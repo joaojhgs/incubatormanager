@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ilb-py-common"
+version = "0.1.0"
+description = "Shared helpers for ILB incubator microservices (events, gateway headers, settings bootstrap)."
+requires-python = ">=3.12"
+dependencies = [
+    "pika>=1.3.2,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ilb_common*"]
+
+[tool.setuptools.package-data]
+ilb_common = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
