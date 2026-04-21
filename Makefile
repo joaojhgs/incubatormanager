@@ -35,6 +35,11 @@ seed: ## Load 10-of-everything fixtures into each service DB
 test: ## Run the full backend + frontend test suite
 	$(COMPOSE) run --rm auth-service pytest
 
+test-libs: ## Run shared Python library unit tests
+	python3 -m pip install -q -e "libs/py-common[dev]" \
+		|| python3 -m pip install -q --break-system-packages -e "libs/py-common[dev]"
+	cd libs/py-common && python3 -m pytest
+
 lint: ## Run ruff, eslint, and prettier across the monorepo
 	ruff check .
 	npm run lint
