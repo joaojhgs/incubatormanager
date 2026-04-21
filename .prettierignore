@@ -1,0 +1,11 @@
+node_modules
+.git
+package-lock.json
+frontend/package-lock.json
+.tilt
+dist
+build
+.next
+coverage
+__pycache__
+*.egg-info

@@ -1,0 +1,26 @@
+default_install_hook_types: [pre-commit]
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+      - id: check-merge-conflict
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.11
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: eslint-and-prettier
+        name: eslint + prettier (npm)
+        entry: bash -lc 'root="$(git rev-parse --show-toplevel)" && cd "$root" && if [ ! -d node_modules ]; then npm ci --no-audit --no-fund; fi && if [ ! -d frontend/node_modules ]; then npm --prefix frontend ci --no-audit --no-fund; fi && npm run lint && npm run format:check'
+        language: system
+        pass_filenames: false

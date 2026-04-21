@@ -36,12 +36,13 @@ test: ## Run the full backend + frontend test suite
 	$(COMPOSE) run --rm auth-service pytest
 
 lint: ## Run ruff, eslint, and prettier across the monorepo
-	@echo "ruff ." && ruff check .
-	@echo "eslint" && npm --prefix frontend run lint
+	ruff check .
+	npm run lint
+	npm run format:check
 
 format: ## Apply ruff and prettier formatters
 	ruff format .
-	npm --prefix frontend run format
+	npm run format
 
 demo: ## Reset DBs, seed, and run the stack in the foreground
 	$(COMPOSE) down -v

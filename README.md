@@ -33,6 +33,9 @@ repo-root/
 ├── .github/workflows/   # CI pipelines (kept in sync with GitLab CI)
 ├── docs/                # architecture, deploy, defense artefacts
 ├── Makefile             # top-level developer targets
+├── eslint.config.mjs  # ESLint (flat config) for JS tooling at the repo root
+├── package.json       # root devDependencies: eslint + prettier
+├── pyproject.toml     # Ruff configuration for Python services and libs
 ├── .python-version      # 3.12
 ├── .nvmrc               # 20
 └── README.md
@@ -63,3 +66,33 @@ make help
   ≤72 chars).
 - One merge request per task, squash-merge.
 - English-only code and commit messages; pt-PT in UI copy.
+
+## Linting and formatting
+
+Install Python 3.12 and Node 20, then install dev tooling:
+
+```bash
+python -m pip install pre-commit ruff
+```
+
+If your Python is externally managed (PEP 668 on many Linux distros), install
+`pre-commit` and `ruff` inside a virtual environment or with `pipx` instead of
+using `pip` globally.
+
+```bash
+npm ci
+npm --prefix frontend ci
+pre-commit install
+```
+
+Run the same checks as CI locally:
+
+```bash
+pre-commit run --all-files
+make lint
+```
+
+Ruff reads `pyproject.toml`. ESLint uses the root flat config for repo-level
+JavaScript (`eslint.config.mjs`) and the Next.js app lint script under
+`frontend/` (`.eslintrc.json`). Prettier reads `.prettierrc.json` at the root
+and `frontend/.prettierrc` for app sources.
