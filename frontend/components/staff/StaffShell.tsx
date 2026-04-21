@@ -1,0 +1,251 @@
+"use client";
+
+import {
+  AppstoreOutlined,
+  BankOutlined,
+  CalendarOutlined,
+  CustomerServiceOutlined,
+  DashboardOutlined,
+  DollarOutlined,
+  FileTextOutlined,
+  GlobalOutlined,
+  HomeOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import type { MenuProps } from "antd";
+import { Avatar, Breadcrumb, Button, Dropdown, Layout, Menu, Space, theme, Typography } from "antd";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
+
+import { type StaffI18nKey, tStaff } from "@/lib/i18n/staffNav";
+
+import styles from "./StaffShell.module.css";
+
+const { Header, Sider, Content } = Layout;
+
+const pathToTitleKey: Record<string, StaffI18nKey> = {
+  dashboard: "navDashboard",
+  companies: "navCompanies",
+  contracts: "navContracts",
+  finance: "navFinance",
+  spaces: "navSpaces",
+  bookings: "navBookings",
+  inventory: "navInventory",
+  tickets: "navTickets",
+  users: "navUsers",
+};
+
+function menuBasePath(pathname: string): string {
+  if (pathname === "/" || pathname === "") {
+    return "/dashboard";
+  }
+  const segment = pathname.split("/").filter(Boolean)[0];
+  return segment ? `/${segment}` : "/dashboard";
+}
+
+function breadcrumbItemsForPath(pathname: string | null): { title: ReactNode }[] {
+  const path = pathname ?? "/";
+  const homeCrumb = {
+    title: (
+      <Link href="/dashboard" prefetch={false}>
+        <HomeOutlined aria-hidden />
+        <span>{tStaff("breadcrumbHome")}</span>
+      </Link>
+    ),
+  };
+
+  if (path === "/" || path === "/dashboard") {
+    return [
+      homeCrumb,
+      {
+        title: <Typography.Text>{tStaff("navDashboard")}</Typography.Text>,
+      },
+    ];
+  }
+
+  const segment = path.split("/").filter(Boolean)[0];
+  const titleKey = segment ? pathToTitleKey[segment] : undefined;
+  if (!titleKey) {
+    return [homeCrumb];
+  }
+
+  return [
+    homeCrumb,
+    {
+      title: <Typography.Text>{tStaff(titleKey)}</Typography.Text>,
+    },
+  ];
+}
+
+export function StaffShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+  const { token } = theme.useToken();
+
+  const selectedKey = menuBasePath(pathname ?? "/");
+
+  const menuItems: MenuProps["items"] = useMemo(
+    () => [
+      {
+        key: "/dashboard",
+        icon: <DashboardOutlined aria-hidden />,
+        label: (
+          <Link href="/dashboard" prefetch={false}>
+            {tStaff("navDashboard")}
+          </Link>
+        ),
+      },
+      {
+        key: "/companies",
+        icon: <BankOutlined aria-hidden />,
+        label: (
+          <Link href="/companies" prefetch={false}>
+            {tStaff("navCompanies")}
+          </Link>
+        ),
+      },
+      {
+        key: "/contracts",
+        icon: <FileTextOutlined aria-hidden />,
+        label: (
+          <Link href="/contracts" prefetch={false}>
+            {tStaff("navContracts")}
+          </Link>
+        ),
+      },
+      {
+        key: "/finance",
+        icon: <DollarOutlined aria-hidden />,
+        label: (
+          <Link href="/finance" prefetch={false}>
+            {tStaff("navFinance")}
+          </Link>
+        ),
+      },
+      {
+        key: "/spaces",
+        icon: <HomeOutlined aria-hidden />,
+        label: (
+          <Link href="/spaces" prefetch={false}>
+            {tStaff("navSpaces")}
+          </Link>
+        ),
+      },
+      {
+        key: "/bookings",
+        icon: <CalendarOutlined aria-hidden />,
+        label: (
+          <Link href="/bookings" prefetch={false}>
+            {tStaff("navBookings")}
+          </Link>
+        ),
+      },
+      {
+        key: "/inventory",
+        icon: <AppstoreOutlined aria-hidden />,
+        label: (
+          <Link href="/inventory" prefetch={false}>
+            {tStaff("navInventory")}
+          </Link>
+        ),
+      },
+      {
+        key: "/tickets",
+        icon: <CustomerServiceOutlined aria-hidden />,
+        label: (
+          <Link href="/tickets" prefetch={false}>
+            {tStaff("navTickets")}
+          </Link>
+        ),
+      },
+      {
+        key: "/users",
+        icon: <UserOutlined aria-hidden />,
+        label: (
+          <Link href="/users" prefetch={false}>
+            {tStaff("navUsers")}
+          </Link>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const breadcrumbItems = useMemo(() => breadcrumbItemsForPath(pathname), [pathname]);
+
+  const languageMenu = useMemo(
+    () => ({
+      items: [
+        { key: "pt", label: tStaff("languagePt"), disabled: false },
+        { key: "en", label: tStaff("languageEn"), disabled: true },
+      ],
+    }),
+    [],
+  );
+
+  const accountMenu = useMemo(
+    () => ({
+      items: [
+        { key: "profile", label: tStaff("menuProfile") },
+        { key: "logout", label: tStaff("menuLogout") },
+      ],
+    }),
+    [],
+  );
+
+  return (
+    <Layout className={styles.staffLayout} hasSider>
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        theme="dark"
+        breakpoint="lg"
+      >
+        <div className={styles.siderBrand}>{tStaff("siderBrand")}</div>
+        <Menu theme="dark" mode="inline" selectedKeys={[selectedKey]} items={menuItems} />
+      </Sider>
+      <Layout>
+        <Header
+          className={styles.headerBar}
+          style={{
+            background: token.colorBgContainer,
+            borderBottom: `1px solid ${token.colorSplit}`,
+          }}
+        >
+          <Typography.Title level={4} className={styles.headerTitle}>
+            {tStaff("headerWorkspace")}
+          </Typography.Title>
+          <Space size="middle">
+            <Dropdown menu={languageMenu} trigger={["click"]}>
+              <Button
+                type="text"
+                icon={<GlobalOutlined aria-hidden />}
+                aria-label={tStaff("headerLanguage")}
+              >
+                PT
+              </Button>
+            </Dropdown>
+            <Dropdown menu={accountMenu} trigger={["click"]}>
+              <Button type="text" className={styles.accountTrigger}>
+                <Space>
+                  <Avatar size="small" icon={<UserOutlined aria-hidden />} />
+                  <Typography.Text>{tStaff("headerAccount")}</Typography.Text>
+                </Space>
+              </Button>
+            </Dropdown>
+          </Space>
+        </Header>
+        <Content
+          className={styles.contentArea}
+          style={{ background: token.colorBgContainer, border: `1px solid ${token.colorSplit}` }}
+        >
+          <Breadcrumb className={styles.breadcrumbRow} items={breadcrumbItems} />
+          {children}
+        </Content>
+      </Layout>
+    </Layout>
+  );
+}
