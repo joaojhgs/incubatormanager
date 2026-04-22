@@ -9,3 +9,5 @@ frontend/node_modules
 *.sqlite3
 services/auth-service/db.sqlite3
 services/auth-service/staticfiles
+services/company-service/db.sqlite3
+services/company-service/staticfiles
