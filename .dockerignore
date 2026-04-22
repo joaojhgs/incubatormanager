@@ -11,5 +11,7 @@ services/auth-service/db.sqlite3
 services/auth-service/staticfiles
 services/company-service/db.sqlite3
 services/company-service/staticfiles
+services/contract-service/db.sqlite3
+services/contract-service/staticfiles
 services/space-service/db.sqlite3
 services/space-service/staticfiles
