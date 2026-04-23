@@ -15,3 +15,5 @@ services/contract-service/db.sqlite3
 services/contract-service/staticfiles
 services/space-service/db.sqlite3
 services/space-service/staticfiles
+services/finance-service/db.sqlite3
+services/finance-service/staticfiles
