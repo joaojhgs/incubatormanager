@@ -1,0 +1,41 @@
+openapi: 3.0.3
+info:
+  title: ILB Finance Service API
+  version: 0.1.0
+  description: Finance bounded context API (stub).
+paths:
+  /api/finance/health/:
+    get:
+      operationId: api_finance_health_retrieve
+      description: Liveness/readiness-style health payload.
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+          description: ''
+  /health/:
+    get:
+      operationId: health_retrieve
+      description: Liveness/readiness-style health payload.
+      tags:
+        - health
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+          description: ''
+components: {}
