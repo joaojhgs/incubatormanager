@@ -11,7 +11,7 @@ paths:
       tags:
         - api
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
@@ -20,7 +20,7 @@ paths:
                   status:
                     type: string
                     example: ok
-          description: ""
+          description: ''
   /health/:
     get:
       operationId: health_retrieve
@@ -28,7 +28,7 @@ paths:
       tags:
         - health
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
@@ -37,5 +37,5 @@ paths:
                   status:
                     type: string
                     example: ok
-          description: ""
+          description: ''
 components: {}
