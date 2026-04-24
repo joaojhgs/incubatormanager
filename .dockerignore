@@ -17,3 +17,5 @@ services/space-service/db.sqlite3
 services/space-service/staticfiles
 services/finance-service/db.sqlite3
 services/finance-service/staticfiles
+services/booking-service/db.sqlite3
+services/booking-service/staticfiles
