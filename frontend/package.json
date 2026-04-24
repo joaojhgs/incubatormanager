@@ -10,12 +10,15 @@
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --fix --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
     "@ant-design/nextjs-registry": "^1.0.2",
     "antd": "^5.22.2",
+    "axios": "^1.7.9",
     "dayjs": "^1.11.13",
     "next": "14.2.15",
     "react": "^18.3.1",
@@ -27,7 +30,9 @@
     "@types/react-dom": "^18.3.1",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.15",
+    "nock": "^14.0.0",
     "prettier": "^3.4.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
   }
 }
