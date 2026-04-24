@@ -1,0 +1,41 @@
+openapi: 3.0.3
+info:
+  title: ILB Booking Service API
+  version: 0.1.0
+  description: Booking bounded context API (stub).
+paths:
+  /api/bookings/health/:
+    get:
+      operationId: api_bookings_health_retrieve
+      description: Liveness/readiness-style health payload.
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+          description: ''
+  /health/:
+    get:
+      operationId: health_retrieve
+      description: Liveness/readiness-style health payload.
+      tags:
+        - health
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+          description: ''
+components: {}
