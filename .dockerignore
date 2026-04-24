@@ -21,3 +21,5 @@ services/booking-service/db.sqlite3
 services/booking-service/staticfiles
 services/dashboard-service/db.sqlite3
 services/dashboard-service/staticfiles
+services/ticket-service/db.sqlite3
+services/ticket-service/staticfiles
