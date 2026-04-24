@@ -13,9 +13,7 @@ from rest_framework.views import APIView
 
 def _minio_configured(settings: dict) -> bool:
     return bool(
-        settings["MINIO_ENDPOINT"]
-        and settings["MINIO_ACCESS_KEY"]
-        and settings["MINIO_SECRET_KEY"]
+        settings["MINIO_ENDPOINT"] and settings["MINIO_ACCESS_KEY"] and settings["MINIO_SECRET_KEY"]
     )
 
 

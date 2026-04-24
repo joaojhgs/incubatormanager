@@ -43,9 +43,7 @@ def test_api_documents_health_503_when_minio_unreachable(
     assert response.json() == {"status": "degraded", "minio": "unreachable"}
 
 
-def test_api_documents_health_minio_ok(
-    client: Client, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_api_documents_health_minio_ok(client: Client, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MINIO_ENDPOINT", "minio:9000")
     monkeypatch.setenv("MINIO_ACCESS_KEY", "access")
     monkeypatch.setenv("MINIO_SECRET_KEY", "secret")
