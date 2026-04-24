@@ -1,0 +1,75 @@
+openapi: 3.0.3
+info:
+  title: ILB Document Service API
+  version: 0.1.0
+  description: Document bounded context API (stub).
+paths:
+  /api/documents/health/:
+    get:
+      operationId: api_documents_health_retrieve
+      description: >-
+        Liveness/readiness-style health payload. When MinIO credentials are set in the
+        environment, the handler probes object storage and may return 503 if it is unreachable.
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  minio:
+                    type: string
+                    example: ok
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: degraded
+                  minio:
+                    type: string
+                    example: unreachable
+          description: MinIO configured but not reachable.
+  /health/:
+    get:
+      operationId: health_retrieve
+      description: Liveness/readiness-style health payload.
+      tags:
+        - health
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  minio:
+                    type: string
+                    example: ok
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: degraded
+                  minio:
+                    type: string
+                    example: unreachable
+          description: MinIO configured but not reachable.
+components: {}
