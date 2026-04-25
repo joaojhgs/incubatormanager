@@ -107,7 +107,27 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
+# Blocklists refresh JTIs; uses Redis in compose, LocMem in tests when ``REDIS_URL`` is empty.
+CACHES = (
+    {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": SHARED["REDIS_URL"],
+        }
+    }
+    if SHARED.get("REDIS_URL")
+    else {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "ilb-auth-cache",
+        }
+    }
+)
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(seconds=SHARED["JWT_ACCESS_TTL_SECONDS"]),
     "REFRESH_TOKEN_LIFETIME": timedelta(seconds=SHARED["JWT_REFRESH_TTL_SECONDS"]),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "TOKEN_REFRESH_SERIALIZER": "core.serializers.ILBTokenRefreshSerializer",
 }
