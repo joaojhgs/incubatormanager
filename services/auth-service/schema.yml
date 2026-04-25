@@ -9,7 +9,7 @@ paths:
       operationId: api_auth_health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -28,7 +28,7 @@ paths:
         pair.
       summary: Login
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -75,7 +75,7 @@ paths:
       description: Revoke the refresh; access may still be valid until its own expiry.
       summary: Logout
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -102,14 +102,14 @@ paths:
         be reused after.
       summary: Refresh
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
             schema:
               type: object
               required:
-              - refresh
+                - refresh
               properties:
                 refresh:
                   type: string
@@ -312,7 +312,7 @@ paths:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-      - health
+        - health
       responses:
         '200':
           content:
@@ -337,8 +337,8 @@ components:
         password:
           type: string
       required:
-      - email
-      - password
+        - email
+        - password
     LogoutRequest:
       type: object
       description: Body for :meth:`core.views.LogoutView.post` — the refresh to revoke.
@@ -347,7 +347,7 @@ components:
           type: string
           writeOnly: true
       required:
-      - refresh
+        - refresh
     TokenPairResponse:
       type: object
       description: JWT access and refresh strings returned on successful login.
@@ -357,8 +357,8 @@ components:
         refresh:
           type: string
       required:
-      - access
-      - refresh
+        - access
+        - refresh
   securitySchemes:
     basicAuth:
       type: http
