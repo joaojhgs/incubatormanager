@@ -76,6 +76,17 @@ paths:
                     type: string
                     example: ok
           description: ''
+  /auth/introspect/:
+    get:
+      operationId: auth_introspect_retrieve
+      description: >
+        Internal gateway probe used with Nginx auth_request. Stub implementation
+        returns trusted identity headers for development.
+      tags:
+        - gateway
+      responses:
+        '200':
+          description: Token accepted (stub).
 components:
   schemas:
     LoginRequest:
