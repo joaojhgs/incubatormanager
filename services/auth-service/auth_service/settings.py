@@ -107,7 +107,8 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "ILB Auth Service API",
     "DESCRIPTION": "Authentication and identity API.",
     "VERSION": "0.1.0",
-    "SERVE_INCLUDE_SCHEMA": False,
+    # List OpenAPI + Swagger UI in the exported schema (plan: eight paths total).
+    "SERVE_INCLUDE_SCHEMA": True,
 }
 
 # Default cache: JTI blocklist, login IP throttle, and DRF throttling share this backend.
