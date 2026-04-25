@@ -1,0 +1,11 @@
+auth_request /auth/introspect;
+auth_request_set $user_id $upstream_http_x_user_id;
+auth_request_set $user_role $upstream_http_x_user_role;
+auth_request_set $company_id $upstream_http_x_company_id;
+proxy_set_header X-User-Id $user_id;
+proxy_set_header X-User-Role $user_role;
+proxy_set_header X-Company-Id $company_id;
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
