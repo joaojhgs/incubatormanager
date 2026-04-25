@@ -5,7 +5,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose --project-directory . -f infra/docker-compose.yml
 COMPOSE_DEV := $(COMPOSE) -f infra/docker-compose.dev.yml
 
-.PHONY: help up down logs ps build rebuild seed test lint format demo tag clean
+.PHONY: help up up-dev down logs ps build rebuild seed test lint format demo tag clean
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} \
@@ -13,6 +13,9 @@ help: ## Show this help
 
 up: ## Start the full stack in the background (production-shaped compose)
 	$(COMPOSE) up -d --build
+
+up-dev: ## Start stack with dev overrides (bind mounts + watchfiles + Django runserver)
+	$(COMPOSE_DEV) up -d --build
 
 down: ## Stop the stack and remove containers
 	$(COMPOSE) down

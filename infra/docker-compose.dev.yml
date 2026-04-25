@@ -1,5 +1,10 @@
-# Layer with `docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml`.
-# Used by Tilt (`tilt up`) for bind mounts and Django `runserver` live reload.
+# Dev layer (use with repo root as Compose project directory):
+#   docker compose --project-directory . -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up
+# Tilt loads the same files (see docker-compose.tilt.yml anchor).
+#
+# Bind-mounts each service tree + libs/py-common. Django is run under watchfiles with
+# `runserver --noreload` so restarts are driven only by watchfiles (avoids nested
+# autoreloaders in bind-mounted Docker volumes).
 
 x-django-dev-env: &django-dev-env
   PYTHONPATH: /opt/ilb-py-common
@@ -7,86 +12,147 @@ x-django-dev-env: &django-dev-env
 services:
   auth-service:
     volumes:
-      - ../services/auth-service:/app:delegated
-      - ../libs/py-common:/opt/ilb-py-common:ro
+      - ./services/auth-service:/app:delegated
+      - ./infra/seed:/app/infra/seed:ro
+      - ./libs/py-common:/opt/ilb-py-common:ro
     environment:
       <<: *django-dev-env
-    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8001']
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - python manage.py runserver 0.0.0.0:8001 --noreload
+      - /app
+      - /opt/ilb-py-common
 
   company-service:
     volumes:
-      - ../services/company-service:/app:delegated
-      - ../libs/py-common:/opt/ilb-py-common:ro
+      - ./services/company-service:/app:delegated
+      - ./libs/py-common:/opt/ilb-py-common:ro
     environment:
       <<: *django-dev-env
-    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8002']
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - python manage.py runserver 0.0.0.0:8002 --noreload
+      - /app
+      - /opt/ilb-py-common
 
   contract-service:
     volumes:
-      - ../services/contract-service:/app:delegated
-      - ../libs/py-common:/opt/ilb-py-common:ro
+      - ./services/contract-service:/app:delegated
+      - ./libs/py-common:/opt/ilb-py-common:ro
     environment:
       <<: *django-dev-env
-    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8003']
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - python manage.py runserver 0.0.0.0:8003 --noreload
+      - /app
+      - /opt/ilb-py-common
 
   finance-service:
     volumes:
-      - ../services/finance-service:/app:delegated
-      - ../libs/py-common:/opt/ilb-py-common:ro
+      - ./services/finance-service:/app:delegated
+      - ./libs/py-common:/opt/ilb-py-common:ro
     environment:
       <<: *django-dev-env
-    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8004']
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - python manage.py runserver 0.0.0.0:8004 --noreload
+      - /app
+      - /opt/ilb-py-common
 
   space-service:
     volumes:
-      - ../services/space-service:/app:delegated
-      - ../libs/py-common:/opt/ilb-py-common:ro
+      - ./services/space-service:/app:delegated
+      - ./libs/py-common:/opt/ilb-py-common:ro
     environment:
       <<: *django-dev-env
-    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8005']
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - python manage.py runserver 0.0.0.0:8005 --noreload
+      - /app
+      - /opt/ilb-py-common
 
   booking-service:
     volumes:
-      - ../services/booking-service:/app:delegated
-      - ../libs/py-common:/opt/ilb-py-common:ro
+      - ./services/booking-service:/app:delegated
+      - ./libs/py-common:/opt/ilb-py-common:ro
     environment:
       <<: *django-dev-env
-    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8006']
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - python manage.py runserver 0.0.0.0:8006 --noreload
+      - /app
+      - /opt/ilb-py-common
 
   inventory-service:
     volumes:
-      - ../services/inventory-service:/app:delegated
-      - ../libs/py-common:/opt/ilb-py-common:ro
+      - ./services/inventory-service:/app:delegated
+      - ./libs/py-common:/opt/ilb-py-common:ro
     environment:
       <<: *django-dev-env
-    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8007']
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - python manage.py runserver 0.0.0.0:8007 --noreload
+      - /app
+      - /opt/ilb-py-common
 
   ticket-service:
     volumes:
-      - ../services/ticket-service:/app:delegated
-      - ../libs/py-common:/opt/ilb-py-common:ro
+      - ./services/ticket-service:/app:delegated
+      - ./libs/py-common:/opt/ilb-py-common:ro
     environment:
       <<: *django-dev-env
-    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8008']
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - python manage.py runserver 0.0.0.0:8008 --noreload
+      - /app
+      - /opt/ilb-py-common
 
   dashboard-service:
     volumes:
-      - ../services/dashboard-service:/app:delegated
-      - ../libs/py-common:/opt/ilb-py-common:ro
+      - ./services/dashboard-service:/app:delegated
+      - ./libs/py-common:/opt/ilb-py-common:ro
     environment:
       <<: *django-dev-env
-    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8009']
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - python manage.py runserver 0.0.0.0:8009 --noreload
+      - /app
+      - /opt/ilb-py-common
 
   document-service:
     volumes:
-      - ../services/document-service:/app:delegated
-      - ../libs/py-common:/opt/ilb-py-common:ro
+      - ./services/document-service:/app:delegated
+      - ./libs/py-common:/opt/ilb-py-common:ro
     environment:
       <<: *django-dev-env
-    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8010']
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - python manage.py runserver 0.0.0.0:8010 --noreload
+      - /app
+      - /opt/ilb-py-common
 
   gateway:
     volumes:
-      - ../gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
     labels:
       ilb.compose.profile: dev
