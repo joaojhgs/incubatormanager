@@ -79,6 +79,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+]
+
 LANGUAGE_CODE = "en-gb"
 TIME_ZONE = SHARED["TIME_ZONE"]
 USE_I18N = True
@@ -97,7 +102,7 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "ILB Auth Service API",
-    "DESCRIPTION": "Authentication and identity API (stub).",
+    "DESCRIPTION": "Authentication and identity API.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

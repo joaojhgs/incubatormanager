@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: ILB Auth Service API
   version: 0.1.0
-  description: Authentication and identity API (stub).
+  description: Authentication and identity API.
 paths:
   /api/auth/health/:
     get:
@@ -21,6 +21,44 @@ paths:
                     type: string
                     example: ok
           description: ''
+  /api/auth/login/:
+    post:
+      operationId: api_auth_login_create
+      description: Authenticate with email and password; returns a JWT access/refresh
+        pair.
+      summary: Login
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPairResponse'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: No active account found with the given credentials
+          description: Unknown email, wrong password, or inactive user (same opaque
+            message for all cases).
   /health/:
     get:
       operationId: health_retrieve
@@ -38,4 +76,29 @@ paths:
                     type: string
                     example: ok
           description: ''
-components: {}
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      description: Credentials accepted at login (matches ``TokenObtainPairSerializer``
+        fields).
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+    TokenPairResponse:
+      type: object
+      description: JWT access and refresh strings returned on successful login.
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+        - access
+        - refresh
