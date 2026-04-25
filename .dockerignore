@@ -6,6 +6,7 @@
 .ruff_cache
 node_modules
 frontend/node_modules
+frontend/.next
 *.sqlite3
 services/auth-service/db.sqlite3
 services/auth-service/staticfiles
