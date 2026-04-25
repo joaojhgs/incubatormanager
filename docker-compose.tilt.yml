@@ -1,0 +1,3 @@
+# Anchor for Tilt: listed first so the Compose project directory is the repo root.
+# Paths in infra/docker-compose*.yml (volumes, build context) assume the project runs from here.
+services: {}
