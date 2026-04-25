@@ -13,6 +13,8 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   /** True until the first client-side read of token storage completes. */
   isReady: boolean;
+  /** Re-reads the access token from storage into React state (e.g. after login). */
+  syncAuthFromStorage: () => void;
   /** Clears the access token and resets auth state (logout UI). */
   logoutLocal: () => void;
 }
@@ -65,9 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: Boolean(user),
       isReady,
+      syncAuthFromStorage: refreshFromStorage,
       logoutLocal,
     }),
-    [user, isReady, logoutLocal],
+    [user, isReady, refreshFromStorage, logoutLocal],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

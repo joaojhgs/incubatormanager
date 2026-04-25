@@ -72,10 +72,13 @@ export function createApiClient(options?: CreateApiClientOptions): AxiosInstance
   let refreshInFlight: Promise<void> | null = null;
 
   async function refreshAccessTokenOnce(): Promise<void> {
-    const { data } = await refreshClient.post<{ access_token?: string }>(AUTH_REFRESH_PATH, {});
-    const next = data.access_token;
+    const { data } = await refreshClient.post<{ access_token?: string; access?: string }>(
+      AUTH_REFRESH_PATH,
+      {},
+    );
+    const next = data.access_token ?? data.access;
     if (!next || typeof next !== "string") {
-      throw new Error("Refresh response missing access_token");
+      throw new Error("Refresh response missing access token");
     }
     setAccessToken(next);
   }

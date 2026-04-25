@@ -8,11 +8,32 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, serializers
 from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from core.token_blacklist import blocklist_refresh_jti, is_refresh_jti_blocklisted
+
+
+def _app_role(user: Any) -> str:
+    raw = getattr(user, "role", "") or ""
+    if not isinstance(raw, str):
+        return str(raw).lower()
+    mapping = {"Director": "director", "Staff": "staff", "Client": "client"}
+    return mapping.get(raw, raw.lower())
+
+
+class ILBTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Adds incubator routing claims expected by the Next.js middleware."""
+
+    @classmethod
+    def get_token(cls, user: Any) -> Any:
+        token = super().get_token(user)
+        token["role"] = _app_role(user)
+        company_id = getattr(user, "company_id", None)
+        if company_id is not None:
+            token["company_id"] = str(company_id)
+        return token
 
 
 class ILBTokenRefreshSerializer(TokenRefreshSerializer):

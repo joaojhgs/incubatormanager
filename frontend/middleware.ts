@@ -11,13 +11,18 @@ function safeInternalPath(next: string | null): string | null {
   return next;
 }
 
+function normalizeRole(role: unknown): string | undefined {
+  if (typeof role !== "string" || !role) return undefined;
+  return role.toLowerCase();
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const cookieName = getRefreshTokenCookieName();
   const raw = request.cookies.get(cookieName)?.value;
   const secret = process.env.AUTH_JWT_SECRET;
   const payload = await verifyRefreshJwtHS256(raw, secret);
-  const role = payload?.role;
+  const role = normalizeRole(payload?.role);
   const hasSession = Boolean(payload && typeof role === "string");
 
   if (pathname === "/login" || pathname.startsWith("/login/")) {

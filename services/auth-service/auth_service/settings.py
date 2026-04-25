@@ -124,10 +124,13 @@ CACHES = (
     }
 )
 
+_JWT_SIGNING_KEY = os.environ.get("AUTH_JWT_SECRET", "").strip() or SECRET_KEY
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(seconds=SHARED["JWT_ACCESS_TTL_SECONDS"]),
     "REFRESH_TOKEN_LIFETIME": timedelta(seconds=SHARED["JWT_REFRESH_TTL_SECONDS"]),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": False,
     "TOKEN_REFRESH_SERIALIZER": "core.serializers.ILBTokenRefreshSerializer",
+    "SIGNING_KEY": _JWT_SIGNING_KEY,
 }
