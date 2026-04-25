@@ -1,6 +1,92 @@
 # Layer with `docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml`.
-# Add bind mounts for live reload (Tilt) here without changing the base topology.
+# Used by Tilt (`tilt up`) for bind mounts and Django `runserver` live reload.
+
+x-django-dev-env: &django-dev-env
+  PYTHONPATH: /opt/ilb-py-common
+
 services:
+  auth-service:
+    volumes:
+      - ../services/auth-service:/app:delegated
+      - ../libs/py-common:/opt/ilb-py-common:ro
+    environment:
+      <<: *django-dev-env
+    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8001']
+
+  company-service:
+    volumes:
+      - ../services/company-service:/app:delegated
+      - ../libs/py-common:/opt/ilb-py-common:ro
+    environment:
+      <<: *django-dev-env
+    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8002']
+
+  contract-service:
+    volumes:
+      - ../services/contract-service:/app:delegated
+      - ../libs/py-common:/opt/ilb-py-common:ro
+    environment:
+      <<: *django-dev-env
+    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8003']
+
+  finance-service:
+    volumes:
+      - ../services/finance-service:/app:delegated
+      - ../libs/py-common:/opt/ilb-py-common:ro
+    environment:
+      <<: *django-dev-env
+    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8004']
+
+  space-service:
+    volumes:
+      - ../services/space-service:/app:delegated
+      - ../libs/py-common:/opt/ilb-py-common:ro
+    environment:
+      <<: *django-dev-env
+    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8005']
+
+  booking-service:
+    volumes:
+      - ../services/booking-service:/app:delegated
+      - ../libs/py-common:/opt/ilb-py-common:ro
+    environment:
+      <<: *django-dev-env
+    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8006']
+
+  inventory-service:
+    volumes:
+      - ../services/inventory-service:/app:delegated
+      - ../libs/py-common:/opt/ilb-py-common:ro
+    environment:
+      <<: *django-dev-env
+    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8007']
+
+  ticket-service:
+    volumes:
+      - ../services/ticket-service:/app:delegated
+      - ../libs/py-common:/opt/ilb-py-common:ro
+    environment:
+      <<: *django-dev-env
+    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8008']
+
+  dashboard-service:
+    volumes:
+      - ../services/dashboard-service:/app:delegated
+      - ../libs/py-common:/opt/ilb-py-common:ro
+    environment:
+      <<: *django-dev-env
+    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8009']
+
+  document-service:
+    volumes:
+      - ../services/document-service:/app:delegated
+      - ../libs/py-common:/opt/ilb-py-common:ro
+    environment:
+      <<: *django-dev-env
+    command: ['/app/docker-entrypoint.sh', 'python', 'manage.py', 'runserver', '0.0.0.0:8010']
+
   gateway:
+    volumes:
+      - ../gateway/nginx.conf:/etc/nginx/nginx.conf:ro
     labels:
       ilb.compose.profile: dev

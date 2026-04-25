@@ -1,0 +1,58 @@
+# ILB dev stack: docker compose + UI groups + manual seed trigger.
+# Run from repo root: `tilt up` (uses ./Tiltfile → this file).
+
+ROOT = config.main_dir
+COMPOSE_ANCHOR = os.path.join(ROOT, 'docker-compose.tilt.yml')
+COMPOSE_MAIN = os.path.join(ROOT, 'infra', 'docker-compose.yml')
+COMPOSE_DEV = os.path.join(ROOT, 'infra', 'docker-compose.dev.yml')
+
+# Anchor must be first so Tilt sets the Compose project directory to the monorepo root
+# (see docker-compose.tilt.yml). Otherwise paths like ./services/... resolve under infra/.
+docker_compose([COMPOSE_ANCHOR, COMPOSE_MAIN, COMPOSE_DEV])
+
+BACKEND_SERVICES = [
+    'auth-service',
+    'company-service',
+    'contract-service',
+    'finance-service',
+    'space-service',
+    'booking-service',
+    'inventory-service',
+    'ticket-service',
+    'dashboard-service',
+    'document-service',
+]
+
+INFRA_SERVICES = [
+    'postgres',
+    'redis',
+    'rabbitmq',
+    'minio',
+    'minio-init',
+    'gateway',
+]
+
+FRONTEND_SERVICES = ['frontend']
+
+for svc in INFRA_SERVICES:
+    dc_resource(svc, labels=['infra'])
+
+for svc in BACKEND_SERVICES:
+    dc_resource(svc, labels=['backend'])
+
+for svc in FRONTEND_SERVICES:
+    dc_resource(svc, labels=['frontend'])
+
+SEED_CMD = 'docker compose --project-directory {root} -f docker-compose.tilt.yml -f infra/docker-compose.yml -f infra/docker-compose.dev.yml exec -T auth-service python /app/infra/seed/seed.py'.format(
+    root=shlex.quote(ROOT),
+)
+
+local_resource(
+    'seed',
+    cmd=SEED_CMD,
+    dir=ROOT,
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    auto_init=False,
+    resource_deps=['auth-service'],
+    labels=['infra'],
+)
