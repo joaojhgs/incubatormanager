@@ -59,6 +59,68 @@ paths:
                     example: No active account found with the given credentials
           description: Unknown email, wrong password, or inactive user (same opaque
             message for all cases).
+  /api/auth/logout/:
+    post:
+      operationId: api_auth_logout_create
+      description: Revoke the refresh; access may still be valid until its own expiry.
+      summary: Logout
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+        required: true
+      responses:
+        '204':
+          description: Blocklisted; further refresh attempts for this JTI fail.
+        '400':
+          description: Validation error, for example a missing `refresh` field.
+        '401':
+          description: Malformed, expired, or otherwise invalid refresh token.
+  /api/auth/refresh/:
+    post:
+      operationId: api_auth_refresh_create
+      description: Exchange a valid refresh for new tokens; the old refresh cannot
+        be reused after.
+      summary: Refresh
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh
+              properties:
+                refresh:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPairResponse'
+          description: ''
+  /auth/introspect/:
+    get:
+      operationId: auth_introspect_retrieve
+      description: Internal gateway probe used with Nginx auth_request. Stub implementation
+        returns trusted identity headers for development.
+      summary: Introspect (stub)
+      tags:
+        - gateway
+      responses:
+        '200':
+          description: Token accepted (stub).
   /health/:
     get:
       operationId: health_retrieve
@@ -76,17 +138,6 @@ paths:
                     type: string
                     example: ok
           description: ''
-  /auth/introspect/:
-    get:
-      operationId: auth_introspect_retrieve
-      description: >
-        Internal gateway probe used with Nginx auth_request. Stub implementation
-        returns trusted identity headers for development.
-      tags:
-        - gateway
-      responses:
-        '200':
-          description: Token accepted (stub).
 components:
   schemas:
     LoginRequest:
@@ -102,6 +153,15 @@ components:
       required:
         - email
         - password
+    LogoutRequest:
+      type: object
+      description: Body for :meth:`core.views.LogoutView.post` — the refresh to revoke.
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+        - refresh
     TokenPairResponse:
       type: object
       description: JWT access and refresh strings returned on successful login.
