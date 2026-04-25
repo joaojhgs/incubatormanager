@@ -1,4 +1,6 @@
 node_modules
+# Nginx include snippets are not JS/CSS; Prettier mangles directives.
+gateway/includes/*.inc
 .git
 package-lock.json
 frontend/package-lock.json
