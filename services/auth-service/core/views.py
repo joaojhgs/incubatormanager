@@ -8,12 +8,15 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from core.serializers import ILBTokenRefreshSerializer, LogoutRequestSerializer
+from core.serializers import (
+    ILBTokenObtainPairSerializer,
+    ILBTokenRefreshSerializer,
+    LogoutRequestSerializer,
+)
 from core.token_blacklist import blocklist_refresh_jti
 
 
@@ -34,7 +37,7 @@ class LoginRequestSerializer(serializers.Serializer):
 class LoginView(TokenObtainPairView):
     """Issue access (15m) and refresh (7d) JWTs after email/password verification."""
 
-    serializer_class = TokenObtainPairSerializer
+    serializer_class = ILBTokenObtainPairSerializer
 
     @extend_schema(
         summary="Login",

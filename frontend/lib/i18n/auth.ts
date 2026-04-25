@@ -1,9 +1,15 @@
 const authMessages = {
   loginTitle: "Iniciar sessão",
-  loginIntro:
-    "A autenticação via formulário será ligada ao serviço de identidade. Por agora, utilize o fluxo de desenvolvimento com JWT válido no cookie de atualização.",
-  loginRoleHint: "Função na sessão (JWT):",
-  loginNotSignedIn: "Sem sessão ativa no browser.",
+  loginSubtitle: "Introduza o seu email e palavra-passe para continuar.",
+  loginEmailLabel: "Email",
+  loginPasswordLabel: "Palavra-passe",
+  loginSubmit: "Entrar",
+  fieldEmailRequired: "Indique o email.",
+  fieldEmailInvalid: "Indique um email válido.",
+  fieldPasswordRequired: "Indique a palavra-passe.",
+  loginErrorInvalid: "Credenciais inválidas. Verifique o email e a palavra-passe.",
+  loginErrorGeneric: "Não foi possível iniciar sessão. Tente novamente.",
+  loginErrorUnreachable: "Serviço de autenticação indisponível.",
 } as const;
 
 export type AuthI18nKey = keyof typeof authMessages;

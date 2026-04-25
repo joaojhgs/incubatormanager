@@ -85,6 +85,20 @@ describe("createApiClient", () => {
     expect(nock.pendingMocks()).toHaveLength(0);
   });
 
+  it("accepts access token field from refresh response", async () => {
+    setAccessToken("expired");
+    const client = createApiClient({ baseURL: `${BASE}${BASE_PATH}` });
+
+    nock(BASE).get(`${BASE_PATH}/resource`).reply(401);
+    nock(BASE).post(`${BASE_PATH}/auth/refresh`).reply(200, { access: "renewed-via-access" });
+    nock(BASE).get(`${BASE_PATH}/resource`).reply(200, { ok: true });
+
+    const { data } = await client.get("/resource");
+    expect(data).toEqual({ ok: true });
+    expect(getAccessToken()).toBe("renewed-via-access");
+    expect(nock.isDone()).toBe(true);
+  });
+
   it("coalesces concurrent 401s into a single refresh", async () => {
     setAccessToken("expired");
     const client = createApiClient({ baseURL: `${BASE}${BASE_PATH}` });

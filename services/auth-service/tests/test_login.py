@@ -6,6 +6,7 @@ import uuid
 
 import pytest
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from users.models import User
 
 
@@ -33,6 +34,8 @@ def test_login_returns_jwt_pair_for_valid_credentials(api_client: APIClient) -> 
     assert "access" in body and "refresh" in body
     assert isinstance(body["access"], str) and len(body["access"]) > 40
     assert isinstance(body["refresh"], str) and len(body["refresh"]) > 40
+    assert RefreshToken(body["refresh"])["role"] == "staff"
+    assert AccessToken(body["access"])["role"] == "staff"
 
 
 @pytest.mark.django_db
