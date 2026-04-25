@@ -15,6 +15,21 @@ from pika.spec import Basic, BasicProperties
 EXCHANGE_DEFAULT = "incubator.events"
 
 
+def ensure_event_exchange(
+    channel: BlockingChannel,
+    *,
+    exchange: str = EXCHANGE_DEFAULT,
+) -> None:
+    """
+    Declare the ``incubator.events`` topic exchange idempotently.
+
+    Call this before publishing or before binding a consumer queue. It is
+    safe to run on every connection: RabbitMQ accepts a matching
+    ``exchange.declare`` for an existing exchange of the same type and flags.
+    """
+    channel.exchange_declare(exchange=exchange, exchange_type="topic", durable=True)
+
+
 class EventEnvelope(TypedDict):
     event_id: str
     event_type: str
@@ -59,7 +74,7 @@ def publish(
     connection = pika.BlockingConnection(parameters)
     try:
         channel = connection.channel()
-        channel.exchange_declare(exchange=exchange, exchange_type="topic", durable=True)
+        ensure_event_exchange(channel, exchange=exchange)
         channel.basic_publish(
             exchange=exchange,
             routing_key=rk,
@@ -116,7 +131,7 @@ def subscribe(
     connection = pika.BlockingConnection(parameters)
     try:
         channel = connection.channel()
-        channel.exchange_declare(exchange=exchange, exchange_type="topic", durable=True)
+        ensure_event_exchange(channel, exchange=exchange)
         channel.basic_qos(prefetch_count=prefetch_count)
 
         if queue:
