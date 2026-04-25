@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
 
-COMPOSE := docker compose -f infra/docker-compose.yml
+COMPOSE := docker compose --project-directory . -f infra/docker-compose.yml
 COMPOSE_DEV := $(COMPOSE) -f infra/docker-compose.dev.yml
 
 .PHONY: help up down logs ps build rebuild seed test lint format demo tag clean
@@ -32,7 +32,7 @@ rebuild: ## Force a clean rebuild of every service
 seed: ## Load 10-of-everything fixtures into each service DB
 	$(COMPOSE) exec auth-service python /app/infra/seed/seed.py
 
-test: ## Run the full backend + frontend test suite
+test: ## Run pytest in the auth-service container (requires `make up` or images built)
 	$(COMPOSE) run --rm auth-service pytest
 
 test-libs: ## Run shared Python library unit tests

@@ -1,0 +1,37 @@
+#!/bin/sh
+set -eu
+
+psql -v ON_ERROR_STOP=1 --username "${POSTGRES_USER}" --dbname "${POSTGRES_DB}" <<SQL
+CREATE USER auth_svc WITH PASSWORD '${AUTH_DB_PASSWORD}';
+CREATE USER company_svc WITH PASSWORD '${COMPANY_DB_PASSWORD}';
+CREATE USER contract_svc WITH PASSWORD '${CONTRACT_DB_PASSWORD}';
+CREATE USER finance_svc WITH PASSWORD '${FINANCE_DB_PASSWORD}';
+CREATE USER space_svc WITH PASSWORD '${SPACE_DB_PASSWORD}';
+CREATE USER booking_svc WITH PASSWORD '${BOOKING_DB_PASSWORD}';
+CREATE USER inventory_svc WITH PASSWORD '${INVENTORY_DB_PASSWORD}';
+CREATE USER ticket_svc WITH PASSWORD '${TICKET_DB_PASSWORD}';
+CREATE USER dashboard_svc WITH PASSWORD '${DASHBOARD_DB_PASSWORD}';
+CREATE USER document_svc WITH PASSWORD '${DOCUMENT_DB_PASSWORD}';
+
+CREATE DATABASE auth_db OWNER auth_svc;
+CREATE DATABASE company_db OWNER company_svc;
+CREATE DATABASE contract_db OWNER contract_svc;
+CREATE DATABASE finance_db OWNER finance_svc;
+CREATE DATABASE space_db OWNER space_svc;
+CREATE DATABASE booking_db OWNER booking_svc;
+CREATE DATABASE inventory_db OWNER inventory_svc;
+CREATE DATABASE ticket_db OWNER ticket_svc;
+CREATE DATABASE dashboard_db OWNER dashboard_svc;
+CREATE DATABASE document_db OWNER document_svc;
+
+GRANT ALL PRIVILEGES ON DATABASE auth_db TO auth_svc;
+GRANT ALL PRIVILEGES ON DATABASE company_db TO company_svc;
+GRANT ALL PRIVILEGES ON DATABASE contract_db TO contract_svc;
+GRANT ALL PRIVILEGES ON DATABASE finance_db TO finance_svc;
+GRANT ALL PRIVILEGES ON DATABASE space_db TO space_svc;
+GRANT ALL PRIVILEGES ON DATABASE booking_db TO booking_svc;
+GRANT ALL PRIVILEGES ON DATABASE inventory_db TO inventory_svc;
+GRANT ALL PRIVILEGES ON DATABASE ticket_db TO ticket_svc;
+GRANT ALL PRIVILEGES ON DATABASE dashboard_db TO dashboard_svc;
+GRANT ALL PRIVILEGES ON DATABASE document_db TO document_svc;
+SQL

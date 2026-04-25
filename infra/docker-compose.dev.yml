@@ -1,0 +1,6 @@
+# Layer with `docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml`.
+# Add bind mounts for live reload (Tilt) here without changing the base topology.
+services:
+  gateway:
+    labels:
+      ilb.compose.profile: dev

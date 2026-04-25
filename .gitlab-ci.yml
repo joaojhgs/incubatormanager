@@ -1,5 +1,5 @@
-# Monorepo GitLab CI — Ruff, frontend tooling, and per-service pytest.
-# Default tag is required for IPB shared runners; untagged jobs are never scheduled.
+# Monorepo GitLab CI — compose validation, Ruff, frontend tooling, and per-service pytest.
+# Default tag `shared` is required for IPB shared runners; untagged jobs are never scheduled.
 
 workflow:
   rules:
@@ -7,6 +7,7 @@ workflow:
     - if: $CI_COMMIT_BRANCH == "main"
 
 stages:
+  - validate
   - lint
   - test
 
@@ -18,6 +19,27 @@ default:
 variables:
   PIP_ROOT_USER_ACTION: ignore
   DJANGO_SECRET_KEY: ci-not-secret-change-in-real-envs
+  # Pin standalone Compose; avoids docker:cli which needs a running engine/socket.
+  DOCKER_COMPOSE_V2_VERSION: '2.31.0'
+
+compose:validate:
+  stage: validate
+  image: debian:12-slim
+  before_script:
+    - |
+      set -eu
+      apt-get update -qq && apt-get install -y -qq ca-certificates curl
+      ARCH="$(uname -m)"
+      case "$ARCH" in
+        x86_64) COMPOSE_ARCH="x86_64" ;;
+        aarch64|arm64) COMPOSE_ARCH="aarch64" ;;
+        *) echo "Unsupported arch: $ARCH"; exit 1 ;;
+      esac
+      curl -fsSL "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_V2_VERSION}/docker-compose-linux-${COMPOSE_ARCH}" -o /usr/local/bin/docker-compose
+      chmod +x /usr/local/bin/docker-compose
+  script:
+    - cp .env.example .env
+    - docker-compose -f infra/docker-compose.yml --project-directory . config --quiet
 
 ruff:
   stage: lint

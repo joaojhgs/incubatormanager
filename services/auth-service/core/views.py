@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -73,3 +73,21 @@ class HealthView(APIView):
     )
     def get(self, request: Request) -> Response:
         return Response({"status": "ok"})
+
+
+class IntrospectView(APIView):
+    """Gateway `auth_request` stub — validates JWT in a later iteration."""
+
+    authentication_classes = ()
+    permission_classes = ()
+
+    @extend_schema(exclude=True)
+    def get(self, request: Request) -> Response:
+        return Response(
+            status=status.HTTP_200_OK,
+            headers={
+                "X-User-Id": "00000000-0000-4000-8000-000000000001",
+                "X-User-Role": "Staff",
+                "X-Company-Id": "",
+            },
+        )
