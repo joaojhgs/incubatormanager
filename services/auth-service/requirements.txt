@@ -7,5 +7,6 @@ djangorestframework-simplejwt==5.4.0
 dj-database-url==2.3.0
 psycopg[binary]==3.2.4
 gunicorn==23.0.0
+watchfiles==0.24.0
 pytest==8.3.4
 pytest-django==4.9.0
