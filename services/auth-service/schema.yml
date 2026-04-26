@@ -59,6 +59,16 @@ paths:
                     example: No active account found with the given credentials
           description: Unknown email, wrong password, or inactive user (same opaque
             message for all cases).
+        '429':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: Request was throttled. Expected available in 42 seconds.
+          description: More than five login attempts per minute from this IP address.
   /api/auth/logout/:
     post:
       operationId: api_auth_logout_create

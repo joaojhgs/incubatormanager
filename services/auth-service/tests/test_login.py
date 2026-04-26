@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from django.core.cache import cache
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from users.models import User
@@ -82,6 +83,57 @@ def test_login_rejects_inactive_user(api_client: APIClient) -> None:
         format="json",
     )
     assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_login_throttled_after_five_attempts_per_ip(api_client: APIClient) -> None:
+    """Sixth POST to login from the same client IP within one minute returns 429."""
+    cache.clear()
+    for i in range(5):
+        response = api_client.post(
+            "/api/auth/login/",
+            {"email": "missing@example.com", "password": "wrong"},
+            format="json",
+        )
+        assert response.status_code == 401, i
+
+    blocked = api_client.post(
+        "/api/auth/login/",
+        {"email": "missing@example.com", "password": "wrong"},
+        format="json",
+    )
+    assert blocked.status_code == 429
+    assert "throttl" in blocked.json()["detail"].lower()
+
+
+@pytest.mark.django_db
+def test_login_throttle_is_per_client_ip(api_client: APIClient) -> None:
+    """Separate limits apply per ``X-Forwarded-For`` client (first address)."""
+    cache.clear()
+    for _ in range(5):
+        api_client.post(
+            "/api/auth/login/",
+            {"email": "a@example.com", "password": "x"},
+            format="json",
+            HTTP_X_FORWARDED_FOR="198.51.100.10",
+        )
+    assert (
+        api_client.post(
+            "/api/auth/login/",
+            {"email": "a@example.com", "password": "x"},
+            format="json",
+            HTTP_X_FORWARDED_FOR="198.51.100.10",
+        ).status_code
+        == 429
+    )
+
+    other = api_client.post(
+        "/api/auth/login/",
+        {"email": "b@example.com", "password": "y"},
+        format="json",
+        HTTP_X_FORWARDED_FOR="198.51.100.20",
+    )
+    assert other.status_code == 401
 
 
 @pytest.mark.django_db

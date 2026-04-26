@@ -17,6 +17,7 @@ from core.serializers import (
     ILBTokenRefreshSerializer,
     LogoutRequestSerializer,
 )
+from core.throttling import LoginIPRateThrottle
 from core.token_blacklist import blocklist_refresh_jti
 
 
@@ -38,6 +39,7 @@ class LoginView(TokenObtainPairView):
     """Issue access (15m) and refresh (7d) JWTs after email/password verification."""
 
     serializer_class = ILBTokenObtainPairSerializer
+    throttle_classes = [LoginIPRateThrottle]
 
     @extend_schema(
         summary="Login",
@@ -59,6 +61,18 @@ class LoginView(TokenObtainPairView):
                     "Unknown email, wrong password, or inactive user "
                     "(same opaque message for all cases)."
                 ),
+            ),
+            429: OpenApiResponse(
+                response={
+                    "type": "object",
+                    "properties": {
+                        "detail": {
+                            "type": "string",
+                            "example": "Request was throttled. Expected available in 42 seconds.",
+                        }
+                    },
+                },
+                description="More than five login attempts per minute from this IP address.",
             ),
         },
     )
