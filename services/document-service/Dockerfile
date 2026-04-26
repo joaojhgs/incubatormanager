@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1
+FROM minio/mc:RELEASE.2024-11-21T17-17-25Z AS mc
+
 FROM python:3.12-slim-bookworm AS builder
 
 RUN apt-get update \
@@ -28,6 +30,10 @@ WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+
+COPY --from=mc /usr/bin/mc /usr/local/bin/mc
+COPY infra/scripts/minio-init.sh /usr/local/bin/minio-init.sh
+RUN chmod +x /usr/local/bin/mc /usr/local/bin/minio-init.sh
 
 COPY services/document-service /app
 
