@@ -11,6 +11,21 @@ from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from users.models import User
 
 
+@pytest.fixture(autouse=True)
+def _reset_throttle_count_before_isolated_login_tests(
+    request: pytest.FixtureRequest,
+) -> object:
+    """``LoginIPRateThrottle`` is per client IP. Other modules (e.g. verify) also POST login."""
+    if request.node.name in (
+        "test_login_throttled_after_five_attempts_per_ip",
+        "test_login_throttle_is_per_client_ip",
+    ):
+        yield
+        return
+    cache.clear()
+    yield
+
+
 @pytest.fixture
 def api_client() -> APIClient:
     return APIClient()
