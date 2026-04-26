@@ -120,17 +120,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenPairResponse'
           description: ''
-  /auth/introspect/:
+  /auth/verify/:
     get:
-      operationId: auth_introspect_retrieve
-      description: Internal gateway probe used with Nginx auth_request. Stub implementation
-        returns trusted identity headers for development.
-      summary: Introspect (stub)
+      operationId: auth_verify_retrieve
+      description: Validates a JWT access token and returns `X-User-Id`, `X-User-Role`,
+        and `X-Company-Id` for the Nginx gateway to pass to upstream services. The
+        gateway must forward the `Authorization` header to this subrequest.
+      summary: Verify (gateway auth_request)
       tags:
         - gateway
       responses:
         '200':
-          description: Token accepted (stub).
+          description: Access token valid; identity in response headers.
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                    enum:
+                      - token_not_valid
+                      - user_not_found
+                      - user_inactive
+          description: ''
   /health/:
     get:
       operationId: health_retrieve

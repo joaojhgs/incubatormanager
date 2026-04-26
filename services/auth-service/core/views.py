@@ -12,6 +12,7 @@ from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from core.gateway_auth import verify_access_token_for_gateway
 from core.serializers import (
     ILBTokenObtainPairSerializer,
     ILBTokenRefreshSerializer,
@@ -175,29 +176,59 @@ class HealthView(APIView):
         return Response({"status": "ok"})
 
 
-class IntrospectView(APIView):
-    """Gateway `auth_request` stub — validates JWT in a later iteration."""
+class VerifyView(APIView):
+    """
+    Nginx internal ``auth_request`` target: validate the *same* request's
+    ``Authorization: Bearer <access>`` and return identity headers.
+    """
 
     authentication_classes = ()
     permission_classes = ()
 
     @extend_schema(
-        summary="Introspect (stub)",
+        summary="Verify (gateway auth_request)",
         description=(
-            "Internal gateway probe used with Nginx auth_request. Stub implementation "
-            "returns trusted identity headers for development."
+            "Validates a JWT access token and returns `X-User-Id`, `X-User-Role`, and "
+            "`X-Company-Id` for the Nginx gateway to pass to upstream services. "
+            "The gateway must forward the `Authorization` header to this subrequest."
         ),
         tags=["gateway"],
         responses={
-            200: OpenApiResponse(description="Token accepted (stub)."),
+            200: OpenApiResponse(
+                response=None,
+                description="Access token valid; identity in response headers.",
+            ),
+            401: OpenApiResponse(
+                response={
+                    "type": "object",
+                    "properties": {
+                        "detail": {"type": "string"},
+                        "code": {
+                            "type": "string",
+                            "enum": [
+                                "token_not_valid",
+                                "user_not_found",
+                                "user_inactive",
+                            ],
+                        },
+                    },
+                },
+            ),
         },
     )
     def get(self, request: Request) -> Response:
-        return Response(
-            status=status.HTTP_200_OK,
-            headers={
-                "X-User-Id": "00000000-0000-4000-8000-000000000001",
-                "X-User-Role": "Staff",
-                "X-Company-Id": "",
-            },
-        )
+        return verify_access_token_for_gateway(request)
+
+
+class IntrospectView(APIView):
+    """
+    Backwards-compatible alias; behaviour matches :class:`VerifyView`.
+    Prefer ``GET /auth/verify/`` for the gateway.
+    """
+
+    authentication_classes = ()
+    permission_classes = ()
+
+    @extend_schema(exclude=True)
+    def get(self, request: Request) -> Response:
+        return verify_access_token_for_gateway(request)

@@ -1,4 +1,4 @@
-auth_request /auth/introspect;
+auth_request /auth/verify;
 auth_request_set $user_id $upstream_http_x_user_id;
 auth_request_set $user_role $upstream_http_x_user_role;
 auth_request_set $company_id $upstream_http_x_company_id;
