@@ -98,6 +98,9 @@ AUTH_USER_MODEL = "users.User"
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_RATES": {
+        "login_ip": "5/minute",
+    },
 }
 
 SPECTACULAR_SETTINGS = {
@@ -107,7 +110,7 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
-# Blocklists refresh JTIs; uses Redis in compose, LocMem in tests when ``REDIS_URL`` is empty.
+# Default cache: JTI blocklist, login IP throttle, and DRF throttling share this backend.
 CACHES = (
     {
         "default": {
