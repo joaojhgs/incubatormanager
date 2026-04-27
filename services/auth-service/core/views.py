@@ -11,6 +11,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from users.models import User
 
 from core.gateway_auth import verify_access_token_for_gateway
 from core.serializers import (
@@ -232,3 +233,60 @@ class IntrospectView(APIView):
     @extend_schema(exclude=True)
     def get(self, request: Request) -> Response:
         return verify_access_token_for_gateway(request)
+
+
+class UserSerializer(serializers.Serializer):
+    """Minimal user representation returned by :class:`UserListView`."""
+
+    id = serializers.UUIDField()
+    email = serializers.EmailField()
+    role = serializers.CharField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    company_id = serializers.UUIDField(allow_null=True)
+
+
+class UserListView(APIView):
+    """
+    List users — Director only.
+
+    Reads the ``X-User-Role`` header injected by the Nginx gateway after
+    ``auth_request`` validation.  Returns 403 for Staff and Client roles.
+    """
+
+    authentication_classes = ()
+    permission_classes = ()
+
+    @extend_schema(
+        summary="List users (Director only)",
+        description=(
+            "Returns all users. Only accessible when the gateway-injected "
+            "X-User-Role header is Director. Staff and Client receive 403."
+        ),
+        tags=["users"],
+        responses={
+            200: UserSerializer(many=True),
+            403: OpenApiResponse(
+                response={
+                    "type": "object",
+                    "properties": {
+                        "detail": {
+                            "type": "string",
+                            "example": "You do not have permission to perform this action.",
+                        }
+                    },
+                },
+                description="Forbidden — role is not Director.",
+            ),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        role = request.META.get("HTTP_X_USER_ROLE", "")
+        if role != "Director":
+            return Response(
+                {"detail": "You do not have permission to perform this action."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        users = User.objects.all().order_by("email")
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)

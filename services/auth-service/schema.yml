@@ -120,33 +120,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenPairResponse'
           description: ''
-  /auth/verify/:
-    get:
-      operationId: auth_verify_retrieve
-      description: Validates a JWT access token and returns `X-User-Id`, `X-User-Role`,
-        and `X-Company-Id` for the Nginx gateway to pass to upstream services. The
-        gateway must forward the `Authorization` header to this subrequest.
-      summary: Verify (gateway auth_request)
-      tags:
-        - gateway
-      responses:
-        '200':
-          description: Access token valid; identity in response headers.
-        '401':
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  detail:
-                    type: string
-                  code:
-                    type: string
-                    enum:
-                      - token_not_valid
-                      - user_not_found
-                      - user_inactive
-          description: ''
   /api/auth/schema/:
     get:
       operationId: api_auth_schema_retrieve
@@ -307,6 +280,60 @@ paths:
       responses:
         '200':
           description: Swagger UI page (HTML).
+  /api/auth/users/:
+    get:
+      operationId: api_auth_users_list
+      description: Returns all users. Only accessible when the gateway-injected X-User-Role
+        header is Director. Staff and Client receive 403.
+      summary: List users (Director only)
+      tags:
+        - users
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: You do not have permission to perform this action.
+          description: Forbidden — role is not Director.
+  /auth/verify/:
+    get:
+      operationId: auth_verify_retrieve
+      description: Validates a JWT access token and returns `X-User-Id`, `X-User-Role`,
+        and `X-Company-Id` for the Nginx gateway to pass to upstream services. The
+        gateway must forward the `Authorization` header to this subrequest.
+      summary: Verify (gateway auth_request)
+      tags:
+        - gateway
+      responses:
+        '200':
+          description: Access token valid; identity in response headers.
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                    enum:
+                      - token_not_valid
+                      - user_not_found
+                      - user_inactive
+          description: ''
   /health/:
     get:
       operationId: health_retrieve
@@ -359,6 +386,33 @@ components:
       required:
         - access
         - refresh
+    User:
+      type: object
+      description: Minimal user representation returned by :class:`UserListView`.
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        company_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+        - company_id
+        - email
+        - first_name
+        - id
+        - last_name
+        - role
   securitySchemes:
     basicAuth:
       type: http
