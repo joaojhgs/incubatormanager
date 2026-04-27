@@ -1,28 +1,242 @@
 "use client";
 
-import { Layout, Typography } from "antd";
+import {
+  BankOutlined,
+  CalendarOutlined,
+  CustomerServiceOutlined,
+  DashboardOutlined,
+  DollarOutlined,
+  FileTextOutlined,
+  GlobalOutlined,
+  HomeOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import type { MenuProps } from "antd";
+import { Avatar, Breadcrumb, Button, Dropdown, Layout, Menu, Space, theme, Typography } from "antd";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
 
-import { tClient } from "@/lib/i18n/clientPortal";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { type ClientPortalI18nKey, tClient } from "@/lib/i18n/clientPortal";
+import { clearAccessToken } from "@/lib/api/tokenStorage";
 
-const { Header, Content } = Layout;
+import styles from "./ClientPortalShell.module.css";
+
+const { Header, Sider, Content } = Layout;
+
+const pathToTitleKey: Record<string, ClientPortalI18nKey> = {
+  portal: "navDashboard",
+  company: "navCompany",
+  contract: "navContract",
+  payments: "navPayments",
+  bookings: "navBookings",
+  tickets: "navSupport",
+};
+
+function menuSelectedKey(pathname: string): string {
+  if (pathname === "/portal" || pathname === "/portal/") {
+    return "/portal";
+  }
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length >= 2) {
+    return `/portal/${segments[1]}`;
+  }
+  return "/portal";
+}
+
+function breadcrumbItemsForPath(pathname: string | null): { title: ReactNode }[] {
+  const path = pathname ?? "/portal";
+  const homeCrumb = {
+    title: (
+      <Link href="/portal" prefetch={false}>
+        <HomeOutlined aria-hidden />
+        <span>{tClient("breadcrumbHome")}</span>
+      </Link>
+    ),
+  };
+
+  if (path === "/portal" || path === "/portal/") {
+    return [
+      homeCrumb,
+      {
+        title: <Typography.Text>{tClient("navDashboard")}</Typography.Text>,
+      },
+    ];
+  }
+
+  const segments = path.split("/").filter(Boolean);
+  const section = segments.length >= 2 ? segments[1] : undefined;
+  const titleKey = section ? pathToTitleKey[section] : undefined;
+  if (!titleKey) {
+    return [homeCrumb];
+  }
+
+  return [
+    homeCrumb,
+    {
+      title: <Typography.Text>{tClient(titleKey)}</Typography.Text>,
+    },
+  ];
+}
 
 export function ClientPortalShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, logoutLocal } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
+  const { token } = theme.useToken();
+
+  const selectedKey = menuSelectedKey(pathname ?? "/portal");
+
+  const menuItems: MenuProps["items"] = useMemo(
+    () => [
+      {
+        key: "/portal",
+        icon: <DashboardOutlined aria-hidden />,
+        label: (
+          <Link href="/portal" prefetch={false}>
+            {tClient("navDashboard")}
+          </Link>
+        ),
+      },
+      {
+        key: "/portal/company",
+        icon: <BankOutlined aria-hidden />,
+        label: (
+          <Link href="/portal/company" prefetch={false}>
+            {tClient("navCompany")}
+          </Link>
+        ),
+      },
+      {
+        key: "/portal/contract",
+        icon: <FileTextOutlined aria-hidden />,
+        label: (
+          <Link href="/portal/contract" prefetch={false}>
+            {tClient("navContract")}
+          </Link>
+        ),
+      },
+      {
+        key: "/portal/payments",
+        icon: <DollarOutlined aria-hidden />,
+        label: (
+          <Link href="/portal/payments" prefetch={false}>
+            {tClient("navPayments")}
+          </Link>
+        ),
+      },
+      {
+        key: "/portal/bookings",
+        icon: <CalendarOutlined aria-hidden />,
+        label: (
+          <Link href="/portal/bookings" prefetch={false}>
+            {tClient("navBookings")}
+          </Link>
+        ),
+      },
+      {
+        key: "/portal/tickets",
+        icon: <CustomerServiceOutlined aria-hidden />,
+        label: (
+          <Link href="/portal/tickets" prefetch={false}>
+            {tClient("navSupport")}
+          </Link>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const breadcrumbItems = useMemo(() => breadcrumbItemsForPath(pathname), [pathname]);
+
+  const languageMenu = useMemo(
+    () => ({
+      items: [
+        { key: "pt", label: tClient("languagePt"), disabled: false },
+        { key: "en", label: tClient("languageEn"), disabled: true },
+      ],
+    }),
+    [],
+  );
+
+  const handleLogout = () => {
+    clearAccessToken();
+    logoutLocal();
+    router.push("/login");
+  };
+
+  const accountMenu = useMemo(
+    () => ({
+      items: [
+        { key: "profile", label: tClient("menuProfile") },
+        { key: "logout", label: tClient("menuLogout"), onClick: handleLogout },
+      ],
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [logoutLocal],
+  );
+
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          paddingInline: 24,
-          background: "#001529",
-        }}
+    <Layout className={styles.clientLayout} hasSider>
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        theme="dark"
+        breakpoint="lg"
+        style={{ background: "#00474F" }}
       >
-        <Typography.Title level={4} style={{ margin: 0, color: "#fff" }}>
-          {tClient("headerTitle")}
-        </Typography.Title>
-      </Header>
-      <Content style={{ padding: 24 }}>{children}</Content>
+        <div className={styles.siderBrand}>{tClient("siderBrand")}</div>
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          items={menuItems}
+          style={{ background: "#00474F" }}
+        />
+      </Sider>
+      <Layout>
+        <Header
+          className={styles.headerBar}
+          style={{
+            background: token.colorBgContainer,
+            borderBottom: `1px solid ${token.colorSplit}`,
+          }}
+        >
+          <Typography.Title level={4} className={styles.headerTitle}>
+            {user?.email ?? tClient("headerTitle")}
+          </Typography.Title>
+          <Space size="middle">
+            <Dropdown menu={languageMenu} trigger={["click"]}>
+              <Button
+                type="text"
+                icon={<GlobalOutlined aria-hidden />}
+                aria-label={tClient("headerLanguage")}
+              >
+                PT
+              </Button>
+            </Dropdown>
+            <Dropdown menu={accountMenu} trigger={["click"]}>
+              <Button type="text" className={styles.accountTrigger}>
+                <Space>
+                  <Avatar size="small" icon={<UserOutlined aria-hidden />} />
+                  <Typography.Text>{tClient("headerAccount")}</Typography.Text>
+                </Space>
+              </Button>
+            </Dropdown>
+          </Space>
+        </Header>
+        <Content
+          className={styles.contentArea}
+          style={{ background: token.colorBgContainer, border: `1px solid ${token.colorSplit}` }}
+        >
+          <Breadcrumb className={styles.breadcrumbRow} items={breadcrumbItems} />
+          {children}
+        </Content>
+      </Layout>
     </Layout>
   );
 }
