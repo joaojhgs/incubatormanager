@@ -7,3 +7,4 @@ export {
 } from "./constants";
 export { createApiClient, getDefaultApiClient } from "./client";
 export { clearAccessToken, getAccessToken, setAccessToken } from "./tokenStorage";
+export * as companiesApi from "./companies";
