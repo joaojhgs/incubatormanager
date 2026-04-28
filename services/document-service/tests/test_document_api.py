@@ -1,4 +1,4 @@
-"""HTTP tests for document upload and download."""
+"""HTTP tests for document upload, download, list, and delete."""
 
 from __future__ import annotations
 
@@ -9,6 +9,8 @@ from unittest.mock import patch
 import pytest
 from core.models import Document
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 
@@ -123,7 +125,10 @@ def test_download_staff_streams_file() -> None:
         mime_type="application/pdf",
     )
     buf = io.BytesIO(b"%PDF")
-    with patch("core.document_views.storage.safe_download", return_value=(buf, "application/pdf")):
+    with patch(
+        "core.document_views.storage.safe_download",
+        return_value=(buf, "application/pdf"),
+    ):
         client = APIClient()
         resp = client.get(
             f"/api/documents/{doc.id}/download/",
@@ -170,3 +175,197 @@ def test_health_still_public() -> None:
     client = APIClient()
     resp = client.get("/api/documents/health/")
     assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+def test_list_staff_returns_only_active_documents() -> None:
+    company_id = uuid.uuid4()
+    Document.objects.create(
+        entity_type=Document.EntityType.COMPANY,
+        entity_id=company_id,
+        file_name="active.pdf",
+        file_path="Company/x/active.pdf",
+        file_size=1,
+        mime_type="application/pdf",
+        is_active=True,
+    )
+    Document.objects.create(
+        entity_type=Document.EntityType.COMPANY,
+        entity_id=company_id,
+        file_name="gone.pdf",
+        file_path="Company/x/gone.pdf",
+        file_size=2,
+        mime_type="application/pdf",
+        is_active=False,
+    )
+    client = APIClient()
+    resp = client.get(
+        f"/api/documents/?entity_type=Company&entity_id={company_id}",
+        **_auth_headers(),
+    )
+    assert resp.status_code == 200
+    assert len(resp.data) == 1
+    assert resp.data[0]["file_name"] == "active.pdf"
+
+
+@pytest.mark.django_db
+def test_list_staff_query_count_bounded() -> None:
+    company_id = uuid.uuid4()
+    for i in range(3):
+        Document.objects.create(
+            entity_type=Document.EntityType.COMPANY,
+            entity_id=company_id,
+            file_name=f"f{i}.pdf",
+            file_path=f"Company/x/{i}.pdf",
+            file_size=1,
+            mime_type="application/pdf",
+        )
+    client = APIClient()
+    with CaptureQueriesContext(connection) as ctx:
+        resp = client.get(
+            f"/api/documents/?entity_type=Company&entity_id={company_id}",
+            **_auth_headers(),
+        )
+    assert resp.status_code == 200
+    assert len(resp.data) == 3
+    assert len(ctx.captured_queries) <= 8
+
+
+@pytest.mark.django_db
+def test_list_missing_query_params_returns_400() -> None:
+    client = APIClient()
+    resp = client.get("/api/documents/", **_auth_headers())
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_list_invalid_entity_id_uuid_returns_400() -> None:
+    client = APIClient()
+    resp = client.get(
+        "/api/documents/?entity_type=Company&entity_id=not-a-uuid",
+        **_auth_headers(),
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_list_client_allowed_for_own_company() -> None:
+    company_id = uuid.uuid4()
+    Document.objects.create(
+        entity_type=Document.EntityType.COMPANY,
+        entity_id=company_id,
+        file_name="mine.pdf",
+        file_path="Company/x/m.pdf",
+        file_size=1,
+        mime_type="application/pdf",
+    )
+    client = APIClient()
+    resp = client.get(
+        f"/api/documents/?entity_type=Company&entity_id={company_id}",
+        **_auth_headers(role="Client", company_id=str(company_id)),
+    )
+    assert resp.status_code == 200
+    assert len(resp.data) == 1
+
+
+@pytest.mark.django_db
+def test_list_client_forbidden_wrong_company_entity() -> None:
+    company_id = uuid.uuid4()
+    other = uuid.uuid4()
+    Document.objects.create(
+        entity_type=Document.EntityType.COMPANY,
+        entity_id=other,
+        file_name="other.pdf",
+        file_path="Company/x/o.pdf",
+        file_size=1,
+        mime_type="application/pdf",
+    )
+    client = APIClient()
+    resp = client.get(
+        f"/api/documents/?entity_type=Company&entity_id={other}",
+        **_auth_headers(role="Client", company_id=str(company_id)),
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_list_client_forbidden_contract_entity() -> None:
+    contract_id = uuid.uuid4()
+    company_id = uuid.uuid4()
+    Document.objects.create(
+        entity_type=Document.EntityType.CONTRACT,
+        entity_id=contract_id,
+        file_name="c.pdf",
+        file_path="Contract/x/c.pdf",
+        file_size=1,
+        mime_type="application/pdf",
+    )
+    client = APIClient()
+    resp = client.get(
+        f"/api/documents/?entity_type=Contract&entity_id={contract_id}",
+        **_auth_headers(role="Client", company_id=str(company_id)),
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_delete_staff_soft_deletes_and_calls_minio() -> None:
+    company_id = uuid.uuid4()
+    doc = Document.objects.create(
+        entity_type=Document.EntityType.COMPANY,
+        entity_id=company_id,
+        file_name="d.pdf",
+        file_path="Company/x/d.pdf",
+        file_size=1,
+        mime_type="application/pdf",
+    )
+    with patch("core.services.storage.safe_delete") as rm:
+        client = APIClient()
+        resp = client.delete(f"/api/documents/{doc.id}/", **_auth_headers())
+    assert resp.status_code == 204
+    rm.assert_called_once_with("Company/x/d.pdf")
+    doc.refresh_from_db()
+    assert doc.is_active is False
+
+
+@pytest.mark.django_db
+def test_delete_client_returns_403() -> None:
+    company_id = uuid.uuid4()
+    doc = Document.objects.create(
+        entity_type=Document.EntityType.COMPANY,
+        entity_id=company_id,
+        file_name="d.pdf",
+        file_path="Company/x/d.pdf",
+        file_size=1,
+        mime_type="application/pdf",
+    )
+    client = APIClient()
+    resp = client.delete(
+        f"/api/documents/{doc.id}/",
+        **_auth_headers(role="Client", company_id=str(company_id)),
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_delete_unknown_id_returns_404() -> None:
+    client = APIClient()
+    resp = client.delete(f"/api/documents/{uuid.uuid4()}/", **_auth_headers())
+    assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_download_soft_deleted_returns_404() -> None:
+    company_id = uuid.uuid4()
+    doc = Document.objects.create(
+        entity_type=Document.EntityType.COMPANY,
+        entity_id=company_id,
+        file_name="gone.pdf",
+        file_path="Company/x/g.pdf",
+        file_size=1,
+        mime_type="application/pdf",
+        is_active=False,
+    )
+    client = APIClient()
+    resp = client.get(f"/api/documents/{doc.id}/download/", **_auth_headers())
+    assert resp.status_code == 404
