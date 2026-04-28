@@ -5,7 +5,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose --project-directory . -f infra/docker-compose.yml
 COMPOSE_DEV := $(COMPOSE) -f infra/docker-compose.dev.yml
 
-.PHONY: help up up-dev down logs ps build rebuild seed test lint format demo tag clean
+.PHONY: help up up-dev down logs ps build rebuild seed test test-libs lint format demo tag env clean
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} \
@@ -59,6 +59,9 @@ demo: ## Reset DBs, seed, and run the stack in the foreground
 tag: ## Tag a release commit and push tags to origin
 	@git tag -a "v$$(date +%Y.%m.%d)" -m "release $$(date +%Y-%m-%d)"
 	@git push origin --tags
+
+env: ## Generate .env from .env.example with random secrets (use -f to overwrite)
+	@bash scripts/generate-env.sh -f
 
 clean: ## Remove build artefacts, volumes, and dangling images
 	$(COMPOSE) down -v --remove-orphans
