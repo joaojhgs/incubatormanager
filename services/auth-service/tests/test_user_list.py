@@ -112,3 +112,4 @@ def test_user_list_response_schema(api_client: APIClient, director: User) -> Non
     assert "last_name" in user
     assert "company_id" in user
     assert user["role"] == "Director"
+    assert user["is_active"] is True
