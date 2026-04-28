@@ -15,3 +15,10 @@ export function isStaffRole(role: unknown): boolean {
   if (typeof role !== "string" || !role) return false;
   return STAFF_ROLES.includes(role);
 }
+
+/** JWT `role` claim for Director-only staff screens (user administration). */
+export const ROLE_DIRECTOR = "director";
+
+export function isDirectorRole(role: unknown): boolean {
+  return typeof role === "string" && role.toLowerCase() === ROLE_DIRECTOR;
+}
