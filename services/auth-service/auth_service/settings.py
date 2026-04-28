@@ -97,6 +97,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_THROTTLE_RATES": {
         "login_ip": "5/minute",
@@ -141,8 +144,10 @@ SIMPLE_JWT = {
 
 
 # DRF may cache ``REST_FRAMEWORK`` before this module finishes assigning it; refresh once
-# so ``DEFAULT_THROTTLE_RATES`` and ``DEFAULT_SCHEMA_CLASS`` match the values above.
+# so ``DEFAULT_THROTTLE_RATES``, ``DEFAULT_AUTHENTICATION_CLASSES``, and
+# ``DEFAULT_SCHEMA_CLASS`` match the values above.
 def _reload_drf_api_settings() -> None:
+    """Ensure DRF picks up this module's final ``REST_FRAMEWORK`` configuration."""
     from rest_framework.settings import api_settings as drf_api_settings
 
     drf_api_settings.reload()
