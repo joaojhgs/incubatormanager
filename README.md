@@ -41,31 +41,51 @@ repo-root/
 └── README.md
 ```
 
-Full architecture and rationale: `docs/`.
+Full architecture and rationale: `docs/`. Branch naming, commits, and MRs:
+`docs/contributing.md`. Operators: `docs/deploy.md`.
 
 ## Quick start
 
-Prerequisites: Docker Engine + Compose v2, Tilt, Python 3.12 (`.python-version`),
-Node 20 (`.nvmrc`).
+Prerequisites: Docker Engine + Compose v2, Tilt (optional, for live reload),
+Python 3.12 (`.python-version`), Node 20 (`.nvmrc`).
+
+From a fresh clone:
 
 ```bash
-# Run the full stack (once compose is wired up)
-make up
-
-# Hot-reload development
-tilt up
-
-# List all Makefile targets
-make help
+git clone https://gitlab.coding.ipb.pt/sdl/2025-2026/projects/sdl-project-group-20.git
+cd sdl-project-group-20
+cp .env.example .env
 ```
+
+Edit `.env` for your machine at minimum: `POSTGRES_PASSWORD`, `DJANGO_SECRET_KEY`,
+per-service `*_DB_PASSWORD` values, MinIO credentials, and `NEXT_PUBLIC_API_URL`
+if the gateway is not `http://localhost`.
+
+Run the full stack in the background:
+
+```bash
+make up
+```
+
+Wait until containers report healthy (`make ps`), then open `http://localhost/`.
+The API is under `http://localhost/api/...`. Quick smoke checks:
+
+```bash
+curl -fsS http://localhost/health
+curl -fsS http://localhost/api/auth/health
+```
+
+Hot-reload development (bind mounts + Tilt):
+
+```bash
+tilt up
+```
+
+Other targets: `make help`.
 
 ## Contributing
 
-- Branches: `w<week>/<slug>` (e.g. `w1/init-monorepo`).
-- Commits: Conventional Commits (`<type>(<scope>): <subject>`, imperative,
-  ≤72 chars).
-- One merge request per task, squash-merge.
-- English-only code and commit messages; pt-PT in UI copy.
+See **`docs/contributing.md`** (branches, Conventional Commits, MR hygiene).
 
 ## Linting and formatting
 
