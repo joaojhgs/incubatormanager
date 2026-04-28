@@ -4,6 +4,82 @@ info:
   version: 0.1.0
   description: Document bounded context API (upload, download, health).
 paths:
+  /api/documents/:
+    get:
+      operationId: api_documents_list
+      description: List active document metadata rows for a company or contract aggregate.
+      summary: List documents
+      parameters:
+      - in: query
+        name: entity_id
+        schema:
+          type: string
+          format: uuid
+        description: Owning aggregate id.
+        required: true
+      - in: query
+        name: entity_type
+        schema:
+          type: string
+          enum:
+          - Company
+          - Contract
+        description: Owning aggregate type.
+        required: true
+      tags:
+      - api
+      security:
+      - GatewayJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentMetadata'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Missing or invalid query parameters.
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                description: Client not allowed for this entity scope.
+          description: ''
+  /api/documents/{document_id}/:
+    delete:
+      operationId: api_documents_destroy
+      description: Soft-delete metadata and remove the object from MinIO.
+      summary: Delete document
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - GatewayJWT: []
+      responses:
+        '204':
+          content:
+            application/json:
+              schema:
+                description: Document removed.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Document not found or already deleted.
+          description: ''
   /api/documents/{document_id}/download/:
     get:
       operationId: api_documents_download_retrieve

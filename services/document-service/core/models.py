@@ -24,11 +24,13 @@ class Document(models.Model):
     description = models.CharField(max_length=500, blank=True)
     uploaded_by = models.UUIDField(null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True, db_index=True)
 
     class Meta:
         ordering = ("-uploaded_at",)
         indexes = [
             models.Index(fields=["entity_type", "entity_id"]),
+            models.Index(fields=["entity_type", "entity_id", "is_active"]),
         ]
 
     def __str__(self) -> str:

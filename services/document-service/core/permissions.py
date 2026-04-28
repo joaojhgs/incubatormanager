@@ -1,4 +1,4 @@
-"""RBAC for document upload and download."""
+"""RBAC for document upload, download, list, and delete."""
 
 from __future__ import annotations
 
@@ -23,6 +23,31 @@ class CanUploadDocuments(BasePermission):
         return False
 
 
+class CanListDocuments(BasePermission):
+    """Staff/Director may list any entity scope; Client only with a company context."""
+
+    def has_permission(self, request: Request, view: object) -> bool:
+        user = request.user
+        if not getattr(user, "is_authenticated", False):
+            return False
+        role = getattr(user, "role", None)
+        if role in ("Director", "Staff"):
+            return True
+        if role == "Client":
+            return getattr(user, "company_id", None) is not None
+        return False
+
+
+class CanDeleteDocuments(BasePermission):
+    """Only Staff and Director may delete documents (per product API matrix)."""
+
+    def has_permission(self, request: Request, view: object) -> bool:
+        user = request.user
+        if not getattr(user, "is_authenticated", False):
+            return False
+        return getattr(user, "role", None) in ("Director", "Staff")
+
+
 class DocumentAccessPermission(BasePermission):
     """Object-level access to a stored :class:`~core.models.Document` record."""
 
@@ -33,10 +58,12 @@ class DocumentAccessPermission(BasePermission):
         user = request.user
         role = getattr(user, "role", None)
         if role in ("Director", "Staff"):
-            return True
+            return bool(getattr(obj, "is_active", True))
         if role == "Client":
             company_id = getattr(user, "company_id", None)
             if company_id is None:
+                return False
+            if not getattr(obj, "is_active", True):
                 return False
             if obj.entity_type == Document.EntityType.COMPANY:
                 return str(obj.entity_id) == str(company_id)

@@ -1,4 +1,4 @@
-"""Document upload/download business rules."""
+"""Document upload, download, list, and delete business rules."""
 
 from __future__ import annotations
 
@@ -8,6 +8,8 @@ from typing import BinaryIO
 
 from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import UploadedFile
+from django.db import transaction
+from django.db.models import QuerySet
 from ilb_common.permissions import RequestUser
 
 from core import storage
@@ -108,3 +110,53 @@ def create_document_from_upload(
     )
     logger.info("document created id=%s entity=%s/%s", doc.id, entity_type, entity_id)
     return doc
+
+
+def documents_for_list_request(
+    user: RequestUser,
+    entity_type: str,
+    entity_id: uuid.UUID,
+) -> QuerySet[Document]:
+    """Return active documents for the entity, enforcing list RBAC for Clients."""
+    if entity_type not in {Document.EntityType.COMPANY, Document.EntityType.CONTRACT}:
+        msg = "entity_type must be Company or Contract."
+        raise ValueError(msg)
+
+    qs: QuerySet[Document] = Document.objects.filter(
+        is_active=True,
+        entity_type=entity_type,
+        entity_id=entity_id,
+    ).order_by("-uploaded_at")
+
+    if user.role in ("Director", "Staff"):
+        return qs
+    if user.role == "Client":
+        if user.company_id is None:
+            raise PermissionDenied("Client listing requires a company context.")
+        if entity_type != Document.EntityType.COMPANY:
+            raise PermissionDenied("Clients may only list documents for a company they belong to.")
+        if str(entity_id) != str(user.company_id):
+            raise PermissionDenied("Entity does not match the authenticated client's company.")
+        return qs
+    raise PermissionDenied("Unsupported role for document listing.")
+
+
+def soft_delete_document(*, document: Document) -> None:
+    """Mark the row inactive and remove the MinIO object after commit."""
+    file_path = document.file_path
+    pk = document.pk
+
+    with transaction.atomic():
+        doc = Document.objects.select_for_update().get(pk=pk, is_active=True)
+        doc.is_active = False
+        doc.save(update_fields=["is_active"])
+    try:
+        storage.safe_delete(file_path)
+    except storage.StorageError as exc:
+        logger.warning(
+            "MinIO delete failed after soft-delete document id=%s path=%s: %s",
+            pk,
+            file_path,
+            exc,
+        )
+    logger.info("document soft-deleted id=%s", pk)
