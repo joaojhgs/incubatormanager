@@ -8,7 +8,7 @@ paths:
       operationId: api_auth_health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -27,7 +27,7 @@ paths:
         pair.
       summary: Login
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -74,7 +74,7 @@ paths:
       description: Revoke the refresh; access may still be valid until its own expiry.
       summary: Logout
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -101,14 +101,14 @@ paths:
         be reused after.
       summary: Refresh
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
             schema:
               type: object
               required:
-              - refresh
+                - refresh
               properties:
                 refresh:
                   type: string
@@ -128,123 +128,122 @@ paths:
         - YAML: application/vnd.oai.openapi
         - JSON: application/vnd.oai.openapi+json
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - json
-          - yaml
-      - in: query
-        name: lang
-        schema:
-          type: string
-          enum:
-          - af
-          - ar
-          - ar-dz
-          - ast
-          - az
-          - be
-          - bg
-          - bn
-          - br
-          - bs
-          - ca
-          - ckb
-          - cs
-          - cy
-          - da
-          - de
-          - dsb
-          - el
-          - en
-          - en-au
-          - en-gb
-          - eo
-          - es
-          - es-ar
-          - es-co
-          - es-mx
-          - es-ni
-          - es-ve
-          - et
-          - eu
-          - fa
-          - fi
-          - fr
-          - fy
-          - ga
-          - gd
-          - gl
-          - he
-          - hi
-          - hr
-          - hsb
-          - hu
-          - hy
-          - ia
-          - id
-          - ig
-          - io
-          - is
-          - it
-          - ja
-          - ka
-          - kab
-          - kk
-          - km
-          - kn
-          - ko
-          - ky
-          - lb
-          - lt
-          - lv
-          - mk
-          - ml
-          - mn
-          - mr
-          - ms
-          - my
-          - nb
-          - ne
-          - nl
-          - nn
-          - os
-          - pa
-          - pl
-          - pt
-          - pt-br
-          - ro
-          - ru
-          - sk
-          - sl
-          - sq
-          - sr
-          - sr-latn
-          - sv
-          - sw
-          - ta
-          - te
-          - tg
-          - th
-          - tk
-          - tr
-          - tt
-          - udm
-          - ug
-          - uk
-          - ur
-          - uz
-          - vi
-          - zh-hans
-          - zh-hant
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - json
+              - yaml
+        - in: query
+          name: lang
+          schema:
+            type: string
+            enum:
+              - af
+              - ar
+              - ar-dz
+              - ast
+              - az
+              - be
+              - bg
+              - bn
+              - br
+              - bs
+              - ca
+              - ckb
+              - cs
+              - cy
+              - da
+              - de
+              - dsb
+              - el
+              - en
+              - en-au
+              - en-gb
+              - eo
+              - es
+              - es-ar
+              - es-co
+              - es-mx
+              - es-ni
+              - es-ve
+              - et
+              - eu
+              - fa
+              - fi
+              - fr
+              - fy
+              - ga
+              - gd
+              - gl
+              - he
+              - hi
+              - hr
+              - hsb
+              - hu
+              - hy
+              - ia
+              - id
+              - ig
+              - io
+              - is
+              - it
+              - ja
+              - ka
+              - kab
+              - kk
+              - km
+              - kn
+              - ko
+              - ky
+              - lb
+              - lt
+              - lv
+              - mk
+              - ml
+              - mn
+              - mr
+              - ms
+              - my
+              - nb
+              - ne
+              - nl
+              - nn
+              - os
+              - pa
+              - pl
+              - pt
+              - pt-br
+              - ro
+              - ru
+              - sk
+              - sl
+              - sq
+              - sr
+              - sr-latn
+              - sv
+              - sw
+              - ta
+              - te
+              - tg
+              - th
+              - tk
+              - tr
+              - tt
+              - udm
+              - ug
+              - uk
+              - ur
+              - uz
+              - vi
+              - zh-hans
+              - zh-hant
       tags:
-      - api
+        - api
       security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
+        - jwtAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -271,11 +270,10 @@ paths:
       description: Interactive OpenAPI documentation for the auth service.
       summary: Swagger UI
       tags:
-      - api
+        - api
       security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
+        - jwtAuth: []
+        - {}
       responses:
         '200':
           description: Swagger UI page (HTML).
@@ -286,7 +284,7 @@ paths:
         header is Director. Staff and Client receive 403.
       summary: List users (Director only)
       tags:
-      - users
+        - users
       responses:
         '200':
           content:
@@ -311,7 +309,7 @@ paths:
       description: Creates a new user account. Password is write-only and never returned.
       summary: Create user (Director only)
       tags:
-      - users
+        - users
       requestBody:
         content:
           application/json:
@@ -341,14 +339,14 @@ paths:
       description: Retrieve, update, or soft-delete a single user — Director only.
       summary: Retrieve user (Director only)
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - users
+        - users
       responses:
         '200':
           content:
@@ -365,14 +363,14 @@ paths:
       description: Retrieve, update, or soft-delete a single user — Director only.
       summary: Partially update user (Director only)
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - users
+        - users
       requestBody:
         content:
           application/json:
@@ -402,14 +400,14 @@ paths:
       description: Sets ``is_active`` to false; does not remove the row.
       summary: Soft-delete user (Director only)
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - users
+        - users
       responses:
         '204':
           description: User deactivated.
@@ -417,6 +415,50 @@ paths:
           description: Forbidden — role is not Director.
         '404':
           description: User id not found.
+  /api/users/me/:
+    get:
+      operationId: api_users_me_retrieve
+      description: Return the authenticated user's full profile. Role and company
+        are read-only.
+      summary: Get own profile
+      tags:
+        - api
+      security:
+        - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    patch:
+      operationId: api_users_me_partial_update
+      description: Update first name, last name, or change password. Role, company,
+        email, and active status are immutable.
+      summary: Update own profile
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileUpdate'
+      security:
+        - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
   /auth/verify/:
     get:
       operationId: auth_verify_retrieve
@@ -425,7 +467,7 @@ paths:
         gateway must forward the `Authorization` header to this subrequest.
       summary: Verify (gateway auth_request)
       tags:
-      - gateway
+        - gateway
       responses:
         '200':
           description: Access token valid; identity in response headers.
@@ -440,16 +482,16 @@ paths:
                   code:
                     type: string
                     enum:
-                    - token_not_valid
-                    - user_not_found
-                    - user_inactive
+                      - token_not_valid
+                      - user_not_found
+                      - user_inactive
           description: ''
   /health/:
     get:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-      - health
+        - health
       responses:
         '200':
           content:
@@ -474,8 +516,8 @@ components:
         password:
           type: string
       required:
-      - email
-      - password
+        - email
+        - password
     LogoutRequest:
       type: object
       description: Body for :meth:`core.views.LogoutView.post` — the refresh to revoke.
@@ -484,7 +526,30 @@ components:
           type: string
           writeOnly: true
       required:
-      - refresh
+        - refresh
+    PatchedUserProfileUpdate:
+      type: object
+      description: |-
+        Write serializer for PATCH /users/me/.
+
+        Allows updating ``first_name``, ``last_name``, and ``password``.
+        ``role``, ``company_id``, ``email``, and ``is_active`` are immutable
+        through this endpoint.
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        old_password:
+          type: string
+          writeOnly: true
+          description: Current password — required when setting a new password.
+        new_password:
+          type: string
+          writeOnly: true
+          description: New password. Must satisfy all Django password validators.
     PatchedUserUpdate:
       type: object
       description: Partial update of a user (Director only).
@@ -505,9 +570,9 @@ components:
           type: boolean
     RoleEnum:
       enum:
-      - Director
-      - Staff
-      - Client
+        - Director
+        - Staff
+        - Client
       type: string
       description: |-
         * `Director` - Director
@@ -522,8 +587,8 @@ components:
         refresh:
           type: string
       required:
-      - access
-      - refresh
+        - access
+        - refresh
     UserCreate:
       type: object
       description: Payload for creating a user (Director only).
@@ -548,11 +613,60 @@ components:
           format: uuid
           nullable: true
       required:
-      - email
-      - first_name
-      - last_name
-      - password
-      - role
+        - email
+        - first_name
+        - last_name
+        - password
+        - role
+    UserProfile:
+      type: object
+      description: Read-only representation of the authenticated user's profile.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Email address
+        first_name:
+          type: string
+          readOnly: true
+        last_name:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+            - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        company_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - company_id
+        - created_at
+        - email
+        - first_name
+        - id
+        - is_active
+        - last_name
+        - role
+        - updated_at
     UserRead:
       type: object
       description: User row returned by Director-scoped user APIs.
@@ -576,18 +690,15 @@ components:
         is_active:
           type: boolean
       required:
-      - company_id
-      - email
-      - first_name
-      - id
-      - is_active
-      - last_name
-      - role
+        - company_id
+        - email
+        - first_name
+        - id
+        - is_active
+        - last_name
+        - role
   securitySchemes:
-    basicAuth:
+    jwtAuth:
       type: http
-      scheme: basic
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: sessionid
+      scheme: bearer
+      bearerFormat: JWT
