@@ -20,6 +20,8 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
 import { type StaffI18nKey, tStaff } from "@/lib/i18n/staffNav";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { isDirectorRole } from "@/lib/auth/constants";
 
 import styles from "./StaffShell.module.css";
 
@@ -83,11 +85,12 @@ export function StaffShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const { token } = theme.useToken();
+  const { user, isReady } = useAuth();
 
   const selectedKey = menuBasePath(pathname ?? "/");
 
-  const menuItems: MenuProps["items"] = useMemo(
-    () => [
+  const menuItems: MenuProps["items"] = useMemo(() => {
+    const items: MenuProps["items"] = [
       {
         key: "/dashboard",
         icon: <DashboardOutlined aria-hidden />,
@@ -160,7 +163,10 @@ export function StaffShell({ children }: { children: ReactNode }) {
           </Link>
         ),
       },
-      {
+    ];
+
+    if (isReady && user && isDirectorRole(user.role)) {
+      items.push({
         key: "/users",
         icon: <UserOutlined aria-hidden />,
         label: (
@@ -168,10 +174,11 @@ export function StaffShell({ children }: { children: ReactNode }) {
             {tStaff("navUsers")}
           </Link>
         ),
-      },
-    ],
-    [],
-  );
+      });
+    }
+
+    return items;
+  }, [isReady, user]);
 
   const breadcrumbItems = useMemo(() => breadcrumbItemsForPath(pathname), [pathname]);
 
