@@ -1,0 +1,74 @@
+# Frontend CI — eslint, typecheck, vitest, and next build.
+# Path-filtered: only runs when frontend code or root JS/TS tooling changes.
+
+# ---------------------------------------------------------------------------
+# ESLint + Prettier
+# ---------------------------------------------------------------------------
+node:lint:
+  stage: lint
+  image: node:20.18-bookworm
+  before_script:
+    - npm ci
+    - test -d frontend && npm --prefix frontend ci
+  script:
+    - npm run lint
+    - npm run format:check
+  rules:
+    - changes:
+        - 'frontend/**'
+        - 'package.json'
+        - 'package-lock.json'
+        - '.gitlab/ci/frontend.yml'
+      if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ---------------------------------------------------------------------------
+# TypeScript type-check
+# ---------------------------------------------------------------------------
+node:typecheck:
+  stage: lint
+  image: node:20.18-bookworm
+  before_script:
+    - npm --prefix frontend ci
+  script:
+    - cd frontend && npm run typecheck
+  rules:
+    - changes:
+        - 'frontend/**'
+        - '.gitlab/ci/frontend.yml'
+      if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ---------------------------------------------------------------------------
+# Vitest unit tests
+# ---------------------------------------------------------------------------
+node:test:
+  stage: test
+  image: node:20.18-bookworm
+  before_script:
+    - npm --prefix frontend ci
+  script:
+    - cd frontend && npm test
+  rules:
+    - changes:
+        - 'frontend/**'
+        - '.gitlab/ci/frontend.yml'
+      if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ---------------------------------------------------------------------------
+# Next.js production build
+# ---------------------------------------------------------------------------
+node:build:
+  stage: build
+  image: node:20.18-bookworm
+  before_script:
+    - npm --prefix frontend ci
+  script:
+    - cd frontend && npm run build
+  rules:
+    - changes:
+        - 'frontend/**'
+        - '.gitlab/ci/frontend.yml'
+      if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"

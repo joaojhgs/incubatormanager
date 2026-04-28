@@ -1,4 +1,4 @@
-# Monorepo GitLab CI — compose validation, Ruff, frontend tooling, and per-service pytest.
+# Monorepo GitLab CI — parent pipeline that includes path-filtered child configs.
 # Default tag `shared` is required for IPB shared runners; untagged jobs are never scheduled.
 
 workflow:
@@ -10,6 +10,8 @@ stages:
   - validate
   - lint
   - test
+  - build
+  - e2e
 
 default:
   interruptible: true
@@ -22,6 +24,10 @@ variables:
   # Pin standalone Compose; avoids docker:cli which needs a running engine/socket.
   DOCKER_COMPOSE_V2_VERSION: '2.31.0'
 
+# ---------------------------------------------------------------------------
+# Compose validation — runs on every pipeline because infra changes are common
+# and the check is fast (< 30 s).
+# ---------------------------------------------------------------------------
 compose:validate:
   stage: validate
   image: debian:12-slim
@@ -41,47 +47,10 @@ compose:validate:
     - cp .env.example .env
     - docker-compose -f infra/docker-compose.yml --project-directory . config --quiet
 
-ruff:
-  stage: lint
-  image: python:3.12-slim-bookworm
-  before_script:
-    - python -m pip install --no-cache-dir ruff
-  script:
-    - ruff check .
-    - ruff format --check .
-
-node:lint:
-  stage: lint
-  image: node:20.18-bookworm
-  before_script:
-    - npm ci
-    - test -d frontend && npm --prefix frontend ci
-  script:
-    - npm run lint
-    - npm run format:check
-
-pytest:services:
-  stage: test
-  image: python:3.12-bookworm
-  parallel:
-    matrix:
-      - SERVICE_DIR:
-          [
-            services/auth-service,
-            services/company-service,
-            services/contract-service,
-            services/finance-service,
-            services/space-service,
-            services/booking-service,
-            services/inventory-service,
-            services/ticket-service,
-            services/dashboard-service,
-            services/document-service,
-          ]
-  before_script:
-    - apt-get update -qq && apt-get install -y -qq libpq-dev gcc
-    - python -m pip install --no-cache-dir -U pip
-    - python -m pip install --no-cache-dir -e "libs/py-common[dev]"
-    - python -m pip install --no-cache-dir -r "${SERVICE_DIR}/requirements.txt"
-  script:
-    - cd "${SERVICE_DIR}" && python -m pytest -q
+# ---------------------------------------------------------------------------
+# Path-filtered child pipelines
+# ---------------------------------------------------------------------------
+include:
+  - local: '.gitlab/ci/backend.yml'
+  - local: '.gitlab/ci/frontend.yml'
+  - local: '.gitlab/ci/e2e.yml'
