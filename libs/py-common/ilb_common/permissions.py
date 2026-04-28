@@ -91,6 +91,15 @@ class HeaderAuthentication(BaseAuthentication):
     authentication fails and the request is treated as anonymous.
     """
 
+    def authenticate_header(self, request: Request) -> str:
+        """Return a ``WWW-Authenticate`` challenge so DRF maps failures to 401.
+
+        The real JWT is validated by the gateway before these headers exist; the
+        challenge string exists only to satisfy DRF's HTTP semantics.
+        """
+
+        return 'Bearer realm="api"'
+
     def authenticate(self, request: Request) -> tuple[RequestUser, None]:
         """Return ``(RequestUser, None)`` from gateway headers.
 
