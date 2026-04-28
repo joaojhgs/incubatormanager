@@ -138,3 +138,14 @@ SIMPLE_JWT = {
     "TOKEN_REFRESH_SERIALIZER": "core.serializers.ILBTokenRefreshSerializer",
     "SIGNING_KEY": _JWT_SIGNING_KEY,
 }
+
+
+# DRF may cache ``REST_FRAMEWORK`` before this module finishes assigning it; refresh once
+# so ``DEFAULT_THROTTLE_RATES`` and ``DEFAULT_SCHEMA_CLASS`` match the values above.
+def _reload_drf_api_settings() -> None:
+    from rest_framework.settings import api_settings as drf_api_settings
+
+    drf_api_settings.reload()
+
+
+_reload_drf_api_settings()

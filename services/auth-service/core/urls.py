@@ -10,6 +10,7 @@ from core.views import (
     LoginView,
     LogoutView,
     RefreshView,
+    UserDetailView,
     UserListView,
     VerifyView,
 )
@@ -21,6 +22,11 @@ urlpatterns = [
     path("api/auth/refresh/", RefreshView.as_view(), name="auth-refresh"),
     path("api/auth/logout/", LogoutView.as_view(), name="auth-logout"),
     path("api/auth/users/", UserListView.as_view(), name="auth-users"),
+    path(
+        "api/auth/users/<uuid:pk>/",
+        UserDetailView.as_view(),
+        name="auth-users-detail",
+    ),
     path("auth/verify/", VerifyView.as_view(), name="auth-verify"),
     path("auth/introspect/", IntrospectView.as_view(), name="auth-introspect"),
 ]

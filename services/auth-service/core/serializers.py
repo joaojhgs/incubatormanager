@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from django.contrib.auth import get_user_model
@@ -96,3 +97,63 @@ class LogoutRequestSerializer(serializers.Serializer):
     """Body for :meth:`core.views.LogoutView.post` — the refresh to revoke."""
 
     refresh = serializers.CharField(write_only=True, required=True, allow_blank=False)
+
+
+class UserReadSerializer(serializers.Serializer):
+    """User row returned by Director-scoped user APIs."""
+
+    id = serializers.UUIDField()
+    email = serializers.EmailField()
+    role = serializers.CharField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    company_id = serializers.UUIDField(allow_null=True)
+    is_active = serializers.BooleanField()
+
+
+class UserCreateSerializer(serializers.Serializer):
+    """Payload for creating a user (Director only)."""
+
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True, min_length=8)
+    first_name = serializers.CharField(required=True, max_length=150)
+    last_name = serializers.CharField(required=True, max_length=150)
+    role = serializers.ChoiceField(required=True, choices=["Director", "Staff", "Client"])
+    company_id = serializers.UUIDField(required=False, allow_null=True)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        role = attrs["role"]
+        company_id = attrs.get("company_id")
+        if role == "Client" and company_id is None:
+            raise serializers.ValidationError({"company_id": "Client users require a company_id."})
+        if role != "Client" and company_id is not None:
+            raise serializers.ValidationError(
+                {"company_id": "company_id must be null unless role is Client."}
+            )
+        return attrs
+
+
+class UserUpdateSerializer(serializers.Serializer):
+    """Partial update of a user (Director only)."""
+
+    first_name = serializers.CharField(required=False, max_length=150)
+    last_name = serializers.CharField(required=False, max_length=150)
+    role = serializers.ChoiceField(required=False, choices=["Director", "Staff", "Client"])
+    company_id = serializers.UUIDField(required=False, allow_null=True)
+    is_active = serializers.BooleanField(required=False)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        User = get_user_model()
+        instance = self.context.get("user_instance")
+        if not isinstance(instance, User):
+            return attrs
+        new_role = attrs.get("role", instance.role)
+        if "company_id" in attrs:
+            new_company: uuid.UUID | None = attrs["company_id"]
+        else:
+            new_company = instance.company_id
+        if new_role == "Client" and new_company is None:
+            raise serializers.ValidationError({"company_id": "Client users require a company_id."})
+        if new_role != "Client":
+            attrs["company_id"] = None
+        return attrs

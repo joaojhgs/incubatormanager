@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import uuid
+
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers, status
 from rest_framework.request import Request
@@ -11,13 +13,17 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from users.models import User
 
+from core import services as user_services
 from core.gateway_auth import verify_access_token_for_gateway
+from core.permissions import IsGatewayDirector
 from core.serializers import (
     ILBTokenObtainPairSerializer,
     ILBTokenRefreshSerializer,
     LogoutRequestSerializer,
+    UserCreateSerializer,
+    UserReadSerializer,
+    UserUpdateSerializer,
 )
 from core.throttling import LoginIPRateThrottle
 from core.token_blacklist import blocklist_refresh_jti
@@ -235,27 +241,16 @@ class IntrospectView(APIView):
         return verify_access_token_for_gateway(request)
 
 
-class UserSerializer(serializers.Serializer):
-    """Minimal user representation returned by :class:`UserListView`."""
-
-    id = serializers.UUIDField()
-    email = serializers.EmailField()
-    role = serializers.CharField()
-    first_name = serializers.CharField()
-    last_name = serializers.CharField()
-    company_id = serializers.UUIDField(allow_null=True)
-
-
 class UserListView(APIView):
     """
-    List users — Director only.
+    List and create users — Director only.
 
-    Reads the ``X-User-Role`` header injected by the Nginx gateway after
-    ``auth_request`` validation.  Returns 403 for Staff and Client roles.
+    Trusts ``X-User-Role`` (and related headers) injected by the Nginx gateway
+    after ``auth_request`` validation.
     """
 
     authentication_classes = ()
-    permission_classes = ()
+    permission_classes = [IsGatewayDirector]
 
     @extend_schema(
         summary="List users (Director only)",
@@ -265,7 +260,7 @@ class UserListView(APIView):
         ),
         tags=["users"],
         responses={
-            200: UserSerializer(many=True),
+            200: UserReadSerializer(many=True),
             403: OpenApiResponse(
                 response={
                     "type": "object",
@@ -281,12 +276,130 @@ class UserListView(APIView):
         },
     )
     def get(self, request: Request) -> Response:
-        role = request.META.get("HTTP_X_USER_ROLE", "")
-        if role != "Director":
-            return Response(
-                {"detail": "You do not have permission to perform this action."},
-                status=status.HTTP_403_FORBIDDEN,
+        users = user_services.list_users()
+        return Response(UserReadSerializer(users, many=True).data)
+
+    @extend_schema(
+        summary="Create user (Director only)",
+        description="Creates a new user account. Password is write-only and never returned.",
+        tags=["users"],
+        request=UserCreateSerializer,
+        responses={
+            201: UserReadSerializer,
+            400: OpenApiResponse(description="Validation error."),
+            403: OpenApiResponse(description="Forbidden — role is not Director."),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        ser = UserCreateSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        d = ser.validated_data
+        try:
+            user = user_services.create_user(
+                email=d["email"],
+                password=d["password"],
+                first_name=d["first_name"],
+                last_name=d["last_name"],
+                role=d["role"],
+                company_id=d.get("company_id"),
             )
-        users = User.objects.all().order_by("email")
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)
+        except user_services.DuplicateUserEmail:
+            return Response(
+                {"email": ["A user with this email already exists."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(UserReadSerializer(user).data, status=status.HTTP_201_CREATED)
+
+
+class UserDetailView(APIView):
+    """Retrieve, update, or soft-delete a single user — Director only."""
+
+    authentication_classes = ()
+    permission_classes = [IsGatewayDirector]
+
+    @extend_schema(
+        summary="Retrieve user (Director only)",
+        tags=["users"],
+        responses={
+            200: UserReadSerializer,
+            403: OpenApiResponse(description="Forbidden — role is not Director."),
+            404: OpenApiResponse(description="User id not found."),
+        },
+    )
+    def get(self, request: Request, pk: str) -> Response:
+        try:
+            uid = uuid.UUID(str(pk))
+        except ValueError:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        try:
+            user = user_services.get_user(uid)
+        except user_services.UserNotFound:
+            return Response(
+                {"detail": "Not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(UserReadSerializer(user).data)
+
+    @extend_schema(
+        summary="Partially update user (Director only)",
+        tags=["users"],
+        request=UserUpdateSerializer,
+        responses={
+            200: UserReadSerializer,
+            400: OpenApiResponse(description="Validation error."),
+            403: OpenApiResponse(description="Forbidden — role is not Director."),
+            404: OpenApiResponse(description="User id not found."),
+        },
+    )
+    def patch(self, request: Request, pk: str) -> Response:
+        try:
+            uid = uuid.UUID(str(pk))
+        except ValueError:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        try:
+            user = user_services.get_user(uid)
+        except user_services.UserNotFound:
+            return Response(
+                {"detail": "Not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        ser = UserUpdateSerializer(
+            data=request.data,
+            partial=True,
+            context={"user_instance": user},
+        )
+        ser.is_valid(raise_exception=True)
+        try:
+            user_services.update_user(user, ser.validated_data)
+        except user_services.DuplicateUserEmail:
+            return Response(
+                {"email": ["A user with this email already exists."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user.refresh_from_db()
+        return Response(UserReadSerializer(user).data)
+
+    @extend_schema(
+        summary="Soft-delete user (Director only)",
+        description="Sets ``is_active`` to false; does not remove the row.",
+        tags=["users"],
+        responses={
+            204: OpenApiResponse(description="User deactivated."),
+            403: OpenApiResponse(description="Forbidden — role is not Director."),
+            404: OpenApiResponse(description="User id not found."),
+        },
+    )
+    def delete(self, request: Request, pk: str) -> Response:
+        try:
+            uid = uuid.UUID(str(pk))
+        except ValueError:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        try:
+            user = user_services.get_user(uid)
+        except user_services.UserNotFound:
+            return Response(
+                {"detail": "Not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        user_services.soft_delete_user(user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
