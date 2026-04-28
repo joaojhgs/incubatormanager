@@ -171,6 +171,10 @@ class TestHeaderAuthentication:
         with pytest.raises(AuthenticationFailed, match="invalid X-User-Id"):
             auth.authenticate(request)
 
+    def test_authenticate_header_returns_bearer_challenge(self) -> None:
+        auth = HeaderAuthentication()
+        assert auth.authenticate_header(MagicMock()) == 'Bearer realm="api"'
+
 
 # ---------------------------------------------------------------------------
 # IsDirector

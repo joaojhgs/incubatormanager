@@ -86,13 +86,24 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Allow bodies slightly above the 20 MiB app limit so we can return HTTP 413 in the view.
+_DATA_CAP = 25 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = _DATA_CAP
+FILE_UPLOAD_MAX_MEMORY_SIZE = _DATA_CAP
+
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "ilb_common.permissions.HeaderAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
 }
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "ILB Document Service API",
-    "DESCRIPTION": "Document bounded context API (stub).",
+    "DESCRIPTION": "Document bounded context API (upload, download, health).",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

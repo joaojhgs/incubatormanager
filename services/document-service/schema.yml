@@ -2,16 +2,49 @@ openapi: 3.0.3
 info:
   title: ILB Document Service API
   version: 0.1.0
-  description: Document bounded context API (stub).
+  description: Document bounded context API (upload, download, health).
 paths:
+  /api/documents/{document_id}/download/:
+    get:
+      operationId: api_documents_download_retrieve
+      description: Stream a stored object from MinIO using the gateway trust headers.
+      summary: Download document bytes
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - GatewayJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Binary file stream with appropriate Content-Type.
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                description: Forbidden for this role or company scope.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Document not found.
+          description: ''
   /api/documents/health/:
     get:
       operationId: api_documents_health_retrieve
-      description: >-
-        Liveness/readiness-style health payload. When MinIO credentials are set in the
-        environment, the handler probes object storage and may return 503 if it is unreachable.
+      description: Liveness/readiness-style health payload (includes MinIO when configured).
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -38,13 +71,79 @@ paths:
                   minio:
                     type: string
                     example: unreachable
-          description: MinIO configured but not reachable.
+          description: ''
+  /api/documents/upload/:
+    post:
+      operationId: api_documents_upload_create
+      description: '``multipart/form-data`` with ``file`` (max 20 MB) and MIME types
+        restricted to office, PDF, and common images.'
+      summary: Upload a document
+      tags:
+      - api
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                entity_type:
+                  type: string
+                  enum:
+                  - Company
+                  - Contract
+                  description: Owning aggregate type.
+                entity_id:
+                  type: string
+                  format: uuid
+                description:
+                  type: string
+                  maxLength: 500
+              required:
+              - file
+              - entity_type
+              - entity_id
+      security:
+      - GatewayJWT: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentMetadata'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Missing or invalid form fields.
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                description: Client not allowed for this entity.
+          description: ''
+        '413':
+          content:
+            application/json:
+              schema:
+                description: File larger than the configured maximum.
+          description: ''
+        '415':
+          content:
+            application/json:
+              schema:
+                description: MIME type not allowed.
+          description: ''
   /health/:
     get:
       operationId: health_retrieve
-      description: Liveness/readiness-style health payload.
+      description: Liveness/readiness-style health payload (includes MinIO when configured).
       tags:
-        - health
+      - health
       responses:
         '200':
           content:
@@ -71,5 +170,64 @@ paths:
                   minio:
                     type: string
                     example: unreachable
-          description: MinIO configured but not reachable.
-components: {}
+          description: ''
+components:
+  schemas:
+    DocumentMetadata:
+      type: object
+      description: Metadata returned after upload or on detail-style reads.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        entity_type:
+          $ref: '#/components/schemas/EntityTypeEnum'
+        entity_id:
+          type: string
+          format: uuid
+        file_name:
+          type: string
+          maxLength: 255
+        file_size:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Size in bytes.
+        mime_type:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+          maxLength: 500
+        uploaded_by:
+          type: string
+          format: uuid
+          nullable: true
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - entity_id
+      - entity_type
+      - file_name
+      - file_size
+      - id
+      - uploaded_at
+    EntityTypeEnum:
+      enum:
+      - Company
+      - Contract
+      type: string
+      description: |-
+        * `Company` - Company
+        * `Contract` - Contract
+  securitySchemes:
+    GatewayJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT validated by the gateway; upstream requests include X-User-Id,
+        X-User-Role, and optionally X-Company-Id.
