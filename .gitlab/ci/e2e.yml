@@ -1,0 +1,64 @@
+# E2E CI — Playwright browser tests against the full compose stack.
+# Path-filtered: runs when frontend, backend services, or compose infra change.
+
+# ---------------------------------------------------------------------------
+# Playwright end-to-end tests
+# ---------------------------------------------------------------------------
+e2e:playwright:
+  stage: e2e
+  image: node:20.18-bookworm
+  services:
+    - name: postgres:16.6-alpine
+      alias: postgres
+    - name: redis:7.4.2-alpine
+      alias: redis
+    - name: rabbitmq:3.13.7-management-alpine
+      alias: rabbitmq
+  variables:
+    POSTGRES_PASSWORD: ci-e2e-password
+    POSTGRES_USER: postgres
+    POSTGRES_DB: postgres
+    AUTH_DB_PASSWORD: ci-e2e-auth
+    COMPANY_DB_PASSWORD: ci-e2e-company
+    CONTRACT_DB_PASSWORD: ci-e2e-contract
+    FINANCE_DB_PASSWORD: ci-e2e-finance
+    SPACE_DB_PASSWORD: ci-e2e-space
+    BOOKING_DB_PASSWORD: ci-e2e-booking
+    INVENTORY_DB_PASSWORD: ci-e2e-inventory
+    TICKET_DB_PASSWORD: ci-e2e-ticket
+    DASHBOARD_DB_PASSWORD: ci-e2e-dashboard
+    DOCUMENT_DB_PASSWORD: ci-e2e-document
+    DJANGO_SECRET_KEY: ci-e2e-not-secret
+    RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    REDIS_URL: redis://redis:6379/0
+    MINIO_ENDPOINT: minio:9000
+    MINIO_ACCESS_KEY: minioadmin
+    MINIO_SECRET_KEY: minioadmin-change-me
+    MINIO_BUCKET: ilb-documents
+    MINIO_USE_SSL: 'false'
+    AUTH_JWT_SECRET: e2e-playwright-secret
+    NEXT_PUBLIC_API_URL: http://localhost:3000/api
+  before_script:
+    # Install system deps for Playwright Chromium
+    - apt-get update -qq && apt-get install -y -qq libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 libxshmfence1
+    # Install frontend deps and Playwright browsers
+    - npm --prefix frontend ci
+    - cd frontend && npx playwright install chromium --with-deps
+  script:
+    - npm run test:e2e
+  rules:
+    - changes:
+        - 'frontend/**'
+        - 'services/**/*.py'
+        - 'gateway/**'
+        - 'infra/docker-compose.yml'
+        - 'infra/docker-compose.dev.yml'
+        - '.gitlab/ci/e2e.yml'
+      if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+  artifacts:
+    when: on_failure
+    paths:
+      - frontend/test-results/
+      - frontend/playwright-report/
+    expire_in: 7 days

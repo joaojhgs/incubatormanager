@@ -1,0 +1,94 @@
+# Backend CI — ruff lint, makemigrations --check, and per-service pytest matrix.
+# Path-filtered: only runs when Python / Django service code or py-common changes.
+
+# ---------------------------------------------------------------------------
+# Ruff — lint + format check
+# ---------------------------------------------------------------------------
+ruff:
+  stage: lint
+  image: python:3.12-slim-bookworm
+  before_script:
+    - python -m pip install --no-cache-dir ruff
+  script:
+    - ruff check .
+    - ruff format --check .
+  rules:
+    - changes:
+        - 'services/**/*.py'
+        - 'libs/py-common/**/*.py'
+        - 'pyproject.toml'
+        - '.gitlab/ci/backend.yml'
+      if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ---------------------------------------------------------------------------
+# makemigrations --check — catches uncommitted model changes
+# ---------------------------------------------------------------------------
+makemigrations:check:
+  stage: lint
+  image: python:3.12-bookworm
+  parallel:
+    matrix:
+      - SERVICE_DIR:
+          [
+            services/auth-service,
+            services/company-service,
+            services/contract-service,
+            services/finance-service,
+            services/space-service,
+            services/booking-service,
+            services/inventory-service,
+            services/ticket-service,
+            services/dashboard-service,
+            services/document-service,
+          ]
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq libpq-dev gcc
+    - python -m pip install --no-cache-dir -U pip
+    - python -m pip install --no-cache-dir -e "libs/py-common[dev]"
+    - python -m pip install --no-cache-dir -r "${SERVICE_DIR}/requirements.txt"
+  script:
+    - cd "${SERVICE_DIR}" && python manage.py makemigrations --check --dry-run
+  rules:
+    - changes:
+        - 'services/**/*.py'
+        - 'libs/py-common/**/*.py'
+        - '.gitlab/ci/backend.yml'
+      if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ---------------------------------------------------------------------------
+# Pytest — per-service test matrix
+# ---------------------------------------------------------------------------
+pytest:services:
+  stage: test
+  image: python:3.12-bookworm
+  parallel:
+    matrix:
+      - SERVICE_DIR:
+          [
+            services/auth-service,
+            services/company-service,
+            services/contract-service,
+            services/finance-service,
+            services/space-service,
+            services/booking-service,
+            services/inventory-service,
+            services/ticket-service,
+            services/dashboard-service,
+            services/document-service,
+          ]
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq libpq-dev gcc
+    - python -m pip install --no-cache-dir -U pip
+    - python -m pip install --no-cache-dir -e "libs/py-common[dev]"
+    - python -m pip install --no-cache-dir -r "${SERVICE_DIR}/requirements.txt"
+  script:
+    - cd "${SERVICE_DIR}" && python -m pytest -q
+  rules:
+    - changes:
+        - 'services/**/*.py'
+        - 'libs/py-common/**/*.py'
+        - '.gitlab/ci/backend.yml'
+      if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
