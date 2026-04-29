@@ -154,6 +154,18 @@ export default function UsersListPage() {
           </Tag>
         ),
       },
+      {
+        title: tUsers("listColumnActions"),
+        key: "actions",
+        width: 120,
+        render: (_: unknown, row: UserRead) => (
+          <Link href={`/users/${row.id}/edit`} prefetch={false}>
+            <Button size="small" type="link">
+              {tUsers("listActionEdit")}
+            </Button>
+          </Link>
+        ),
+      },
     ],
     [],
   );

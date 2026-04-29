@@ -6,6 +6,7 @@ import uuid
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, serializers
 from rest_framework_simplejwt.exceptions import TokenError
@@ -141,12 +142,23 @@ class UserUpdateSerializer(serializers.Serializer):
     role = serializers.ChoiceField(required=False, choices=["Director", "Staff", "Client"])
     company_id = serializers.UUIDField(required=False, allow_null=True)
     is_active = serializers.BooleanField(required=False)
+    password = serializers.CharField(
+        write_only=True,
+        required=False,
+        min_length=8,
+        help_text="New password — optional; omit to leave unchanged.",
+    )
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         User = get_user_model()
         instance = self.context.get("user_instance")
         if not isinstance(instance, User):
             return attrs
+
+        pwd = attrs.get("password")
+        if pwd:
+            validate_password(pwd, user=instance)
+
         new_role = attrs.get("role", instance.role)
         if "company_id" in attrs:
             new_company: uuid.UUID | None = attrs["company_id"]

@@ -53,6 +53,7 @@ def create_user(
 
 def update_user(instance: User, partial: dict[str, Any]) -> User:
     allowed = {"first_name", "last_name", "role", "company_id", "is_active"}
+    new_password = partial.pop("password", None)
     for key, value in partial.items():
         if key in allowed:
             setattr(instance, key, value)
@@ -63,6 +64,9 @@ def update_user(instance: User, partial: dict[str, Any]) -> User:
         instance.save()
     except IntegrityError as exc:
         raise DuplicateUserEmail from exc
+    if new_password:
+        instance.set_password(new_password)
+        instance.save(update_fields=["password", "updated_at"])
     return instance
 
 

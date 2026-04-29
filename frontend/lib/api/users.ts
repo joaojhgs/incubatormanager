@@ -1,5 +1,5 @@
 /**
- * Auth service — Director-scoped user directory (`GET /auth/users/`, `POST /auth/users/`).
+ * Auth service — Director-scoped user directory (`GET|POST /auth/users/`, `GET|PATCH /auth/users/{id}/`).
  */
 
 import { getDefaultApiClient } from "./client";
@@ -30,6 +30,20 @@ export interface UserCreatePayload {
   company_id?: string | null;
 }
 
+/** API role values accepted by `PATCH /auth/users/{id}/` (see auth-service `RoleEnum`). */
+export type UserAdminRole = "Director" | "Staff" | "Client";
+
+/** Writable fields for Director `PATCH /auth/users/{id}/` (partial). */
+export interface UserUpdatePayload {
+  first_name?: string;
+  last_name?: string;
+  role?: UserAdminRole;
+  company_id?: string | null;
+  is_active?: boolean;
+  /** When set, replaces the password (Director-only reset; omitted to leave unchanged). */
+  password?: string;
+}
+
 /** List all incubator users (Director role only; others receive 403 from the API). */
 export async function listUsers(): Promise<UserRead[]> {
   const { data } = await api().get<UserRead[]>("/auth/users/");
@@ -39,5 +53,20 @@ export async function listUsers(): Promise<UserRead[]> {
 /** Create a user account (Director only). */
 export async function createUser(payload: UserCreatePayload): Promise<UserRead> {
   const { data } = await api().post<UserRead>("/auth/users/", payload);
+  return data;
+}
+
+/** Load a single user by id (Director only). */
+export async function getUserById(userId: string): Promise<UserRead> {
+  const { data } = await api().get<UserRead>(`/auth/users/${encodeURIComponent(userId)}/`);
+  return data;
+}
+
+/** Partially update a user (Director only). */
+export async function updateUser(userId: string, payload: UserUpdatePayload): Promise<UserRead> {
+  const { data } = await api().patch<UserRead>(
+    `/auth/users/${encodeURIComponent(userId)}/`,
+    payload,
+  );
   return data;
 }
