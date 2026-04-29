@@ -183,14 +183,19 @@ export default function UsersListPage() {
 
   return (
     <>
-      <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
+      <Flex justify="space-between" align="center" wrap gap="small" style={{ marginBottom: 16 }}>
         <Title level={3} style={{ margin: 0 }}>
           <UserOutlined aria-hidden style={{ marginRight: 8 }} />
           {tUsers("listTitle")}
         </Title>
-        <Button type="default" icon={<FilterOutlined aria-hidden />} onClick={openDrawer}>
-          {tUsers("listOpenFilters")}
-        </Button>
+        <Space wrap>
+          <Link href="/users/new" prefetch={false}>
+            <Button type="primary">{tUsers("listCreateUser")}</Button>
+          </Link>
+          <Button type="default" icon={<FilterOutlined aria-hidden />} onClick={openDrawer}>
+            {tUsers("listOpenFilters")}
+          </Button>
+        </Space>
       </Flex>
 
       <Card>

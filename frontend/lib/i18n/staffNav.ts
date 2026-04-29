@@ -17,6 +17,7 @@ const staffMessages = {
   menuProfile: "Perfil",
   menuLogout: "Terminar sessão",
   breadcrumbHome: "Início",
+  breadcrumbUserCreate: "Novo utilizador",
   pageHomeTitle: "Painel",
   pageHomeIntro: "Área reservada à equipa do incubador. Utilize o menu lateral para navegar.",
   pagePlaceholderBody: "Conteúdo em desenvolvimento.",

@@ -67,7 +67,24 @@ function breadcrumbItemsForPath(pathname: string | null): { title: ReactNode }[]
     ];
   }
 
-  const segment = path.split("/").filter(Boolean)[0];
+  const segments = path.split("/").filter(Boolean);
+  if (segments[0] === "users" && segments[1] === "new") {
+    return [
+      homeCrumb,
+      {
+        title: (
+          <Link href="/users" prefetch={false}>
+            {tStaff("navUsers")}
+          </Link>
+        ),
+      },
+      {
+        title: <Typography.Text>{tStaff("breadcrumbUserCreate")}</Typography.Text>,
+      },
+    ];
+  }
+
+  const segment = segments[0];
   const titleKey = segment ? pathToTitleKey[segment] : undefined;
   if (!titleKey) {
     return [homeCrumb];
