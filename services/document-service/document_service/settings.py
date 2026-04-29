@@ -105,5 +105,8 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "ILB Document Service API",
     "DESCRIPTION": "Document bounded context API (upload, download, health).",
     "VERSION": "0.1.0",
-    "SERVE_INCLUDE_SCHEMA": False,
+    # Include OpenAPI and Swagger paths in exported schema.yml (parity with auth-service).
+    "SERVE_INCLUDE_SCHEMA": True,
+    # Do not run gateway header auth on schema UI (HeaderAuthentication requires X-User-Id).
+    "SERVE_AUTHENTICATION": [],
 }

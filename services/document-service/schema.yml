@@ -86,16 +86,16 @@ paths:
       description: Stream a stored object from MinIO using the gateway trust headers.
       summary: Download document bytes
       parameters:
-        - in: path
-          name: document_id
-          schema:
-            type: string
-            format: uuid
-          required: true
+      - in: path
+        name: document_id
+        schema:
+          type: string
+          format: uuid
+        required: true
       tags:
-        - api
+      - api
       security:
-        - GatewayJWT: []
+      - GatewayJWT: []
       responses:
         '200':
           content:
@@ -120,7 +120,7 @@ paths:
       operationId: api_documents_health_retrieve
       description: Liveness/readiness-style health payload (includes MinIO when configured).
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -148,6 +148,162 @@ paths:
                     type: string
                     example: unreachable
           description: ''
+  /api/documents/schema/:
+    get:
+      operationId: api_documents_schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - api
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/documents/schema/swagger/:
+    get:
+      operationId: api_documents_schema_swagger_retrieve
+      description: Interactive OpenAPI documentation for the document service.
+      summary: Swagger UI
+      tags:
+      - api
+      security:
+      - {}
+      responses:
+        '200':
+          description: Swagger UI page (HTML).
   /api/documents/upload/:
     post:
       operationId: api_documents_upload_create
@@ -155,7 +311,7 @@ paths:
         restricted to office, PDF, and common images.'
       summary: Upload a document
       tags:
-        - api
+      - api
       requestBody:
         content:
           multipart/form-data:
@@ -168,8 +324,8 @@ paths:
                 entity_type:
                   type: string
                   enum:
-                    - Company
-                    - Contract
+                  - Company
+                  - Contract
                   description: Owning aggregate type.
                 entity_id:
                   type: string
@@ -178,11 +334,11 @@ paths:
                   type: string
                   maxLength: 500
               required:
-                - file
-                - entity_type
-                - entity_id
+              - file
+              - entity_type
+              - entity_id
       security:
-        - GatewayJWT: []
+      - GatewayJWT: []
       responses:
         '201':
           content:
@@ -219,7 +375,7 @@ paths:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload (includes MinIO when configured).
       tags:
-        - health
+      - health
       responses:
         '200':
           content:
@@ -286,16 +442,16 @@ components:
           format: date-time
           readOnly: true
       required:
-        - entity_id
-        - entity_type
-        - file_name
-        - file_size
-        - id
-        - uploaded_at
+      - entity_id
+      - entity_type
+      - file_name
+      - file_size
+      - id
+      - uploaded_at
     EntityTypeEnum:
       enum:
-        - Company
-        - Contract
+      - Company
+      - Contract
       type: string
       description: |-
         * `Company` - Company

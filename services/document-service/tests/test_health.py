@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 from django.test import Client
 
 
@@ -57,3 +59,28 @@ def test_api_documents_health_minio_ok(client: Client, monkeypatch: pytest.Monke
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "minio": "ok"}
     fake_client.list_buckets.assert_called_once()
+
+
+def test_openapi_schema_yaml_returns_ok(client: Client) -> None:
+    response = client.get("/api/documents/schema/")
+    assert response.status_code == 200
+    body = response.content.decode()
+    doc = yaml.safe_load(body)
+    assert doc["openapi"].startswith("3.")
+    paths = doc["paths"]
+    assert "/api/documents/schema/" in paths
+    assert "/api/documents/schema/swagger/" in paths
+
+
+def test_openapi_schema_json_format(client: Client) -> None:
+    response = client.get("/api/documents/schema/?format=json")
+    assert response.status_code == 200
+    doc = json.loads(response.content.decode())
+    assert "/api/documents/schema/swagger/" in doc["paths"]
+
+
+def test_swagger_ui_returns_html(client: Client) -> None:
+    response = client.get("/api/documents/schema/swagger/")
+    assert response.status_code == 200
+    assert "text/html" in response["Content-Type"]
+    assert b"swagger" in response.content.lower()
