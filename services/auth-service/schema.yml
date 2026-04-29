@@ -568,6 +568,13 @@ components:
           nullable: true
         is_active:
           type: boolean
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+          description: |-
+            Optional new password. When omitted, the credential is unchanged.
+            Validated against Django auth password validators.
     RoleEnum:
       enum:
         - Director

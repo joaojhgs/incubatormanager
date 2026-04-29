@@ -1,5 +1,7 @@
 const userMessages = {
   listTitle: "Utilizadores",
+  listColumnActions: "Ações",
+  listActionEdit: "Editar",
   listSearchPlaceholder: "Pesquisar por e-mail ou nome",
   listOpenFilters: "Filtros",
   listDrawerTitle: "Filtrar lista",
@@ -57,6 +59,29 @@ const userMessages = {
   createFieldPasswordMismatch: "As palavras-passe não coincidem.",
   createCancel: "Cancelar",
   createCompaniesLoadError: "Não foi possível carregar as empresas.",
+  editTitle: "Editar utilizador",
+  editSubtitle:
+    "Atualize o perfil, a função e o estado. A palavra-passe só é alterada se preencher o campo abaixo.",
+  editBack: "Voltar à lista",
+  editFieldEmail: "E-mail",
+  editFieldFirstName: "Nome próprio",
+  editFieldLastName: "Apelido",
+  editFieldRole: "Função",
+  editFieldCompany: "Empresa (cliente)",
+  editFieldActive: "Conta ativa",
+  editFieldPassword: "Nova palavra-passe",
+  editFieldPasswordHint:
+    "Opcional. Deixe em branco para manter a palavra-passe atual. Mínimo 8 caracteres; utilize letras e números.",
+  editSave: "Guardar",
+  editCancel: "Cancelar",
+  editSuccess: "Utilizador atualizado.",
+  editError: "Não foi possível guardar as alterações.",
+  editNotFound: "Utilizador não encontrado.",
+  editValidationFirstName: "Indique o nome próprio.",
+  editValidationLastName: "Indique o apelido.",
+  editValidationRole: "Selecione uma função.",
+  editValidationCompany: "Selecione a empresa associada ao perfil de cliente.",
+  editValidationPasswordMin: "A palavra-passe deve ter pelo menos 8 caracteres.",
 } as const;
 
 export type UsersI18nKey = keyof typeof userMessages;

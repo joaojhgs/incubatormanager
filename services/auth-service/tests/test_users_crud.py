@@ -182,6 +182,23 @@ def test_create_duplicate_email(api_client: APIClient, director: User, staff_use
 
 
 @pytest.mark.django_db
+def test_patch_password_only_director(
+    api_client: APIClient,
+    director: User,
+    staff_user: User,
+) -> None:
+    patch = api_client.patch(
+        f"{USERS_URL}{staff_user.id}/",
+        data={"password": "new-strong-pw-99"},
+        format="json",
+        **_headers("Director", director.id),
+    )
+    assert patch.status_code == 200
+    staff_user.refresh_from_db()
+    assert staff_user.check_password("new-strong-pw-99")
+
+
+@pytest.mark.django_db
 def test_patch_and_soft_delete(api_client: APIClient, director: User, staff_user: User) -> None:
     patch = api_client.patch(
         f"{USERS_URL}{staff_user.id}/",
