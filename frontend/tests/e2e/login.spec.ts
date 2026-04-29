@@ -38,7 +38,13 @@ test.describe("login page", () => {
     await page.getByLabel("Palavra-passe").fill("Password123!");
     await page.getByRole("button", { name: "Entrar" }).click();
     await expect
-      .poll(async () => page.evaluate(() => localStorage.getItem("ilb.access_token")))
+      .poll(async () => {
+        try {
+          return await page.evaluate(() => localStorage.getItem("ilb.access_token"));
+        } catch {
+          return null;
+        }
+      })
       .toMatch(/^ey/);
     await page.context().addCookies([
       {
@@ -46,7 +52,7 @@ test.describe("login page", () => {
         value: refresh,
         sameSite: "Lax",
         httpOnly: true,
-        url: "http://127.0.0.1:3000",
+        url: "http://localhost:3000",
       },
     ]);
     await page.goto("/dashboard");
@@ -68,7 +74,13 @@ test.describe("login page", () => {
     await page.getByLabel("Palavra-passe").fill("Password123!");
     await page.getByRole("button", { name: "Entrar" }).click();
     await expect
-      .poll(async () => page.evaluate(() => localStorage.getItem("ilb.access_token")))
+      .poll(async () => {
+        try {
+          return await page.evaluate(() => localStorage.getItem("ilb.access_token"));
+        } catch {
+          return null;
+        }
+      })
       .toMatch(/^ey/);
     await page.context().addCookies([
       {
@@ -76,7 +88,7 @@ test.describe("login page", () => {
         value: refresh,
         sameSite: "Lax",
         httpOnly: true,
-        url: "http://127.0.0.1:3000",
+        url: "http://localhost:3000",
       },
     ]);
     await page.goto("/portal");

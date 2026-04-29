@@ -10,7 +10,7 @@ vi.mock("./client", async (importOriginal) => {
 });
 
 import { createApiClient, getDefaultApiClient } from "./client";
-import { listUsers } from "./users";
+import { createUser, listUsers } from "./users";
 
 const BASE = "http://127.0.0.1:9";
 const BASE_PATH = "/api";
@@ -42,6 +42,40 @@ describe("listUsers", () => {
     nock(BASE).get(`${BASE_PATH}/auth/users/`).reply(200, rows);
 
     await expect(listUsers()).resolves.toEqual(rows);
+    expect(nock.isDone()).toBe(true);
+  });
+});
+
+describe("createUser", () => {
+  it("POST /auth/users/", async () => {
+    const created = {
+      id: "22222222-2222-4222-8222-222222222222",
+      email: "new@example.com",
+      role: "Staff",
+      first_name: "N",
+      last_name: "User",
+      company_id: null,
+      is_active: true,
+    };
+    nock(BASE)
+      .post(`${BASE_PATH}/auth/users/`, {
+        email: "new@example.com",
+        password: "longpass1",
+        first_name: "N",
+        last_name: "User",
+        role: "Staff",
+      })
+      .reply(201, created);
+
+    await expect(
+      createUser({
+        email: "new@example.com",
+        password: "longpass1",
+        first_name: "N",
+        last_name: "User",
+        role: "Staff",
+      }),
+    ).resolves.toEqual(created);
     expect(nock.isDone()).toBe(true);
   });
 });

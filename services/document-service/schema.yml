@@ -86,16 +86,16 @@ paths:
       description: Stream a stored object from MinIO using the gateway trust headers.
       summary: Download document bytes
       parameters:
-      - in: path
-        name: document_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: document_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       security:
-      - GatewayJWT: []
+        - GatewayJWT: []
       responses:
         '200':
           content:
@@ -120,7 +120,7 @@ paths:
       operationId: api_documents_health_retrieve
       description: Liveness/readiness-style health payload (includes MinIO when configured).
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -155,7 +155,7 @@ paths:
         restricted to office, PDF, and common images.'
       summary: Upload a document
       tags:
-      - api
+        - api
       requestBody:
         content:
           multipart/form-data:
@@ -168,8 +168,8 @@ paths:
                 entity_type:
                   type: string
                   enum:
-                  - Company
-                  - Contract
+                    - Company
+                    - Contract
                   description: Owning aggregate type.
                 entity_id:
                   type: string
@@ -178,11 +178,11 @@ paths:
                   type: string
                   maxLength: 500
               required:
-              - file
-              - entity_type
-              - entity_id
+                - file
+                - entity_type
+                - entity_id
       security:
-      - GatewayJWT: []
+        - GatewayJWT: []
       responses:
         '201':
           content:
@@ -219,7 +219,7 @@ paths:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload (includes MinIO when configured).
       tags:
-      - health
+        - health
       responses:
         '200':
           content:
@@ -286,16 +286,16 @@ components:
           format: date-time
           readOnly: true
       required:
-      - entity_id
-      - entity_type
-      - file_name
-      - file_size
-      - id
-      - uploaded_at
+        - entity_id
+        - entity_type
+        - file_name
+        - file_size
+        - id
+        - uploaded_at
     EntityTypeEnum:
       enum:
-      - Company
-      - Contract
+        - Company
+        - Contract
       type: string
       description: |-
         * `Company` - Company
