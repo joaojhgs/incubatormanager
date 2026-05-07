@@ -30,6 +30,13 @@ const userMessages = {
   roleFilterCoordinator: "Coordenador",
   roleFilterStaff: "Equipa",
   roleFilterClient: "Cliente (empresa)",
+  listShowInactive: "Mostrar contas inativas",
+  listDeactivate: "Desativar",
+  deactivateConfirmTitle: "Desativar utilizador?",
+  deactivateConfirmDescription:
+    "A conta deixará de poder iniciar sessão. Pode voltar a ativar mais tarde ao editar o utilizador.",
+  deactivateSuccess: "Utilizador desativado.",
+  deactivateError: "Não foi possível desativar o utilizador.",
   listCreateUser: "Novo utilizador",
   createTitle: "Criar utilizador",
   createBackToList: "Voltar à lista",

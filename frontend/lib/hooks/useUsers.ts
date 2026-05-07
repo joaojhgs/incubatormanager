@@ -2,7 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { type UserUpdatePayload, getUserById, listUsers, updateUser } from "@/lib/api/users";
+import {
+  type UserUpdatePayload,
+  deactivateUser,
+  getUserById,
+  listUsers,
+  updateUser,
+} from "@/lib/api/users";
 
 export const userKeys = {
   all: ["users"] as const,
@@ -42,6 +48,16 @@ export function useUpdateUser() {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: userKeys.directorList() });
       void queryClient.invalidateQueries({ queryKey: userKeys.detail(variables.userId) });
+    },
+  });
+}
+
+export function useDeactivateUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => deactivateUser(userId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: userKeys.directorList() });
     },
   });
 }
