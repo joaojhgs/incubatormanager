@@ -1,5 +1,6 @@
 /**
- * Auth service — Director-scoped user directory (`GET|POST /auth/users/`, `GET|PATCH /auth/users/{id}/`).
+ * Auth service — Director-scoped user directory (`GET|POST /auth/users/`,
+ * `GET|PATCH|DELETE /auth/users/{id}/`).
  */
 
 import { getDefaultApiClient } from "./client";
@@ -69,4 +70,9 @@ export async function updateUser(userId: string, payload: UserUpdatePayload): Pr
     payload,
   );
   return data;
+}
+
+/** Soft-delete: sets `is_active` to false (Director only). `DELETE /auth/users/{id}/` → 204. */
+export async function deactivateUser(userId: string): Promise<void> {
+  await api().delete(`/auth/users/${encodeURIComponent(userId)}/`);
 }

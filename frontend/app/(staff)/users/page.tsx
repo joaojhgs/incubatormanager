@@ -8,11 +8,13 @@ import {
   Drawer,
   Flex,
   Input,
+  Popconfirm,
   Radio,
   Result,
   Select,
   Space,
   Spin,
+  Switch,
   Table,
   Tag,
   Typography,
@@ -24,14 +26,12 @@ import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { isDirectorRole, ROLE_CLIENT } from "@/lib/auth/constants";
 import type { UserRead } from "@/lib/api/users";
-import { useUsersList } from "@/lib/hooks/useUsers";
+import { useDeactivateUser, useUsersList } from "@/lib/hooks/useUsers";
 import { tUsers, userRoleDisplay } from "@/lib/i18n/users";
 
 const { Title } = Typography;
 
 const PAGE_SIZE = 20;
-
-type ActiveFilter = "all" | "active" | "inactive";
 
 function roleTagColor(role: string): string | undefined {
   const r = role.toLowerCase();
@@ -58,6 +58,7 @@ export default function UsersListPage() {
   const director = Boolean(isReady && user && isDirectorRole(user.role));
 
   const { data, isLoading, isError } = useUsersList(director);
+  const deactivateMutation = useDeactivateUser();
 
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -65,10 +66,10 @@ export default function UsersListPage() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string | undefined>(undefined);
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+  /** When false, inactive rows are hidden (soft-deactivated accounts). */
+  const [showInactive, setShowInactive] = useState(false);
 
   const [draftRole, setDraftRole] = useState<string | undefined>(undefined);
-  const [draftActive, setDraftActive] = useState<ActiveFilter>("all");
 
   useEffect(() => {
     if (debounceTimer.current !== null) clearTimeout(debounceTimer.current);
@@ -86,22 +87,18 @@ export default function UsersListPage() {
 
   const openDrawer = useCallback(() => {
     setDraftRole(roleFilter);
-    setDraftActive(activeFilter);
     setDrawerOpen(true);
-  }, [roleFilter, activeFilter]);
+  }, [roleFilter]);
 
   const applyDrawerFilters = useCallback(() => {
     setRoleFilter(draftRole);
-    setActiveFilter(draftActive);
     setDrawerOpen(false);
     setPage(1);
-  }, [draftRole, draftActive]);
+  }, [draftRole]);
 
   const clearDrawerFilters = useCallback(() => {
     setDraftRole(undefined);
-    setDraftActive("all");
     setRoleFilter(undefined);
-    setActiveFilter("all");
     setDrawerOpen(false);
     setPage(1);
   }, []);
@@ -112,16 +109,27 @@ export default function UsersListPage() {
     const list = data ?? [];
     const q = debouncedSearch.trim().toLowerCase();
     return list.filter((row) => {
+      if (!showInactive && !row.is_active) return false;
       if (roleFilter) {
         if (row.role.toLowerCase() !== roleFilter.toLowerCase()) return false;
       }
-      if (activeFilter === "active" && !row.is_active) return false;
-      if (activeFilter === "inactive" && row.is_active) return false;
       if (!q) return true;
       const hay = `${row.email} ${row.first_name} ${row.last_name}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [data, debouncedSearch, roleFilter, activeFilter]);
+  }, [data, debouncedSearch, roleFilter, showInactive]);
+
+  const handleDeactivate = useCallback(
+    async (row: UserRead) => {
+      try {
+        await deactivateMutation.mutateAsync(row.id);
+        message.success(tUsers("deactivateSuccess"));
+      } catch {
+        message.error(tUsers("deactivateError"));
+      }
+    },
+    [deactivateMutation],
+  );
 
   const columns: ColumnsType<UserRead> = useMemo(
     () => [
@@ -157,17 +165,33 @@ export default function UsersListPage() {
       {
         title: tUsers("listColumnActions"),
         key: "actions",
-        width: 120,
+        width: 220,
         render: (_: unknown, row: UserRead) => (
-          <Link href={`/users/${row.id}/edit`} prefetch={false}>
-            <Button size="small" type="link">
-              {tUsers("listActionEdit")}
-            </Button>
-          </Link>
+          <Space size="small" wrap>
+            <Link href={`/users/${row.id}/edit`} prefetch={false}>
+              <Button size="small" type="link">
+                {tUsers("listActionEdit")}
+              </Button>
+            </Link>
+            {row.is_active && user?.id !== row.id && (
+              <Popconfirm
+                title={tUsers("deactivateConfirmTitle")}
+                description={tUsers("deactivateConfirmDescription")}
+                okText={tUsers("listDeactivate")}
+                cancelText={tUsers("editCancel")}
+                okButtonProps={{ danger: true, loading: deactivateMutation.isPending }}
+                onConfirm={() => handleDeactivate(row)}
+              >
+                <Button size="small" type="link" danger>
+                  {tUsers("listDeactivate")}
+                </Button>
+              </Popconfirm>
+            )}
+          </Space>
         ),
       },
     ],
-    [],
+    [user?.id, deactivateMutation.isPending, handleDeactivate],
   );
 
   if (!isReady) {
@@ -223,6 +247,17 @@ export default function UsersListPage() {
             style={{ width: 320 }}
             aria-label={tUsers("listSearchPlaceholder")}
           />
+          <Space align="center">
+            <Switch
+              checked={showInactive}
+              onChange={(checked) => {
+                setShowInactive(checked);
+                setPage(1);
+              }}
+              aria-label={tUsers("listShowInactive")}
+            />
+            <Typography.Text>{tUsers("listShowInactive")}</Typography.Text>
+          </Space>
         </Space>
 
         <Table<UserRead>
@@ -273,18 +308,6 @@ export default function UsersListPage() {
               onChange={(v) => setDraftRole(v)}
               options={roleFilterOptions()}
             />
-          </div>
-          <div>
-            <Typography.Text strong>{tUsers("listFilterActiveLabel")}</Typography.Text>
-            <Radio.Group
-              style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}
-              value={draftActive}
-              onChange={(e) => setDraftActive(e.target.value as ActiveFilter)}
-            >
-              <Radio value="all">{tUsers("listFilterActiveAll")}</Radio>
-              <Radio value="active">{tUsers("listFilterActiveYes")}</Radio>
-              <Radio value="inactive">{tUsers("listFilterActiveNo")}</Radio>
-            </Radio.Group>
           </div>
         </Space>
       </Drawer>

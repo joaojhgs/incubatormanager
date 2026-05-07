@@ -10,7 +10,14 @@ vi.mock("./client", async (importOriginal) => {
 });
 
 import { createApiClient, getDefaultApiClient } from "./client";
-import { createUser, getUserById, listUsers, updateUser, type UserUpdatePayload } from "./users";
+import {
+  createUser,
+  deactivateUser,
+  getUserById,
+  listUsers,
+  updateUser,
+  type UserUpdatePayload,
+} from "./users";
 
 const BASE = "http://127.0.0.1:9";
 const BASE_PATH = "/api";
@@ -121,6 +128,18 @@ describe("updateUser", () => {
       .reply(200, response);
 
     await expect(updateUser(id, payload)).resolves.toEqual(response);
+    expect(nock.isDone()).toBe(true);
+  });
+});
+
+describe("deactivateUser", () => {
+  it("DELETE /auth/users/{id}/ returns 204", async () => {
+    const id = "11111111-1111-1111-1111-111111111111";
+    nock(BASE)
+      .delete(`${BASE_PATH}/auth/users/${encodeURIComponent(id)}/`)
+      .reply(204);
+
+    await expect(deactivateUser(id)).resolves.toBeUndefined();
     expect(nock.isDone()).toBe(true);
   });
 });
