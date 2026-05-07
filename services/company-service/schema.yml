@@ -4,12 +4,51 @@ info:
   version: 0.1.0
   description: Company bounded context API (stub).
 paths:
+  /api/companies/cae/:
+    get:
+      operationId: api_companies_cae_list
+      description: List CAE codes for any authenticated user; create is Director-only.
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CAE'
+          description: ''
+    post:
+      operationId: api_companies_cae_create
+      description: List CAE codes for any authenticated user; create is Director-only.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CAE'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CAE'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CAE'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CAE'
+          description: ''
   /api/companies/health/:
     get:
       operationId: api_companies_health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -26,7 +65,7 @@ paths:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-        - health
+      - health
       responses:
         '200':
           content:
@@ -38,4 +77,22 @@ paths:
                     type: string
                     example: ok
           description: ''
-components: {}
+components:
+  schemas:
+    CAE:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          maxLength: 16
+        description:
+          type: string
+          maxLength: 255
+      required:
+      - code
+      - description
+      - id
