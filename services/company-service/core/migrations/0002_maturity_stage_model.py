@@ -89,7 +89,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("rate_per_sqm", models.DecimalField(decimal_places=2, max_digits=10)),
-                ("description", models.CharField(blank=True, default="", max_length=255)),
+                (
+                    "description",
+                    models.CharField(blank=True, default="", max_length=255),
+                ),
                 ("display_order", models.IntegerField(default=0)),
             ],
             options={
