@@ -7,6 +7,11 @@ import uuid
 from django.db import models
 
 
+class ActiveManager(models.Manager):
+    def get_queryset(self) -> models.QuerySet:
+        return super().get_queryset().filter(is_active=True)
+
+
 class CAE(models.Model):
     """Portuguese economic activity classification code."""
 
@@ -39,6 +44,40 @@ class MaturityStage(models.Model):
     class Meta:
         ordering = ("display_order",)
         indexes = [models.Index(fields=["display_order"], name="core_maturi_display_order_idx")]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Company(models.Model):
+    """Incubated company entity."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)
+    tax_id = models.CharField(max_length=20, unique=True, db_index=True)
+    address = models.CharField(max_length=255, blank=True, default="")
+    phone = models.CharField(max_length=32, blank=True, default="")
+    email = models.EmailField(blank=True, default="")
+    legal_representative = models.CharField(max_length=255)
+    cae = models.ForeignKey(CAE, on_delete=models.PROTECT, related_name="companies")
+    maturity_stage = models.ForeignKey(
+        MaturityStage, on_delete=models.PROTECT, related_name="companies"
+    )
+    description = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = models.Manager()
+    active = ActiveManager()
+
+    class Meta:
+        ordering = ("name",)
+        indexes = [
+            models.Index(fields=["is_active"], name="core_company_is_active_idx"),
+            models.Index(fields=["cae_id"], name="core_company_cae_id_idx"),
+            models.Index(fields=["maturity_stage_id"], name="core_company_mstage_idx"),
+        ]
 
     def __str__(self) -> str:
         return self.name
