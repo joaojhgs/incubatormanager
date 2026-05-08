@@ -12,8 +12,11 @@ vi.mock("./client", async (importOriginal) => {
 import { createApiClient, getDefaultApiClient } from "./client";
 import {
   DOCUMENT_UPLOAD_MAX_BYTES,
+  deleteDocument,
+  downloadDocumentBlob,
   isSupportedDocumentMimeType,
   isSupportedDocumentSize,
+  listDocuments,
   uploadDocument,
 } from "./documents";
 
@@ -53,6 +56,58 @@ describe("uploadDocument", () => {
         file,
       }),
     ).resolves.toEqual(response);
+    expect(nock.isDone()).toBe(true);
+  });
+});
+
+describe("listDocuments", () => {
+  it("GET /documents/ with entity filters", async () => {
+    const rows = [
+      {
+        id: "6d767fd5-7e21-4f07-8965-5e6c6fe2a2dc",
+        entity_type: "Company" as const,
+        entity_id: "0458f113-bef8-46fd-b327-7d260f5daa52",
+        file_name: "terms.pdf",
+        file_size: 4,
+        mime_type: "application/pdf",
+        uploaded_at: "2026-04-29T10:00:00Z",
+      },
+    ];
+    nock(BASE)
+      .get(`${BASE_PATH}/documents/`)
+      .query({ entity_type: "Company", entity_id: "0458f113-bef8-46fd-b327-7d260f5daa52" })
+      .reply(200, rows);
+
+    await expect(
+      listDocuments({
+        entityType: "Company",
+        entityId: "0458f113-bef8-46fd-b327-7d260f5daa52",
+      }),
+    ).resolves.toEqual(rows);
+    expect(nock.isDone()).toBe(true);
+  });
+});
+
+describe("deleteDocument", () => {
+  it("DELETE /documents/{id}/", async () => {
+    const id = "6d767fd5-7e21-4f07-8965-5e6c6fe2a2dc";
+    nock(BASE).delete(`${BASE_PATH}/documents/${id}/`).reply(204);
+
+    await expect(deleteDocument(id)).resolves.toBeUndefined();
+    expect(nock.isDone()).toBe(true);
+  });
+});
+
+describe("downloadDocumentBlob", () => {
+  it("GET /documents/{id}/download/ parses filename from Content-Disposition", async () => {
+    const id = "6d767fd5-7e21-4f07-8965-5e6c6fe2a2dc";
+    nock(BASE).get(`${BASE_PATH}/documents/${id}/download/`).reply(200, Buffer.from("abc"), {
+      "content-disposition": 'attachment; filename="report.pdf"',
+    });
+
+    const { blob, fileName } = await downloadDocumentBlob(id);
+    expect(fileName).toBe("report.pdf");
+    expect(blob).toBeDefined();
     expect(nock.isDone()).toBe(true);
   });
 });
