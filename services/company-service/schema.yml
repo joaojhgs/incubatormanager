@@ -9,7 +9,7 @@ paths:
       operationId: api_companies_cae_list
       description: List CAE codes for any authenticated user; create is Director-only.
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -23,7 +23,7 @@ paths:
       operationId: api_companies_cae_create
       description: List CAE codes for any authenticated user; create is Director-only.
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -48,7 +48,7 @@ paths:
       operationId: api_companies_health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -65,7 +65,7 @@ paths:
       operationId: api_companies_maturity_stages_list
       description: List maturity stages. Any authenticated role.
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -79,7 +79,7 @@ paths:
       operationId: api_companies_maturity_stages_create
       description: Create a maturity stage. Director only.
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -104,15 +104,15 @@ paths:
       operationId: api_companies_maturity_stages_retrieve
       description: Retrieve one maturity stage. Any authenticated role.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        description: A UUID string identifying this maturity stage.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this maturity stage.
+          required: true
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -124,15 +124,15 @@ paths:
       operationId: api_companies_maturity_stages_partial_update
       description: Partially update a maturity stage. Director only.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        description: A UUID string identifying this maturity stage.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this maturity stage.
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -156,7 +156,7 @@ paths:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-      - health
+        - health
       responses:
         '200':
           content:
@@ -184,9 +184,9 @@ components:
           type: string
           maxLength: 255
       required:
-      - code
-      - description
-      - id
+        - code
+        - description
+        - id
     MaturityStage:
       type: object
       properties:
@@ -209,15 +209,15 @@ components:
           minimum: -9223372036854775808
           format: int64
       required:
-      - id
-      - name
-      - rate_per_sqm
+        - id
+        - name
+        - rate_per_sqm
     NameEnum:
       enum:
-      - Incubated
-      - Startup
-      - Intermediate
-      - Consolidated
+        - Incubated
+        - Startup
+        - Intermediate
+        - Consolidated
       type: string
       description: |-
         * `Incubated` - Incubated
