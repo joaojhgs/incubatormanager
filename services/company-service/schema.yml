@@ -60,6 +60,97 @@ paths:
                     type: string
                     example: ok
           description: ''
+  /api/companies/maturity-stages/:
+    get:
+      operationId: api_companies_maturity_stages_list
+      description: List maturity stages. Any authenticated role.
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaturityStage'
+          description: ''
+    post:
+      operationId: api_companies_maturity_stages_create
+      description: Create a maturity stage. Director only.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaturityStage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MaturityStage'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MaturityStage'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaturityStage'
+          description: ''
+  /api/companies/maturity-stages/{id}/:
+    get:
+      operationId: api_companies_maturity_stages_retrieve
+      description: Retrieve one maturity stage. Any authenticated role.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this maturity stage.
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaturityStage'
+          description: ''
+    patch:
+      operationId: api_companies_maturity_stages_partial_update
+      description: Partially update a maturity stage. Director only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this maturity stage.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMaturityStage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMaturityStage'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMaturityStage'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaturityStage'
+          description: ''
   /health/:
     get:
       operationId: health_retrieve
@@ -96,3 +187,61 @@ components:
       - code
       - description
       - id
+    MaturityStage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          $ref: '#/components/schemas/NameEnum'
+        rate_per_sqm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        description:
+          type: string
+          maxLength: 255
+        display_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+      required:
+      - id
+      - name
+      - rate_per_sqm
+    NameEnum:
+      enum:
+      - Incubated
+      - Startup
+      - Intermediate
+      - Consolidated
+      type: string
+      description: |-
+        * `Incubated` - Incubated
+        * `Startup` - Startup
+        * `Intermediate` - Intermediate
+        * `Consolidated` - Consolidated
+    PatchedMaturityStage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          $ref: '#/components/schemas/NameEnum'
+        rate_per_sqm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        description:
+          type: string
+          maxLength: 255
+        display_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
