@@ -14,8 +14,12 @@ from rest_framework.views import APIView
 from core.filters import CompanyFilter
 from core.models import CAE
 from core.pagination import CompanyListPagination
-from core.serializers import CAESerializer, CompanyListSerializer
-from core.services import company_list_queryset
+from core.serializers import (
+    CAESerializer,
+    CompanyDetailSerializer,
+    CompanyListSerializer,
+)
+from core.services import company_detail_queryset, company_list_queryset
 
 
 @extend_schema(
@@ -40,6 +44,27 @@ class CompanyListView(generics.ListAPIView):
         cid_str = str(cid) if cid is not None else None
         role_str = role if isinstance(role, str) else ""
         return company_list_queryset(role_str, cid_str)
+
+
+@extend_schema(
+    description=(
+        "Company detail including CAE and maturity-stage relations (select_related) and "
+        "active employees (prefetch_related). Uses active companies only. Staff and "
+        "Directors may retrieve any active company by id. Clients only retrieve their "
+        "company (`X-Company-Id`)."
+    ),
+)
+class CompanyDetailView(generics.RetrieveAPIView):
+    serializer_class = CompanyDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):  # type: ignore[override]
+        user = self.request.user
+        role = getattr(user, "role", None)
+        cid = getattr(user, "company_id", None)
+        cid_str = str(cid) if cid is not None else None
+        role_str = role if isinstance(role, str) else ""
+        return company_detail_queryset(role_str, cid_str)
 
 
 class HealthView(APIView):

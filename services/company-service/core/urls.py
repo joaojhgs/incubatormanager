@@ -6,7 +6,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from core.maturity_views import MaturityStageViewSet
-from core.views import CAEListCreateView, CompanyListView, HealthView
+from core.views import CAEListCreateView, CompanyDetailView, CompanyListView, HealthView
 
 router = DefaultRouter()
 router.register(
@@ -19,6 +19,9 @@ urlpatterns = [
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/companies/health/", HealthView.as_view(), name="health-companies"),
     path("api/companies/cae/", CAEListCreateView.as_view(), name="cae-list-create"),
+    path(
+        "api/companies/<uuid:pk>/", CompanyDetailView.as_view(), name="company-detail"
+    ),
     path("api/companies/", CompanyListView.as_view(), name="company-list"),
     *router.urls,
 ]

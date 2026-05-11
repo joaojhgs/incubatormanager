@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from core.models import CAE, Company, MaturityStage
+from core.models import CAE, Company, Employee, MaturityStage
 from core.services import create_maturity_stage, update_maturity_stage
 
 
@@ -13,6 +13,13 @@ class CAESerializer(serializers.ModelSerializer):
         model = CAE
         fields = ["id", "code", "description"]
         read_only_fields = ["id"]
+
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = ["id", "name", "type", "start_date", "end_date", "is_active"]
+        read_only_fields = ["id", "name", "type", "start_date", "end_date", "is_active"]
 
 
 class MaturityStageSerializer(serializers.ModelSerializer):
@@ -52,3 +59,12 @@ class CompanyListSerializer(serializers.ModelSerializer):
             "maturity_stage",
         ]
         read_only_fields = fields
+
+
+class CompanyDetailSerializer(CompanyListSerializer):
+    """Full company projection with nested CAE, maturity stage, and active employees."""
+
+    employees = EmployeeSerializer(many=True, read_only=True)
+
+    class Meta(CompanyListSerializer.Meta):
+        fields = [*CompanyListSerializer.Meta.fields, "employees"]

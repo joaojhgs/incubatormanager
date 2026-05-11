@@ -52,6 +52,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedCompanyListList'
           description: ''
+  /api/companies/{id}/:
+    get:
+      operationId: api_companies_retrieve
+      description: Company detail including CAE and maturity-stage relations (select_related)
+        and active employees (prefetch_related). Uses active companies only. Staff
+        and Directors may retrieve any active company by id. Clients only retrieve
+        their company (`X-Company-Id`).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyDetail'
+          description: ''
   /api/companies/cae/:
     get:
       operationId: api_companies_cae_list
@@ -235,6 +258,76 @@ components:
       - code
       - description
       - id
+    CompanyDetail:
+      type: object
+      description: Full company projection with nested CAE, maturity stage, and active
+        employees.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        tax_id:
+          type: string
+          readOnly: true
+        address:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        legal_representative:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        cae:
+          allOf:
+          - $ref: '#/components/schemas/CAE'
+          readOnly: true
+        maturity_stage:
+          allOf:
+          - $ref: '#/components/schemas/MaturityStage'
+          readOnly: true
+        employees:
+          type: array
+          items:
+            $ref: '#/components/schemas/Employee'
+          readOnly: true
+      required:
+      - address
+      - cae
+      - created_at
+      - description
+      - email
+      - employees
+      - id
+      - is_active
+      - legal_representative
+      - maturity_stage
+      - name
+      - phone
+      - tax_id
+      - updated_at
     CompanyList:
       type: object
       description: Company row for GET /companies; nested FKs via select_related (no
@@ -299,6 +392,39 @@ components:
       - phone
       - tax_id
       - updated_at
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+        end_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+      required:
+      - end_date
+      - id
+      - is_active
+      - name
+      - start_date
+      - type
     MaturityStage:
       type: object
       properties:
@@ -380,3 +506,19 @@ components:
           maximum: 9223372036854775807
           minimum: -9223372036854775808
           format: int64
+    TypeEnum:
+      enum:
+      - Regular
+      - Intern
+      - PhD
+      - Designer
+      - Junior
+      - Senior
+      type: string
+      description: |-
+        * `Regular` - Regular
+        * `Intern` - Intern
+        * `PhD` - PhD
+        * `Designer` - Designer
+        * `Junior` - Junior
+        * `Senior` - Senior
