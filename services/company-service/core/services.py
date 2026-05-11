@@ -5,7 +5,9 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
-from core.models import MaturityStage
+from django.db.models import Prefetch, QuerySet
+
+from core.models import Company, Employee, MaturityStage
 
 
 def create_maturity_stage(
@@ -31,3 +33,13 @@ def update_maturity_stage(instance: MaturityStage, **updates: Any) -> MaturitySt
         setattr(instance, key, value)
     instance.save()
     return instance
+
+
+def company_detail_queryset() -> QuerySet[Company]:
+    """Queryset for GET company detail; avoids N+1 on FKs and nested employees."""
+
+    emp_qs = Employee.active.order_by("name")
+    return Company.active.select_related(
+        "cae",
+        "maturity_stage",
+    ).prefetch_related(Prefetch("employees", queryset=emp_qs))

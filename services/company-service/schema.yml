@@ -4,12 +4,33 @@ info:
   version: 0.1.0
   description: Company bounded context API (stub).
 paths:
+  /api/companies/{id}/:
+    get:
+      operationId: api_companies_retrieve
+      description: Optimized company retrieve (select_related CAE/stage + prefetch
+        employees).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyDetail'
+          description: ''
   /api/companies/cae/:
     get:
       operationId: api_companies_cae_list
       description: List CAE codes for any authenticated user; create is Director-only.
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -23,7 +44,7 @@ paths:
       operationId: api_companies_cae_create
       description: List CAE codes for any authenticated user; create is Director-only.
       tags:
-        - api
+      - api
       requestBody:
         content:
           application/json:
@@ -48,7 +69,7 @@ paths:
       operationId: api_companies_health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -65,7 +86,7 @@ paths:
       operationId: api_companies_maturity_stages_list
       description: List maturity stages. Any authenticated role.
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -79,7 +100,7 @@ paths:
       operationId: api_companies_maturity_stages_create
       description: Create a maturity stage. Director only.
       tags:
-        - api
+      - api
       requestBody:
         content:
           application/json:
@@ -104,15 +125,15 @@ paths:
       operationId: api_companies_maturity_stages_retrieve
       description: Retrieve one maturity stage. Any authenticated role.
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          description: A UUID string identifying this maturity stage.
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this maturity stage.
+        required: true
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -124,15 +145,15 @@ paths:
       operationId: api_companies_maturity_stages_partial_update
       description: Partially update a maturity stage. Director only.
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          description: A UUID string identifying this maturity stage.
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this maturity stage.
+        required: true
       tags:
-        - api
+      - api
       requestBody:
         content:
           application/json:
@@ -156,7 +177,7 @@ paths:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-        - health
+      - health
       responses:
         '200':
           content:
@@ -184,9 +205,111 @@ components:
           type: string
           maxLength: 255
       required:
-        - code
-        - description
-        - id
+      - code
+      - description
+      - id
+    CompanyDetail:
+      type: object
+      description: Full company projection with nested CAE, maturity stage, and employees.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        tax_id:
+          type: string
+          readOnly: true
+        address:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        legal_representative:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        cae:
+          allOf:
+          - $ref: '#/components/schemas/CAE'
+          readOnly: true
+        maturity_stage:
+          allOf:
+          - $ref: '#/components/schemas/MaturityStage'
+          readOnly: true
+        employees:
+          type: array
+          items:
+            $ref: '#/components/schemas/Employee'
+          readOnly: true
+      required:
+      - address
+      - cae
+      - created_at
+      - description
+      - email
+      - employees
+      - id
+      - is_active
+      - legal_representative
+      - maturity_stage
+      - name
+      - phone
+      - tax_id
+      - updated_at
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+        end_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+      required:
+      - end_date
+      - id
+      - is_active
+      - name
+      - start_date
+      - type
     MaturityStage:
       type: object
       properties:
@@ -209,15 +332,15 @@ components:
           minimum: -9223372036854775808
           format: int64
       required:
-        - id
-        - name
-        - rate_per_sqm
+      - id
+      - name
+      - rate_per_sqm
     NameEnum:
       enum:
-        - Incubated
-        - Startup
-        - Intermediate
-        - Consolidated
+      - Incubated
+      - Startup
+      - Intermediate
+      - Consolidated
       type: string
       description: |-
         * `Incubated` - Incubated
@@ -245,3 +368,19 @@ components:
           maximum: 9223372036854775807
           minimum: -9223372036854775808
           format: int64
+    TypeEnum:
+      enum:
+      - Regular
+      - Intern
+      - PhD
+      - Designer
+      - Junior
+      - Senior
+      type: string
+      description: |-
+        * `Regular` - Regular
+        * `Intern` - Intern
+        * `PhD` - PhD
+        * `Designer` - Designer
+        * `Junior` - Junior
+        * `Senior` - Senior
