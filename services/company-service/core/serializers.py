@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from core.models import CAE, MaturityStage
+from core.models import CAE, Company, MaturityStage
 from core.services import create_maturity_stage, update_maturity_stage
 
 
@@ -26,3 +26,29 @@ class MaturityStageSerializer(serializers.ModelSerializer):
 
     def update(self, instance: MaturityStage, validated_data: dict) -> MaturityStage:
         return update_maturity_stage(instance, **validated_data)
+
+
+class CompanyListSerializer(serializers.ModelSerializer):
+    """Company row for GET /companies; nested FKs via select_related (no employee list)."""
+
+    cae = CAESerializer(read_only=True)
+    maturity_stage = MaturityStageSerializer(read_only=True)
+
+    class Meta:
+        model = Company
+        fields = [
+            "id",
+            "name",
+            "tax_id",
+            "address",
+            "phone",
+            "email",
+            "legal_representative",
+            "description",
+            "is_active",
+            "created_at",
+            "updated_at",
+            "cae",
+            "maturity_stage",
+        ]
+        read_only_fields = fields

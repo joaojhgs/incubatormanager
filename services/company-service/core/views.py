@@ -2,16 +2,44 @@
 
 from __future__ import annotations
 
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from ilb_common.permissions import IsDirector
-from rest_framework import status
+from rest_framework import filters, generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.filters import CompanyFilter
 from core.models import CAE
-from core.serializers import CAESerializer
+from core.pagination import CompanyListPagination
+from core.serializers import CAESerializer, CompanyListSerializer
+from core.services import company_list_queryset
+
+
+@extend_schema(
+    description=(
+        "Paginated company list with optional filters (`cae`, `maturity`, `is_active`) "
+        "and `search` across name / tax ID / legal representative. Directors and Staff "
+        "see all companies; Clients only see their row (`X-Company-Id`)."
+    ),
+)
+class CompanyListView(generics.ListAPIView):
+    serializer_class = CompanyListSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = CompanyListPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = CompanyFilter
+    search_fields = ("name", "tax_id", "legal_representative")
+
+    def get_queryset(self):  # type: ignore[override]
+        user = self.request.user
+        role = getattr(user, "role", None)
+        cid = getattr(user, "company_id", None)
+        cid_str = str(cid) if cid is not None else None
+        role_str = role if isinstance(role, str) else ""
+        return company_list_queryset(role_str, cid_str)
 
 
 class HealthView(APIView):
