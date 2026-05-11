@@ -81,3 +81,39 @@ class Company(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class Employee(models.Model):
+    """Employee record for an incubated company (class-er §1.5)."""
+
+    class Type(models.TextChoices):
+        REGULAR = "Regular", "Regular"
+        INTERN = "Intern", "Intern"
+        PHD = "PhD", "PhD"
+        DESIGNER = "Designer", "Designer"
+        JUNIOR = "Junior", "Junior"
+        SENIOR = "Senior", "Senior"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="employees")
+    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=32, choices=Type.choices)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = models.Manager()
+    active = ActiveManager()
+
+    class Meta:
+        ordering = ("company", "name")
+        indexes = [
+            models.Index(fields=["company_id"], name="core_employee_company_id_idx"),
+            models.Index(fields=["is_active"], name="core_employee_is_active_idx"),
+            models.Index(fields=["type"], name="core_employee_type_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.company.name})"
