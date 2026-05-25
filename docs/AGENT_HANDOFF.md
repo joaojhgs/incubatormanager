@@ -45,19 +45,24 @@ GitLab shared runners are not the merge gate for this work. Use local checks:
 - Dashboard service health/metric aggregation endpoints.
 - Frontend placeholder replacement for staff and client operational pages.
 
+## Latest local verification evidence
+
+The integrated Phase 2 tree was verified locally on 2026-05-25 with:
+
+- `manage.py check`, migration dry-runs, and full pytest suites for auth, company, document, contract, finance, space, booking, inventory, ticket, and dashboard services.
+- Frontend `typecheck`, unit tests, lint, and production build.
+- Targeted integration smoke tests covering client isolation, contract and booking event publication, event consumer idempotency, finance billing/overdue idempotency, inventory assignment/release projections, ticket scoping, and dashboard authorization.
+- Playwright gateway-auth probe attempted against `127.0.0.1:80`; it failed because the live Docker stack was unavailable in the local environment.
+- `make demo` attempted; it failed before stack startup because the current user could not access `/var/run/docker.sock`.
+
 ## Recommended next checks
 
-Run these from the repository root after pulling any new local changes:
+On a workstation with Docker socket access, run:
 
 ```bash
-for svc in company contract finance space booking inventory ticket dashboard; do
-  (cd services/$svc-service && PYTHONPATH=../../libs/py-common python3 manage.py check)
-done
-
-npm --prefix frontend run typecheck
-npm --prefix frontend run test
-npm --prefix frontend run lint
-npm --prefix frontend run build
+make demo
+make seed
+NODE_PATH="$PWD/frontend/node_modules" frontend/node_modules/.bin/playwright test -c e2e/playwright.config.ts
 ```
 
-Then run integration smoke checks and `make demo`.
+If additional changes land, also rerun the relevant service tests plus frontend `typecheck`, tests, lint, and build.
