@@ -25,12 +25,27 @@ def _client(role: str = "Staff", company_id: uuid.UUID | None = None) -> APIClie
 def test_space_type_space_crud_and_occupancy_map() -> None:
     type_response = _client().post("/api/space-types/", data={"name": "Office"}, format="json")
     assert type_response.status_code == 201
+    other_type_response = _client().post(
+        "/api/space-types/", data={"name": "Meeting Room"}, format="json"
+    )
+    assert other_type_response.status_code == 201
     space_response = _client().post(
         "/api/spaces/",
         data={"name": "Room A", "space_type": type_response.json()["id"], "capacity": 2},
         format="json",
     )
     assert space_response.status_code == 201
+    other_space_response = _client().post(
+        "/api/spaces/",
+        data={
+            "name": "Room B",
+            "space_type": other_type_response.json()["id"],
+            "capacity": 1,
+            "status": Space.Status.MAINTENANCE,
+        },
+        format="json",
+    )
+    assert other_space_response.status_code == 201
     space = Space.objects.get(pk=space_response.json()["id"])
     SpaceBookingRecord.objects.create(
         booking_id=uuid.uuid4(),
@@ -45,6 +60,13 @@ def test_space_type_space_crud_and_occupancy_map() -> None:
     assert occupancy.status_code == 200
     assert occupancy.json()[0]["occupied"] == 1
     assert occupancy.json()[0]["occupancy_percent"] == "50.00"
+
+    filtered = _client().get(
+        "/api/spaces/",
+        {"status": Space.Status.AVAILABLE, "space_type": type_response.json()["id"]},
+    )
+    assert filtered.status_code == 200
+    assert [row["id"] for row in filtered.json()] == [space_response.json()["id"]]
 
 
 @pytest.mark.django_db

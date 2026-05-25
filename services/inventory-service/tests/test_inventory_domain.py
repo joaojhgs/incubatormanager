@@ -56,6 +56,38 @@ def test_equipment_crud_assign_release_and_client_assignment_scope() -> None:
     assert assign.json()["rental_cost"] == "15.50"
     assert _client("Client", uuid.uuid4()).get("/api/inventory/my-assignments/").json() == []
     assert len(_client("Client", company_id).get("/api/inventory/my-assignments/").json()) == 1
+    history = _client("Client", company_id).get(
+        "/api/inventory/assignments/",
+        {"booking": str(booking_id)},
+    )
+    assert history.status_code == 200
+    assert history.json()[0]["equipment_id"] == equipment_id
+    assert history.json()[0]["equipment_name"] == "Projector A"
+    assert history.json()[0]["status"] == EquipmentAssignment.Status.ASSIGNED
+    assert _client("Client", uuid.uuid4()).get("/api/inventory/assignments/").json() == []
+
+    filtered_equipment = _client().get(
+        "/api/inventory/equipment/",
+        {
+            "equipment_type": type_response.json()["id"],
+            "status": Equipment.Status.IN_USE,
+            "assigned_space_id": str(assigned_space_id),
+        },
+    )
+    assert filtered_equipment.status_code == 200
+    assert [row["id"] for row in filtered_equipment.json()] == [equipment_id]
+
+    other_booking_id = uuid.uuid4()
+    other_assign = _client().post(
+        f"/api/inventory/equipment/{equipment_id}/assign/",
+        data={
+            "booking_id": str(other_booking_id),
+            "company_id": str(company_id),
+            "assigned_space_id": str(assigned_space_id),
+        },
+        format="json",
+    )
+    assert other_assign.status_code == 200
 
     release = _client().post(
         f"/api/inventory/equipment/{equipment_id}/release/",
@@ -63,7 +95,24 @@ def test_equipment_crud_assign_release_and_client_assignment_scope() -> None:
         format="json",
     )
     assert release.status_code == 200
-    assert release.json()["status"] == Equipment.Status.AVAILABLE
+    assert release.json()["status"] == Equipment.Status.IN_USE
+    assert (
+        EquipmentAssignment.objects.get(booking_id=booking_id).status
+        == EquipmentAssignment.Status.RELEASED
+    )
+    assert (
+        EquipmentAssignment.objects.get(booking_id=other_booking_id).status
+        == EquipmentAssignment.Status.ASSIGNED
+    )
+
+    final_release = _client().post(
+        f"/api/inventory/equipment/{equipment_id}/release/",
+        data={"booking_id": str(other_booking_id)},
+        format="json",
+    )
+    assert final_release.status_code == 200
+    assert final_release.json()["assigned_space_id"] is None
+    assert final_release.json()["status"] == Equipment.Status.AVAILABLE
 
 
 @pytest.mark.django_db

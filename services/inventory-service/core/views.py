@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 
 from core.models import Equipment, EquipmentAssignment, EquipmentType
 from core.serializers import (
+    EquipmentAssignmentSerializer,
     EquipmentAssignSerializer,
     EquipmentReleaseSerializer,
     EquipmentSerializer,
@@ -65,7 +66,23 @@ class EquipmentTypeDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class EquipmentListCreateView(generics.ListCreateAPIView):
     serializer_class = EquipmentSerializer
-    queryset = Equipment.objects.all()
+
+    def get_queryset(self):  # type: ignore[override]
+        queryset = Equipment.objects.all()
+        equipment_type = self.request.query_params.get("type") or self.request.query_params.get(
+            "equipment_type"
+        )
+        if equipment_type:
+            queryset = queryset.filter(equipment_type_id=equipment_type)
+        status = self.request.query_params.get("status")
+        if status:
+            queryset = queryset.filter(status=status)
+        space_id = self.request.query_params.get("space") or self.request.query_params.get(
+            "assigned_space_id"
+        )
+        if space_id:
+            queryset = queryset.filter(assigned_space_id=space_id)
+        return queryset
 
     def get_permissions(self):  # type: ignore[override]
         if self.request.method == "POST":
@@ -118,13 +135,30 @@ class EquipmentReleaseView(APIView):
         payload = EquipmentReleaseSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         equipment = Equipment.objects.get(pk=equipment_id)
-        EquipmentAssignment.objects.filter(
+        assignments = EquipmentAssignment.objects.filter(
             equipment=equipment,
             booking_id=payload.validated_data["booking_id"],
             status=EquipmentAssignment.Status.ASSIGNED,
-        ).update(status=EquipmentAssignment.Status.RELEASED)
-        equipment.status = Equipment.Status.AVAILABLE
-        equipment.save(update_fields=["status", "updated_at"])
+        )
+        released_space_ids = {
+            assignment.assigned_space_id
+            for assignment in assignments
+            if assignment.assigned_space_id is not None
+        }
+        assignments.update(status=EquipmentAssignment.Status.RELEASED)
+        remaining = EquipmentAssignment.objects.filter(
+            equipment=equipment,
+            status=EquipmentAssignment.Status.ASSIGNED,
+        )
+        update_fields = ["updated_at"]
+        if equipment.assigned_space_id in released_space_ids and not remaining.exists():
+            equipment.assigned_space_id = None
+            update_fields.append("assigned_space_id")
+        if not remaining.exists():
+            equipment.status = Equipment.Status.AVAILABLE
+            update_fields.append("status")
+        if len(update_fields) > 1:
+            equipment.save(update_fields=update_fields)
         return Response(EquipmentSerializer(equipment).data)
 
 
@@ -166,3 +200,29 @@ class InventoryMyAssignmentsView(generics.ListAPIView):
                 return Equipment.objects.none()
             return qs.filter(assignments__company_id=company_id).distinct()
         return Equipment.objects.none()
+
+
+class InventoryAssignmentListView(generics.ListAPIView):
+    """Assignment history scoped for staff or the authenticated client company."""
+
+    serializer_class = EquipmentAssignmentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):  # type: ignore[override]
+        queryset = EquipmentAssignment.objects.select_related("equipment").all()
+        role = _role(self.request)
+        if role == "Client":
+            company_id = getattr(self.request.user, "company_id", None)
+            if company_id is None:
+                return EquipmentAssignment.objects.none()
+            queryset = queryset.filter(company_id=company_id)
+        elif role not in {"Staff", "Director"}:
+            return EquipmentAssignment.objects.none()
+
+        booking_id = self.request.query_params.get("booking")
+        if booking_id:
+            queryset = queryset.filter(booking_id=booking_id)
+        equipment_id = self.request.query_params.get("equipment")
+        if equipment_id:
+            queryset = queryset.filter(equipment_id=equipment_id)
+        return queryset

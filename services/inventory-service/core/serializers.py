@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from core.models import Equipment, EquipmentType
+from core.models import Equipment, EquipmentAssignment, EquipmentType
 
 
 class EquipmentTypeSerializer(serializers.ModelSerializer):
@@ -31,6 +31,26 @@ class EquipmentSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class EquipmentAssignmentSerializer(serializers.ModelSerializer):
+    equipment_id = serializers.UUIDField(source="equipment.id", read_only=True)
+    equipment_name = serializers.CharField(source="equipment.name", read_only=True)
+
+    class Meta:
+        model = EquipmentAssignment
+        fields = [
+            "id",
+            "equipment_id",
+            "equipment_name",
+            "booking_id",
+            "company_id",
+            "assigned_space_id",
+            "status",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
 
 
 class EquipmentAssignSerializer(serializers.Serializer):
