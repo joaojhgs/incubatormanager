@@ -20,8 +20,8 @@ The Phase 2 backend gap has been closed for the core demo path. Contract, Financ
 | Space     |               Implemented | Types, CRUD, occupancy, contract/booking projections.                    |
 | Booking   |               Implemented | Staff/client/public booking flows, lifecycle events, completion command. |
 | Inventory |               Implemented | Equipment/type CRUD, assignment/release, booking event handlers.         |
-| Ticket    |               Implemented | Scoped tickets and message threads.                                      |
-| Dashboard |               Implemented | Service health and metric aggregation endpoints.                         |
+| Ticket    |               Implemented | Scoped tickets, message threads, and staff metrics.                      |
+| Dashboard |               Implemented | Service health, ticket KPIs, and metric aggregation endpoints.           |
 
 ## Event chains
 

@@ -11,6 +11,11 @@ urlpatterns = [
     path("api/finance/health/", views.HealthView.as_view(), name="health-finance"),
     path("api/finance/payments/", views.PaymentListView.as_view(), name="finance-payment-list"),
     path(
+        "api/finance/payments/next-due/",
+        views.NextDuePaymentView.as_view(),
+        name="finance-payment-next-due",
+    ),
+    path(
         "api/finance/payments/<uuid:payment_id>/",
         views.PaymentDetailView.as_view(),
         name="finance-payment-detail",
@@ -22,4 +27,9 @@ urlpatterns = [
     ),
     path("api/finance/dashboard/", views.FinanceDashboardView.as_view(), name="finance-dashboard"),
     path("api/finance/reports/", views.FinanceReportsView.as_view(), name="finance-reports"),
+    path(
+        "api/finance/billing/generate/",
+        views.BillingGenerateView.as_view(),
+        name="finance-billing-generate",
+    ),
 ]

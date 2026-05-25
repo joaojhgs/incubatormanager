@@ -46,7 +46,7 @@ SERVICE_DEFAULTS: dict[str, str] = {
 METRIC_ENDPOINTS: dict[str, str] = {
     "company": "http://company-service:8002/api/companies/stats/",
     "finance": "http://finance-service:8004/api/finance/dashboard/",
-    "ticket": "http://ticket-service:8008/api/tickets/",
+    "ticket": "http://ticket-service:8008/api/tickets/metrics/",
 }
 
 ZERO = Decimal("0")
@@ -117,6 +117,10 @@ def _overview_kpis() -> dict[str, Any]:
     overdue_count = 0
     if isinstance(getattr(finance_snapshot, "payload", None), dict):
         overdue_count = int(finance_snapshot.payload.get("overdue") or 0)
+    ticket_snapshot = DashboardSnapshot.objects.filter(source="ticket").first()
+    open_tickets = 0
+    if isinstance(getattr(ticket_snapshot, "payload", None), dict):
+        open_tickets = int(ticket_snapshot.payload.get("open_count") or 0)
 
     return {
         "companies": active_companies,
@@ -125,6 +129,7 @@ def _overview_kpis() -> dict[str, Any]:
         "revenue_mtd": revenue_mtd,
         "overdue_count": overdue_count,
         "pending_bookings": pending_bookings,
+        "open_tickets": open_tickets,
     }
 
 

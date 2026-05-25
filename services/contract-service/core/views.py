@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from ilb_common.permissions import IsStaff
 from rest_framework import generics, status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated as DRFIsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -36,6 +37,59 @@ def _requires_company_scope(user: object) -> str:
     if company_id is None:
         raise PermissionDenied("Missing X-Company-Id")
     return company_id
+
+
+def _uuid_query_param(request: Request, name: str) -> UUID | None:
+    raw = request.query_params.get(name)
+    if not raw:
+        return None
+    try:
+        return UUID(raw)
+    except ValueError as exc:
+        raise ValidationError({name: "Must be a valid UUID."}) from exc
+
+
+def _apply_contract_filters(queryset, request: Request):
+    """Apply Week-3 staff/client list filters without weakening role scope."""
+
+    status_filter = request.query_params.get("status")
+    if status_filter:
+        valid_statuses = {choice.value for choice in Contract.Status}
+        if status_filter not in valid_statuses:
+            raise ValidationError({"status": "Unsupported contract status."})
+        queryset = queryset.filter(status=status_filter)
+
+    company_id = _uuid_query_param(request, "company_id")
+    if company_id is not None:
+        queryset = queryset.filter(company_id=company_id)
+
+    space_id = _uuid_query_param(request, "space_id")
+    if space_id is not None:
+        queryset = queryset.filter(space_id=space_id)
+
+    date_filters = {
+        "start_date_from": "start_date__gte",
+        "start_date_to": "start_date__lte",
+        "end_date_from": "end_date__gte",
+        "end_date_to": "end_date__lte",
+    }
+    for param, lookup in date_filters.items():
+        raw = request.query_params.get(param)
+        if not raw:
+            continue
+        try:
+            queryset = queryset.filter(**{lookup: raw})
+        except DjangoValidationError as exc:
+            raise ValidationError({param: "Must be an ISO date."}) from exc
+
+    active_on = request.query_params.get("active_on")
+    if active_on:
+        try:
+            queryset = queryset.filter(start_date__lte=active_on, end_date__gte=active_on)
+        except DjangoValidationError as exc:
+            raise ValidationError({"active_on": "Must be an ISO date."}) from exc
+
+    return queryset
 
 
 def _contract_queryset_for_role(user: object):
@@ -79,7 +133,7 @@ class ContractListCreateView(generics.ListCreateAPIView):
         return [DRFIsAuthenticated()]
 
     def get_queryset(self):  # type: ignore[override]
-        return _contract_queryset_for_role(self.request.user)
+        return _apply_contract_filters(_contract_queryset_for_role(self.request.user), self.request)
 
     @extend_schema(
         responses={

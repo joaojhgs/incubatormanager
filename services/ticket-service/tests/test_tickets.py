@@ -120,6 +120,34 @@ def test_ticket_list_staff_can_filter_unassigned() -> None:
 
 
 @pytest.mark.django_db
+def test_ticket_metrics_are_staff_only_and_count_open_work() -> None:
+    company_id = str(uuid.uuid4())
+    _create_ticket(company_id=company_id, status=Ticket.Status.OPEN)
+    _create_ticket(company_id=company_id, status=Ticket.Status.IN_PROGRESS)
+    _create_ticket(company_id=company_id, status=Ticket.Status.WAITING_RESPONSE)
+    _create_ticket(company_id=company_id, status=Ticket.Status.RESOLVED)
+    _create_ticket(company_id=company_id, status=Ticket.Status.CLOSED)
+
+    response = _api_client("Staff").get("/api/tickets/metrics/")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "total": 5,
+        "open_count": 3,
+        "by_status": {
+            Ticket.Status.OPEN: 1,
+            Ticket.Status.IN_PROGRESS: 1,
+            Ticket.Status.WAITING_RESPONSE: 1,
+            Ticket.Status.RESOLVED: 1,
+            Ticket.Status.CLOSED: 1,
+        },
+    }
+
+    blocked = _api_client("Client", company_id=company_id).get("/api/tickets/metrics/")
+    assert blocked.status_code == 403
+
+
+@pytest.mark.django_db
 def test_ticket_detail_scope_is_enforced() -> None:
     mine = _create_ticket(company_id=str(uuid.uuid4()), subject="Own")
     other = _create_ticket(company_id=str(uuid.uuid4()), subject="Other")

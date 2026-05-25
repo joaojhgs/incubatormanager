@@ -165,6 +165,10 @@ def test_dashboard_analytics_endpoints_read_materialized_rows(urlopen) -> None:
         paid_at=datetime(2026, 5, 25, 12, 0, tzinfo=UTC),
     )
     DashboardSnapshot.objects.create(source="finance", payload={"overdue": 2})
+    DashboardSnapshot.objects.create(
+        source="ticket",
+        payload={"total": 4, "open_count": 3, "by_status": {"Open": 2, "In progress": 1}},
+    )
 
     client = _client()
     companies = client.get("/api/dashboard/companies/")
@@ -181,6 +185,7 @@ def test_dashboard_analytics_endpoints_read_materialized_rows(urlopen) -> None:
     assert overview.status_code == 200
     assert overview.json()["kpis"]["companies"] == 1
     assert overview.json()["kpis"]["pending_bookings"] == 1
+    assert overview.json()["kpis"]["open_tickets"] == 3
 
 
 @pytest.mark.django_db

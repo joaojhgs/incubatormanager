@@ -1,7 +1,8 @@
 "use client";
 
 import type { ColumnsType } from "antd/es/table";
-import { Card, Result, Spin, Table, Tag, Typography } from "antd";
+import { Button, Card, Result, Spin, Table, Tag, Typography } from "antd";
+import Link from "next/link";
 
 import { useMyTickets } from "@/lib/hooks";
 import { tClient } from "@/lib/i18n/clientPortal";
@@ -51,6 +52,16 @@ const columns: ColumnsType<Ticket> = [
     key: "updated_at",
     render: (value: string) => formatDate(value),
   },
+  {
+    title: tClient("portalTicketsColumnAction"),
+    key: "action",
+    width: 120,
+    render: (_: unknown, row: Ticket) => (
+      <Link href={`/portal/tickets/${row.id}`} prefetch={false}>
+        {tClient("viewDetails")}
+      </Link>
+    ),
+  },
 ];
 
 export default function ClientTicketsPage() {
@@ -65,7 +76,14 @@ export default function ClientTicketsPage() {
   }
 
   return (
-    <Card title={tClient("portalTicketsTitle")}>
+    <Card
+      title={tClient("portalTicketsTitle")}
+      extra={
+        <Link href="/portal/tickets/new" prefetch={false}>
+          <Button type="primary">{tClient("portalTicketNewTitle")}</Button>
+        </Link>
+      }
+    >
       <Table<Ticket>
         rowKey={rowKey}
         columns={columns}

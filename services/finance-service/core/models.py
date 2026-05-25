@@ -47,6 +47,10 @@ class Payment(models.Model):
         CONTRACT = "contract", "contract"
         BOOKING = "booking", "booking"
 
+    class PaymentType(models.TextChoices):
+        MONTHLY = "monthly", "monthly"
+        RENTAL = "rental", "rental"
+
     class Status(models.TextChoices):
         PENDING = "pending", "pending"
         PAID = "paid", "paid"
@@ -57,6 +61,12 @@ class Payment(models.Model):
     contract_id = models.UUIDField(blank=True, null=True)
     booking_id = models.UUIDField(blank=True, null=True)
     source = models.CharField(max_length=16, choices=Source.choices)
+    payment_type = models.CharField(
+        max_length=16,
+        choices=PaymentType.choices,
+        default=PaymentType.MONTHLY,
+        db_index=True,
+    )
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=8, default="EUR")
     status = models.CharField(
@@ -81,7 +91,11 @@ class Payment(models.Model):
     def can_mark_paid(self) -> bool:
         return self.status != self.Status.PAID
 
-    def mark_paid(self, paid_at: dt.datetime | None = None) -> bool:
+    def mark_paid(
+        self,
+        paid_at: dt.datetime | None = None,
+        reference_id: str | None = None,
+    ) -> bool:
         """Mark payment paid when needed; returns whether state changed."""
 
         if not self.can_mark_paid():
@@ -89,7 +103,11 @@ class Payment(models.Model):
 
         self.status = self.Status.PAID
         self.paid_at = paid_at or dt.datetime.now(tz=dt.UTC)
-        self.save(update_fields=("status", "paid_at", "updated_at"))
+        update_fields = ["status", "paid_at", "updated_at"]
+        if reference_id is not None:
+            self.reference_id = reference_id
+            update_fields.append("reference_id")
+        self.save(update_fields=update_fields)
         return True
 
 

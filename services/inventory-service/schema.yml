@@ -4,6 +4,22 @@ info:
   version: 0.1.0
   description: Inventory bounded context API.
 paths:
+  /api/inventory/assignments/:
+    get:
+      operationId: api_inventory_assignments_list
+      description: Assignment history scoped for staff or the authenticated client
+        company.
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EquipmentAssignment'
+          description: ''
   /api/inventory/bookings/{event_type}/:
     post:
       operationId: api_inventory_bookings_create
@@ -411,7 +427,7 @@ components:
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
           nullable: true
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/EquipmentStatusEnum'
         notes:
           type: string
         is_active:
@@ -443,6 +459,63 @@ components:
           type: string
           format: uuid
           nullable: true
+    EquipmentAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        equipment_id:
+          type: string
+          format: uuid
+          readOnly: true
+        equipment_name:
+          type: string
+          readOnly: true
+        booking_id:
+          type: string
+          format: uuid
+          readOnly: true
+        company_id:
+          type: string
+          format: uuid
+          readOnly: true
+        assigned_space_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        status:
+          allOf:
+            - $ref: '#/components/schemas/EquipmentAssignmentStatusEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - assigned_space_id
+        - booking_id
+        - company_id
+        - created_at
+        - equipment_id
+        - equipment_name
+        - id
+        - status
+        - updated_at
+    EquipmentAssignmentStatusEnum:
+      enum:
+        - Assigned
+        - Released
+      type: string
+      description: |-
+        * `Assigned` - Assigned
+        * `Released` - Released
     EquipmentRelease:
       type: object
       properties:
@@ -451,6 +524,16 @@ components:
           format: uuid
       required:
         - booking_id
+    EquipmentStatusEnum:
+      enum:
+        - Available
+        - In use
+        - Maintenance
+      type: string
+      description: |-
+        * `Available` - Available
+        * `In use` - In use
+        * `Maintenance` - Maintenance
     EquipmentType:
       type: object
       properties:
@@ -502,7 +585,7 @@ components:
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
           nullable: true
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/EquipmentStatusEnum'
         notes:
           type: string
         is_active:
@@ -535,13 +618,3 @@ components:
           type: string
           format: date-time
           readOnly: true
-    StatusEnum:
-      enum:
-        - Available
-        - In use
-        - Maintenance
-      type: string
-      description: |-
-        * `Available` - Available
-        * `In use` - In use
-        * `Maintenance` - Maintenance
