@@ -10,7 +10,7 @@ vi.mock("./client", async (importOriginal) => {
 });
 
 import { createApiClient, getDefaultApiClient } from "./client";
-import { listSpaceBookingRecords } from "./spaces";
+import { createSpace, createSpaceType, listSpaceBookingRecords, updateSpace } from "./spaces";
 
 const BASE = "http://127.0.0.1:9";
 const BASE_PATH = "/api";
@@ -44,6 +44,32 @@ describe("listSpaceBookingRecords", () => {
     nock(BASE).get(`${BASE_PATH}/spaces/bookings/records/`).reply(200, response);
 
     await expect(listSpaceBookingRecords()).resolves.toEqual(response);
+    expect(nock.isDone()).toBe(true);
+  });
+
+  it("writes spaces and space types through service endpoints", async () => {
+    nock(BASE)
+      .post(`${BASE_PATH}/space-types/`, { name: "Lab", is_active: true })
+      .reply(201, { id: "type-1", name: "Lab", is_active: true })
+      .post(`${BASE_PATH}/spaces/`, {
+        name: "Room 1",
+        space_type: "type-1",
+        capacity: 8,
+        status: "Available",
+      })
+      .reply(201, { id: "space-1", name: "Room 1", space_type: "type-1", capacity: 8 })
+      .patch(`${BASE_PATH}/spaces/space-1/`, { status: "Maintenance" })
+      .reply(200, { id: "space-1", status: "Maintenance" });
+
+    await expect(createSpaceType({ name: "Lab", is_active: true })).resolves.toMatchObject({
+      id: "type-1",
+    });
+    await expect(
+      createSpace({ name: "Room 1", space_type: "type-1", capacity: 8, status: "Available" }),
+    ).resolves.toMatchObject({ id: "space-1" });
+    await expect(updateSpace("space-1", { status: "Maintenance" })).resolves.toMatchObject({
+      status: "Maintenance",
+    });
     expect(nock.isDone()).toBe(true);
   });
 });

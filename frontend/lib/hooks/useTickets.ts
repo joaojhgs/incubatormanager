@@ -9,9 +9,11 @@ import {
   getTicket,
   listMyTickets,
   listTickets,
+  updateTicket,
   type Ticket,
   type TicketCreatePayload,
   type TicketMessageCreatePayload,
+  type TicketUpdatePayload,
 } from "@/lib/api/tickets";
 import { tClient } from "@/lib/i18n/clientPortal";
 
@@ -77,6 +79,41 @@ export function useAddTicketMessage(ticketId: string) {
       message.success(tClient("portalTicketMessageSuccess"));
     },
     onError: () => message.error(tClient("portalTicketMessageError")),
+  });
+}
+
+export function useAddTicketMessageAction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      ticketId,
+      payload,
+    }: {
+      ticketId: string;
+      payload: TicketMessageCreatePayload;
+    }) => addTicketMessage(ticketId, payload),
+    onSuccess: (_message, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ticketKeys.detail(variables.ticketId) });
+      void queryClient.invalidateQueries({ queryKey: ticketKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: ticketKeys.mine() });
+      message.success("Resposta enviada.");
+    },
+    onError: () => message.error("Não foi possível enviar a resposta."),
+  });
+}
+
+export function useUpdateTicket() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ticketId, payload }: { ticketId: string; payload: TicketUpdatePayload }) =>
+      updateTicket(ticketId, payload),
+    onSuccess: (ticket) => {
+      void queryClient.invalidateQueries({ queryKey: ticketKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: ticketKeys.mine() });
+      void queryClient.invalidateQueries({ queryKey: ticketKeys.detail(ticket.id) });
+      message.success("Pedido atualizado.");
+    },
+    onError: () => message.error("Não foi possível atualizar o pedido."),
   });
 }
 

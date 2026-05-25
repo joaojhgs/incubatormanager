@@ -33,6 +33,13 @@ export interface TicketMessageCreatePayload {
   content: string;
 }
 
+export interface TicketUpdatePayload {
+  subject?: string;
+  description?: string;
+  status?: string;
+  assigned_to?: string | null;
+}
+
 const api = getDefaultApiClient;
 
 /** List all tickets visible to the authenticated caller (staff or scoped client). */
@@ -65,5 +72,14 @@ export async function addTicketMessage(
   payload: TicketMessageCreatePayload,
 ): Promise<TicketMessage> {
   const { data } = await api().post<TicketMessage>(`/tickets/${ticketId}/messages/`, payload);
+  return data;
+}
+
+/** Staff-only ticket metadata workflow: status transitions and assignment. */
+export async function updateTicket(
+  ticketId: string,
+  payload: TicketUpdatePayload,
+): Promise<Ticket> {
+  const { data } = await api().patch<Ticket>(`/tickets/${ticketId}/`, payload);
   return data;
 }

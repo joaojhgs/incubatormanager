@@ -12,6 +12,30 @@ export interface Space {
   updated_at: string;
 }
 
+export interface SpaceType {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SpaceCreatePayload {
+  name: string;
+  space_type?: string | null;
+  capacity: number;
+  status?: string;
+  company_id?: string | null;
+  is_active?: boolean;
+}
+
+export type SpaceUpdatePayload = Partial<SpaceCreatePayload>;
+
+export interface SpaceTypePayload {
+  name: string;
+  is_active?: boolean;
+}
+
 export interface SpaceOccupancy {
   space_id: string;
   space_name: string;
@@ -37,6 +61,42 @@ const api = getDefaultApiClient;
 export async function listSpaces(): Promise<Space[]> {
   const { data } = await api().get<Space[]>("/spaces/");
   return data;
+}
+
+export async function createSpace(payload: SpaceCreatePayload): Promise<Space> {
+  const { data } = await api().post<Space>("/spaces/", payload);
+  return data;
+}
+
+export async function updateSpace(spaceId: string, payload: SpaceUpdatePayload): Promise<Space> {
+  const { data } = await api().patch<Space>(`/spaces/${spaceId}/`, payload);
+  return data;
+}
+
+export async function deleteSpace(spaceId: string): Promise<void> {
+  await api().delete(`/spaces/${spaceId}/`);
+}
+
+export async function listSpaceTypes(): Promise<SpaceType[]> {
+  const { data } = await api().get<SpaceType[]>("/space-types/");
+  return data;
+}
+
+export async function createSpaceType(payload: SpaceTypePayload): Promise<SpaceType> {
+  const { data } = await api().post<SpaceType>("/space-types/", payload);
+  return data;
+}
+
+export async function updateSpaceType(
+  spaceTypeId: string,
+  payload: Partial<SpaceTypePayload>,
+): Promise<SpaceType> {
+  const { data } = await api().patch<SpaceType>(`/space-types/${spaceTypeId}/`, payload);
+  return data;
+}
+
+export async function deleteSpaceType(spaceTypeId: string): Promise<void> {
+  await api().delete(`/space-types/${spaceTypeId}/`);
 }
 
 export async function listSpaceOccupancy(): Promise<SpaceOccupancy[]> {
