@@ -35,6 +35,11 @@ const companyMessages = {
   listRegisterButton: "Registar empresa",
   listShowingPagination: "A mostrar {from}–{to} de {total} empresas",
   listResultCount: "{count} empresa(s) encontrada(s)",
+  listDirectoryTitle: "Diretório de empresas",
+  listKpiTotal: "Total registado",
+  listKpiActive: "Empresas ativas",
+  listKpiArchived: "Arquivadas",
+  listKpiVisible: "Visíveis nesta página",
 
   // ── Company Form / Detail ─────────────────────────────────────────────
   formCreateTitle: "Registar empresa",

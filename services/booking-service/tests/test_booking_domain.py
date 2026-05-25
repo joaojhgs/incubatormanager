@@ -137,7 +137,7 @@ def test_public_external_booking_requires_requester_fields() -> None:
     )
     assert response.status_code == 201
     assert response.json()["requester_email"] == "public@example.test"
-    assert response.json()["company_id"] is None
+    assert response.json()["company_id"] == str(claimed_company)
 
 
 @pytest.mark.django_db
@@ -315,3 +315,76 @@ def test_complete_bookings_command_is_idempotent_and_publishes_completed_event()
 
         call_command("complete_bookings")
         assert publish.call_count == 1
+
+
+@pytest.mark.django_db
+@override_settings(
+    REST_FRAMEWORK={
+        "DEFAULT_AUTHENTICATION_CLASSES": ["ilb_common.permissions.HeaderAuthentication"],
+        "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+        "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+        "DEFAULT_THROTTLE_RATES": {"public_booking_ip": "5/minute"},
+    }
+)
+def test_public_external_booking_throttled_after_five_requests_per_ip() -> None:
+    client = APIClient()
+    for index in range(5):
+        response = client.post(
+            "/api/bookings/external/",
+            data={
+                **_payload(),
+                "requester_name": f"Public user {index}",
+                "requester_email": f"public{index}@example.test",
+                "requester_phone": "+351 900 000 000",
+            },
+            format="json",
+            HTTP_X_FORWARDED_FOR="203.0.113.9",
+        )
+        assert response.status_code == 201
+
+    blocked = client.post(
+        "/api/bookings/external/",
+        data={
+            **_payload(),
+            "requester_name": "Public user blocked",
+            "requester_email": "blocked@example.test",
+            "requester_phone": "+351 900 000 000",
+        },
+        format="json",
+        HTTP_X_FORWARDED_FOR="203.0.113.9",
+    )
+
+    assert blocked.status_code == 429
+    assert "throttled" in blocked.json()["detail"].lower()
+
+
+@pytest.mark.django_db
+def test_public_external_booking_throttle_is_per_client_ip() -> None:
+    client = APIClient()
+    for index in range(5):
+        response = client.post(
+            "/api/bookings/external/",
+            data={
+                **_payload(),
+                "requester_name": f"Public user {index}",
+                "requester_email": f"ip-a-{index}@example.test",
+                "requester_phone": "+351 900 000 000",
+            },
+            format="json",
+            HTTP_X_FORWARDED_FOR="203.0.113.10",
+        )
+        assert response.status_code == 201
+
+    other_ip = client.post(
+        "/api/bookings/external/",
+        data={
+            **_payload(),
+            "requester_name": "Public user other IP",
+            "requester_email": "ip-b@example.test",
+            "requester_phone": "+351 900 000 000",
+        },
+        format="json",
+        HTTP_X_FORWARDED_FOR="203.0.113.11",
+    )
+
+    assert other_ip.status_code == 201

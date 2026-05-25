@@ -16,6 +16,7 @@ from core.views import (
     CompanyMaturityStageChangeView,
     CompanyStatsView,
     HealthView,
+    MetricsView,
 )
 
 router = DefaultRouter()
@@ -26,6 +27,8 @@ router.register(
 )
 
 urlpatterns = [
+    path("metrics/", MetricsView.as_view(), name="metrics-root"),
+    path("api/companies/metrics/", MetricsView.as_view(), name="metrics-companies"),
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/companies/health/", HealthView.as_view(), name="health-companies"),
     path("api/companies/cae/", CAEListCreateView.as_view(), name="cae-list-create"),

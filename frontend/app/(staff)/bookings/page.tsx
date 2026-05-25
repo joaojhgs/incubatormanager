@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   Descriptions,
+  InputNumber,
   Result,
   Select,
   Space,
@@ -20,6 +21,7 @@ import {
   useBookingActions,
   useBookingCalendar,
   useBookings,
+  useCompanies,
   useEquipment,
   useSpaces,
 } from "@/lib/hooks";
@@ -35,13 +37,32 @@ export default function BookingsPage() {
   const calendar = useBookingCalendar();
   const spaces = useSpaces();
   const equipment = useEquipment();
+  const companies = useCompanies({ page_size: 100, is_active: true });
   const actions = useBookingActions();
+  const [selectedCompanyByBooking, setSelectedCompanyByBooking] = useState<Record<string, string>>(
+    {},
+  );
+  const [quotedPriceByBooking, setQuotedPriceByBooking] = useState<Record<string, number | null>>(
+    {},
+  );
   const [selectedEquipmentByBooking, setSelectedEquipmentByBooking] = useState<
     Record<string, string[]>
   >({});
 
   const spaceNames = useMemo(() => byId(spaces.data), [spaces.data]);
   const equipmentNames = useMemo(() => byId(equipment.data), [equipment.data]);
+  const companyNames = useMemo(
+    () => new Map((companies.data?.results ?? []).map((company) => [company.id, company.name])),
+    [companies.data],
+  );
+  const companyOptions = useMemo(
+    () =>
+      (companies.data?.results ?? []).map((company) => ({
+        label: company.name,
+        value: company.id,
+      })),
+    [companies.data],
+  );
   const equipmentOptions = useMemo(
     () =>
       (equipment.data ?? []).map((item) => ({
@@ -53,7 +74,14 @@ export default function BookingsPage() {
   );
 
   const columns: ColumnsType<Booking> = [
-    { title: tStaff("columnCompany"), dataIndex: "company_id", key: "company_id", width: 210 },
+    {
+      title: tStaff("columnCompany"),
+      dataIndex: "company_id",
+      key: "company_id",
+      width: 230,
+      render: (companyId: string | null) =>
+        companyId ? (companyNames.get(companyId) ?? companyId) : tStaff("bookingCompanyMissing"),
+    },
     {
       title: tStaff("columnSpace"),
       dataIndex: "space_id",
@@ -74,6 +102,56 @@ export default function BookingsPage() {
       dataIndex: "quoted_price",
       key: "quoted_price",
       render: formatCurrency,
+    },
+    {
+      title: tStaff("bookingCompanyPicker"),
+      key: "companyPicker",
+      width: 280,
+      render: (_: unknown, row) => (
+        <Select
+          showSearch
+          allowClear
+          size="small"
+          placeholder={tStaff("bookingCompanyPlaceholder")}
+          value={selectedCompanyByBooking[row.id] ?? row.company_id ?? undefined}
+          options={companyOptions}
+          disabled={row.status !== "Pending" || actions.approve.isPending}
+          optionFilterProp="label"
+          onChange={(companyId) =>
+            setSelectedCompanyByBooking((current) => {
+              const next = { ...current };
+              if (companyId) {
+                next[row.id] = companyId;
+              } else {
+                delete next[row.id];
+              }
+              return next;
+            })
+          }
+          style={{ minWidth: 240 }}
+        />
+      ),
+    },
+    {
+      title: tStaff("bookingQuotedPricePicker"),
+      key: "quotedPricePicker",
+      width: 170,
+      render: (_: unknown, row) => (
+        <InputNumber
+          min={0}
+          precision={2}
+          size="small"
+          placeholder={tStaff("bookingQuotedPricePlaceholder")}
+          value={
+            quotedPriceByBooking[row.id] ?? (row.quoted_price ? Number(row.quoted_price) : null)
+          }
+          disabled={row.status !== "Pending" || actions.approve.isPending}
+          onChange={(value) =>
+            setQuotedPriceByBooking((current) => ({ ...current, [row.id]: value }))
+          }
+          style={{ width: 140 }}
+        />
+      ),
     },
     {
       title: tStaff("bookingEquipmentPicker"),
@@ -108,7 +186,11 @@ export default function BookingsPage() {
             onClick={() =>
               actions.approve.mutate({
                 id: row.id,
-                payload: { equipment_ids: selectedEquipmentByBooking[row.id] ?? row.equipment_ids },
+                payload: {
+                  company_id: selectedCompanyByBooking[row.id] ?? row.company_id ?? undefined,
+                  quoted_price: quotedPriceByBooking[row.id] ?? row.quoted_price ?? undefined,
+                  equipment_ids: selectedEquipmentByBooking[row.id] ?? row.equipment_ids,
+                },
               })
             }
             disabled={row.status !== "Pending"}
@@ -154,10 +236,16 @@ export default function BookingsPage() {
     { title: tStaff("columnEnd"), dataIndex: "end_time", key: "end_time", render: formatDateTime },
   ];
 
-  if (isLoading || calendar.isLoading || spaces.isLoading || equipment.isLoading) {
+  if (
+    isLoading ||
+    calendar.isLoading ||
+    spaces.isLoading ||
+    equipment.isLoading ||
+    companies.isLoading
+  ) {
     return <Spin size="large" tip={tStaff("pageLoading")} />;
   }
-  if (isError || calendar.isError || spaces.isError || equipment.isError) {
+  if (isError || calendar.isError || spaces.isError || equipment.isError || companies.isError) {
     return <Result status="error" title={tStaff("loadError")} />;
   }
 

@@ -16,9 +16,25 @@ import {
   type BookingCreatePayload,
 } from "@/lib/api/bookings";
 import { listCompanyContracts, listContracts } from "@/lib/api/contracts";
-import { getFinanceDashboard, listCompanyPayments, listPayments } from "@/lib/api/finance";
-import { listEquipment, listEquipmentTypes, listMyAssignedEquipment } from "@/lib/api/inventory";
-import { listSpaceOccupancy, listSpaces } from "@/lib/api/spaces";
+import {
+  getFinanceDashboard,
+  getFinanceReport,
+  getNextDuePayment,
+  listCompanyPayments,
+  listPayments,
+  updatePayment,
+  type FinanceReportFilters,
+  type PaymentListFilters,
+  type PaymentPatchPayload,
+} from "@/lib/api/finance";
+import {
+  listEquipment,
+  listEquipmentAssignments,
+  listEquipmentTypes,
+  listMyAssignedEquipment,
+  type EquipmentAssignmentFilters,
+} from "@/lib/api/inventory";
+import { listSpaceBookingRecords, listSpaceOccupancy, listSpaces } from "@/lib/api/spaces";
 import { tStaff } from "@/lib/i18n/staffNav";
 import { tClient } from "@/lib/i18n/clientPortal";
 
@@ -29,13 +45,18 @@ export const operationalKeys = {
   contracts: ["contracts"] as const,
   companyContracts: (companyId: string) => ["contracts", "company", companyId] as const,
   dashboardFinance: ["finance", "dashboard"] as const,
-  payments: ["finance", "payments"] as const,
+  payments: (filters?: PaymentListFilters) => ["finance", "payments", filters ?? {}] as const,
   companyPayments: (companyId: string) => ["finance", "payments", "company", companyId] as const,
+  financeReport: (filters?: FinanceReportFilters) => ["finance", "reports", filters ?? {}] as const,
+  nextDuePayment: ["finance", "payments", "nextDue"] as const,
   equipment: ["inventory", "equipment"] as const,
   equipmentTypes: ["inventory", "equipmentTypes"] as const,
+  equipmentAssignments: (filters?: EquipmentAssignmentFilters) =>
+    ["inventory", "assignments", filters?.bookingId ?? null, filters?.equipmentId ?? null] as const,
   myAssignedEquipment: (bookingId?: string) => ["inventory", "myAssignments", bookingId] as const,
   spaces: ["spaces"] as const,
   occupancy: ["spaces", "occupancy"] as const,
+  spaceBookingRecords: ["spaces", "bookings", "records"] as const,
 };
 
 export function useBookings() {
@@ -129,8 +150,12 @@ export function useCompanyContracts(companyId: string | null | undefined) {
   });
 }
 
-export function usePayments() {
-  return useQuery({ queryKey: operationalKeys.payments, queryFn: listPayments, staleTime: 30_000 });
+export function usePayments(filters?: PaymentListFilters) {
+  return useQuery({
+    queryKey: operationalKeys.payments(filters),
+    queryFn: () => listPayments(filters),
+    staleTime: 30_000,
+  });
 }
 
 export function useCompanyPayments(companyId: string | null | undefined) {
@@ -148,6 +173,40 @@ export function useFinanceDashboard() {
     queryFn: getFinanceDashboard,
     staleTime: 30_000,
   });
+}
+
+export function useFinanceReport(filters?: FinanceReportFilters) {
+  return useQuery({
+    queryKey: operationalKeys.financeReport(filters),
+    queryFn: () => getFinanceReport(filters),
+    staleTime: 30_000,
+  });
+}
+
+export function useNextDuePayment() {
+  return useQuery({
+    queryKey: operationalKeys.nextDuePayment,
+    queryFn: getNextDuePayment,
+    staleTime: 30_000,
+  });
+}
+
+export function usePaymentActions() {
+  const queryClient = useQueryClient();
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ["finance"] });
+  };
+  return {
+    update: useMutation({
+      mutationFn: ({ id, payload }: { id: string; payload: PaymentPatchPayload }) =>
+        updatePayment(id, payload),
+      onSuccess: () => {
+        invalidate();
+        message.success(tStaff("paymentActionSuccess"));
+      },
+      onError: () => message.error(tStaff("paymentActionError")),
+    }),
+  };
 }
 
 export function useEquipment() {
@@ -174,6 +233,14 @@ export function useMyAssignedEquipment(bookingId?: string) {
   });
 }
 
+export function useEquipmentAssignments(filters: EquipmentAssignmentFilters = {}) {
+  return useQuery({
+    queryKey: operationalKeys.equipmentAssignments(filters),
+    queryFn: () => listEquipmentAssignments(filters),
+    staleTime: 30_000,
+  });
+}
+
 export function useSpaces() {
   return useQuery({ queryKey: operationalKeys.spaces, queryFn: listSpaces, staleTime: 30_000 });
 }
@@ -182,6 +249,14 @@ export function useSpaceOccupancy() {
   return useQuery({
     queryKey: operationalKeys.occupancy,
     queryFn: listSpaceOccupancy,
+    staleTime: 30_000,
+  });
+}
+
+export function useSpaceBookingRecords() {
+  return useQuery({
+    queryKey: operationalKeys.spaceBookingRecords,
+    queryFn: listSpaceBookingRecords,
     staleTime: 30_000,
   });
 }

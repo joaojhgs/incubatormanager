@@ -34,6 +34,11 @@ const clientMessages = {
   contractRate: "Taxa",
   contractPeriod: "Período",
   contractMonthlyFee: "Mensalidade",
+  contractDaysRemaining: "Dias restantes",
+  contractTermsTitle: "Termos do contrato",
+  contractTerminationReason: "Motivo de término",
+  contractEndingSoon: "Contrato a terminar brevemente",
+  contractEndingSoonDescription: "Este contrato termina dentro de {days} dia(s).",
   viewFullContract: "Ver contrato completo",
   recentPayments: "Pagamentos recentes",
   viewAllPayments: "Ver todos os pagamentos",
@@ -62,6 +67,10 @@ const clientMessages = {
   companyFieldEmail: "Email",
   companyFieldAddress: "Morada",
   companyFieldSection: "Dados da empresa",
+  companyFieldDescription: "Descrição",
+  companyActiveEmployees: "Colaboradores ativos",
+  companyStatusActive: "Ativa",
+  companyStatusArchived: "Arquivada",
   documentsTitle: "Documentos",
 
   // Client operational data

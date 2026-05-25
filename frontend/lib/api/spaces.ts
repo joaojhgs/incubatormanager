@@ -21,6 +21,17 @@ export interface SpaceOccupancy {
   status: string;
 }
 
+export interface SpaceBookingRecord {
+  id: string;
+  space_id: string;
+  company_id: string;
+  status: string;
+  start_time: string | null;
+  end_time: string | null;
+  quoted_price: string | null;
+  equipment_ids: string[];
+}
+
 const api = getDefaultApiClient;
 
 export async function listSpaces(): Promise<Space[]> {
@@ -30,5 +41,10 @@ export async function listSpaces(): Promise<Space[]> {
 
 export async function listSpaceOccupancy(): Promise<SpaceOccupancy[]> {
   const { data } = await api().get<SpaceOccupancy[]>("/spaces/occupancy-map/");
+  return data;
+}
+
+export async function listSpaceBookingRecords(): Promise<SpaceBookingRecord[]> {
+  const { data } = await api().get<SpaceBookingRecord[]>("/spaces/bookings/records/");
   return data;
 }

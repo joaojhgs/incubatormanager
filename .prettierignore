@@ -12,7 +12,7 @@ build
 coverage
 __pycache__
 *.egg-info
-.omx
+.o*/
 **/.venv
 **/venv
 frontend/test-results
@@ -21,5 +21,5 @@ test-results
 playwright-report
 **/.venv*/
 
-# Generated Codex/OMX instruction overlays
+# Generated runtime instruction overlays
 AGENTS.md

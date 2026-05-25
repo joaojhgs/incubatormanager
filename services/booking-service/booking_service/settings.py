@@ -94,6 +94,9 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_RATES": {
+        "public_booking_ip": os.environ.get("PUBLIC_BOOKING_THROTTLE_RATE", "5/minute"),
+    },
 }
 
 RABBITMQ_URL = os.environ.get("RABBITMQ_URL", "")

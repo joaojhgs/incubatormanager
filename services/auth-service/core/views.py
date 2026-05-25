@@ -493,3 +493,25 @@ class UserDetailView(APIView):
             )
         user_services.soft_delete_user(user)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MetricsView(APIView):
+    """Minimal operational metrics endpoint for local demos and probes."""
+
+    authentication_classes = ()
+    permission_classes = ()
+
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "service": {"type": "string", "example": "auth-service"},
+                    "status": {"type": "string", "example": "ok"},
+                    "metrics": {"type": "object"},
+                },
+            }
+        }
+    )
+    def get(self, request: Request) -> Response:
+        return Response({"service": "auth-service", "status": "ok", "metrics": {}})

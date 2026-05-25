@@ -49,7 +49,7 @@ test.describe("create user page", () => {
     });
 
     /** Axios POST /auth/refresh — prevents interceptor from clearing the session when refresh cannot reach cross-origin localhost/api with cookies. */
-    await page.route("**/api/auth/refresh", async (route) => {
+    await page.route("**/api/auth/refresh**", async (route) => {
       if (route.request().method() !== "POST") {
         await route.continue();
         return;

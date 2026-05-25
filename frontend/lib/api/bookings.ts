@@ -2,7 +2,7 @@ import { getDefaultApiClient } from "./client";
 
 export interface Booking {
   id: string;
-  company_id: string;
+  company_id: string | null;
   space_id: string;
   created_by_user_id: string | null;
   created_by_role: string;
@@ -12,7 +12,7 @@ export interface Booking {
   requester_phone: string;
   start_time: string;
   end_time: string;
-  quoted_price: string;
+  quoted_price: string | null;
   equipment_ids: string[];
   status: string;
   notes: string;
@@ -41,7 +41,7 @@ export interface BookingApprovePayload {
 
 export interface BookingCalendarEvent {
   id: string;
-  company_id: string;
+  company_id: string | null;
   space_id: string;
   start_time: string;
   end_time: string;

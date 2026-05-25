@@ -11,9 +11,12 @@ from core.views import (
     ContractListCreateView,
     ContractTerminateView,
     HealthView,
+    MetricsView,
 )
 
 urlpatterns = [
+    path("metrics/", MetricsView.as_view(), name="metrics-root"),
+    path("api/contracts/metrics/", MetricsView.as_view(), name="metrics-contracts"),
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/contracts/health/", HealthView.as_view(), name="health-contracts"),
     path("api/contracts/", ContractListCreateView.as_view(), name="contract-list"),

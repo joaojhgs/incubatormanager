@@ -22,6 +22,23 @@ export interface Equipment {
   updated_at: string;
 }
 
+export interface EquipmentAssignment {
+  id: string;
+  equipment_id: string;
+  equipment_name: string;
+  booking_id: string;
+  company_id: string;
+  assigned_space_id: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EquipmentAssignmentFilters {
+  bookingId?: string;
+  equipmentId?: string;
+}
+
 const api = getDefaultApiClient;
 
 export async function listEquipment(): Promise<Equipment[]> {
@@ -37,6 +54,18 @@ export async function listEquipmentTypes(): Promise<EquipmentType[]> {
 export async function listMyAssignedEquipment(bookingId?: string): Promise<Equipment[]> {
   const { data } = await api().get<Equipment[]>("/inventory/my-assignments/", {
     params: bookingId ? { booking: bookingId } : undefined,
+  });
+  return data;
+}
+
+export async function listEquipmentAssignments(
+  filters: EquipmentAssignmentFilters = {},
+): Promise<EquipmentAssignment[]> {
+  const { data } = await api().get<EquipmentAssignment[]>("/inventory/assignments/", {
+    params: {
+      ...(filters.bookingId ? { booking: filters.bookingId } : {}),
+      ...(filters.equipmentId ? { equipment: filters.equipmentId } : {}),
+    },
   });
   return data;
 }

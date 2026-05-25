@@ -192,3 +192,25 @@ class TicketMessageCreateView(APIView):
             content=serializer.validated_data["content"],
         )
         return Response(TicketMessageSerializer(message).data, status=status.HTTP_201_CREATED)
+
+
+class MetricsView(APIView):
+    """Minimal operational metrics endpoint for local demos and probes."""
+
+    authentication_classes = ()
+    permission_classes = ()
+
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "service": {"type": "string", "example": "ticket-service"},
+                    "status": {"type": "string", "example": "ok"},
+                    "metrics": {"type": "object"},
+                },
+            }
+        }
+    )
+    def get(self, request: Request) -> Response:
+        return Response({"service": "ticket-service", "status": "ok", "metrics": {}})

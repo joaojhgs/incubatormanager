@@ -13,11 +13,14 @@ from core.views import (
     BookingListCreateView,
     BookingRejectView,
     HealthView,
+    MetricsView,
     MyBookingsView,
     PublicBookingCreateView,
 )
 
 urlpatterns = [
+    path("metrics/", MetricsView.as_view(), name="metrics-root"),
+    path("api/bookings/metrics/", MetricsView.as_view(), name="metrics-bookings"),
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/bookings/health/", HealthView.as_view(), name="health-bookings"),
     path("api/bookings/", BookingListCreateView.as_view(), name="booking-list-create"),

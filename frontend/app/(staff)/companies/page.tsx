@@ -13,10 +13,13 @@ import {
 import {
   Button,
   Card,
+  Col,
   Flex,
   Input,
+  Row,
   Select,
   Space,
+  Statistic,
   Switch,
   Table,
   Typography,
@@ -27,7 +30,13 @@ import type { ColumnsType } from "antd/es/table";
 import Link from "next/link";
 
 import { ArchivedBadge, MaturityStageTag } from "@/components/companies";
-import { useArchiveCompany, useCAECodes, useCompanies, useMaturityStages } from "@/lib/hooks";
+import {
+  useArchiveCompany,
+  useCAECodes,
+  useCompanies,
+  useCompanyStats,
+  useMaturityStages,
+} from "@/lib/hooks";
 import { tCompany } from "@/lib/i18n/companies";
 import type { Company } from "@/lib/api/companies";
 
@@ -71,6 +80,7 @@ export default function CompaniesListPage() {
   const archiveMutation = useArchiveCompany();
   const caeQuery = useCAECodes();
   const maturityQuery = useMaturityStages();
+  const statsQuery = useCompanyStats();
 
   const caeOptions = useMemo(
     () =>
@@ -182,6 +192,10 @@ export default function CompaniesListPage() {
     [handleArchive],
   );
 
+  const visibleCompanies = data?.results ?? [];
+  const visibleActiveCount = visibleCompanies.filter((company) => company.is_active).length;
+  const visibleArchivedCount = visibleCompanies.length - visibleActiveCount;
+
   // ── Render ───────────────────────────────────────────────────────────
   return (
     <>
@@ -197,7 +211,46 @@ export default function CompaniesListPage() {
         </Link>
       </Flex>
 
-      <Card>
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title={tCompany("listKpiTotal")}
+              value={statsQuery.data?.total ?? data?.count ?? 0}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title={tCompany("listKpiActive")}
+              value={statsQuery.data?.active ?? visibleActiveCount}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title={tCompany("listKpiArchived")}
+              value={statsQuery.data?.inactive ?? visibleArchivedCount}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic title={tCompany("listKpiVisible")} value={visibleCompanies.length} />
+          </Card>
+        </Col>
+      </Row>
+
+      <Card
+        title={tCompany("listDirectoryTitle")}
+        extra={
+          <Typography.Text type="secondary">
+            {tCompany("listResultCount").replace("{count}", String(data?.count ?? 0))}
+          </Typography.Text>
+        }
+      >
         <Space wrap style={{ marginBottom: 16 }} size="middle">
           <Input
             placeholder={tCompany("listSearchPlaceholder")}
@@ -252,7 +305,7 @@ export default function CompaniesListPage() {
         <Table<Company>
           rowKey="id"
           columns={columns}
-          dataSource={data?.results ?? []}
+          dataSource={visibleCompanies}
           loading={isLoading}
           pagination={{
             current: page,

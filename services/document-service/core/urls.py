@@ -11,9 +11,11 @@ from core.document_views import (
     DocumentPresignedUrlView,
     DocumentUploadView,
 )
-from core.views import HealthView
+from core.views import HealthView, MetricsView
 
 urlpatterns = [
+    path("metrics/", MetricsView.as_view(), name="metrics-root"),
+    path("api/documents/metrics/", MetricsView.as_view(), name="metrics-documents"),
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/documents/health/", HealthView.as_view(), name="health-documents"),
     path("api/documents/upload/", DocumentUploadView.as_view(), name="document-upload"),

@@ -11,9 +11,12 @@ from core.views import (
     DashboardReportsView,
     DashboardSpacesView,
     HealthView,
+    MetricsView,
 )
 
 urlpatterns = [
+    path("metrics/", MetricsView.as_view(), name="metrics-root"),
+    path("api/dashboard/metrics/", MetricsView.as_view(), name="metrics-dashboard"),
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/dashboard/health/", HealthView.as_view(), name="health-dashboard"),
     path("api/dashboard/overview/", DashboardOverviewView.as_view(), name="dashboard-overview"),
