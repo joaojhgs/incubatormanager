@@ -18,44 +18,6 @@ class SpaceType(models.Model):
 
     class Meta:
         ordering = ("name",)
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class Space(models.Model):
-    """Physical space metadata used by booking and occupancy handlers."""
-
-    class Status(models.TextChoices):
-        AVAILABLE = "available", "Available"
-        BLOCKED = "blocked", "Blocked"
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    space_type = models.ForeignKey(
-        SpaceType,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="spaces",
-    )
-    name = models.CharField(max_length=255)
-    capacity = models.PositiveIntegerField(default=1)
-    status = models.CharField(
-        max_length=24,
-        choices=Status.choices,
-        default=Status.AVAILABLE,
-        db_index=True,
-    )
-    is_active = models.BooleanField(default=True, db_index=True)
-    company_id = models.UUIDField(null=True, blank=True, db_index=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    objects = models.Manager()
-    active = ActiveManager()
-
-    class Meta:
-        ordering = ("name",)
         indexes = [
             models.Index(fields=["is_active"], name="space_type_active"),
         ]

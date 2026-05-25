@@ -25,16 +25,6 @@ def _role(request: Request) -> str:
     value = getattr(request.user, "role", "")
     return value if isinstance(value, str) else ""
 
-from core.models import Equipment, EquipmentAssignment, EquipmentType
-from core.serializers import (
-    AssignmentSerializer,
-    EquipmentAssignSerializer,
-    EquipmentReleaseSerializer,
-    EquipmentSerializer,
-    EquipmentTypeSerializer,
-)
-from core.services import apply_booking_approved, apply_booking_state_changed
-
 
 class HealthView(APIView):
     authentication_classes = ()

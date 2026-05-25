@@ -65,7 +65,7 @@ class HealthView(APIView):
             }
         }
     )
-    def get(self, request: Request) -> Response:  # type: ignore[override]
+    def get(self, request: Request) -> Response:
         return Response({"status": "ok"})
 
 
