@@ -1,10 +1,10 @@
 "use client";
 
 import type { ColumnsType } from "antd/es/table";
-import { Card, Result, Space, Spin, Tag, Typography } from "antd";
+import { Card, Result, Spin, Table, Tag, Typography } from "antd";
 
 import { useTickets } from "@/lib/hooks";
-import { tStaff, type StaffI18nKey } from "@/lib/i18n/staffNav";
+import { tStaff } from "@/lib/i18n/staffNav";
 import type { Ticket } from "@/lib/hooks/useTickets";
 
 const { Title, Text } = Typography;
@@ -72,7 +72,7 @@ export default function TicketsPage() {
   const { data, isLoading, isError } = useTickets();
 
   if (isLoading) {
-    return <Spin size="large" tip={tStaff("pageLoading") ?? tStaff("serviceHealthLoading")} />;
+    return <Spin size="large" tip={tStaff("serviceHealthLoading")} />;
   }
 
   if (isError) {
