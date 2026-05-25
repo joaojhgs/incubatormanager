@@ -55,8 +55,6 @@ const clientMessages = {
   pageNoCompanyAction: "Contacte o administrador da incubadora.",
   serviceUnavailable: "Serviço indisponível no momento.",
   serviceHealthUnavailable: "Serviço em construção",
-  serviceHealthUp: "Disponível",
-  serviceHealthDown: "Indisponível",
   serviceHealthHint:
     "Esta página mostra o estado atual do serviço enquanto os fluxos de negócio ainda estão em implementação.",
 
