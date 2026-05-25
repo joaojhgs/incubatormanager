@@ -54,6 +54,10 @@ const clientMessages = {
   pageNoCompany: "A sua conta de utilizador não está associada a uma empresa.",
   pageNoCompanyAction: "Contacte o administrador da incubadora.",
   serviceUnavailable: "Serviço indisponível no momento.",
+  serviceHealthUp: "Disponível",
+  serviceHealthDown: "Indisponível",
+  serviceHealthUnknown: "Desconhecido",
+  serviceHealthLoading: "A carregar estado do serviço…",
   serviceHealthUnavailable: "Serviço em construção",
   serviceHealthHint:
     "Esta página mostra o estado atual do serviço enquanto os fluxos de negócio ainda estão em implementação.",
