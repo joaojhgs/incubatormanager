@@ -41,8 +41,8 @@ GitLab shared runners are not the merge gate for this work. Use local checks:
 - Space occupancy and contract/booking projections.
 - Booking public/internal/client flows and lifecycle events.
 - Inventory equipment CRUD, assignment/release flows, and booking event handlers.
-- Ticket RBAC-scoped ticket/thread endpoints.
-- Dashboard service health/metric aggregation endpoints.
+- Ticket RBAC-scoped ticket/thread endpoints and staff-only ticket metrics.
+- Dashboard service health/metric aggregation endpoints, including ticket KPI snapshots.
 - Frontend placeholder replacement for staff and client operational pages.
 
 ## Latest local verification evidence

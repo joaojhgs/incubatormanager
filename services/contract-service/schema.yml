@@ -4,6 +4,222 @@ info:
   version: 0.1.0
   description: Contracts bounded context API.
 paths:
+  /api/contracts/:
+    get:
+      operationId: api_contracts_list
+      description: List all visible contracts, or create a staff-managed contract.
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contract'
+          description: ''
+    post:
+      operationId: api_contracts_create
+      description: List all visible contracts, or create a staff-managed contract.
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contract'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Contract'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Contract'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
+  /api/contracts/{id}/:
+    get:
+      operationId: api_contracts_retrieve
+      description: Contract detail with client-owner scope and staff-managed writes.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
+    put:
+      operationId: api_contracts_update
+      description: Contract detail with client-owner scope and staff-managed writes.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contract'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Contract'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Contract'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
+    patch:
+      operationId: api_contracts_partial_update
+      description: Contract detail with client-owner scope and staff-managed writes.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
+    delete:
+      operationId: api_contracts_destroy
+      description: Contract detail with client-owner scope and staff-managed writes.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        '204':
+          description: No response body
+  /api/contracts/{id}/activate/:
+    patch:
+      operationId: api_contracts_activate_partial_update
+      description: Activate contract and emit contract.activated.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedContract'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
+  /api/contracts/{id}/terminate/:
+    patch:
+      operationId: api_contracts_terminate_partial_update
+      description: Terminate contract with optional reason and emit contract.terminated.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
+  /api/contracts/company/{company_id}/:
+    get:
+      operationId: api_contracts_company_list
+      description: List contracts for a specific company with role-aware scoping.
+      parameters:
+        - in: path
+          name: company_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contract'
+          description: ''
   /api/contracts/health/:
     get:
       operationId: api_contracts_health_retrieve
@@ -38,4 +254,119 @@ paths:
                     type: string
                     example: ok
           description: ''
-components: {}
+components:
+  schemas:
+    Contract:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        company_id:
+          type: string
+          format: uuid
+        space_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        area_sqm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        rate_per_sqm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        monthly_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        termination_reason:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - area_sqm
+        - company_id
+        - created_at
+        - end_date
+        - id
+        - monthly_fee
+        - rate_per_sqm
+        - space_id
+        - start_date
+        - termination_reason
+        - updated_at
+    PatchedContract:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        company_id:
+          type: string
+          format: uuid
+        space_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        area_sqm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        rate_per_sqm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        monthly_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        termination_reason:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    StatusEnum:
+      enum:
+        - draft
+        - active
+        - terminated
+        - expired
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `active` - Active
+        * `terminated` - Terminated
+        * `expired` - Expired

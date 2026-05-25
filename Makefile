@@ -8,7 +8,7 @@ COMPOSE_DEV := $(COMPOSE) -f infra/docker-compose.dev.yml
 BACKEND_SERVICES := auth-service company-service contract-service finance-service space-service booking-service inventory-service ticket-service dashboard-service document-service
 CRON_FILES := infra/cron/booking.crontab infra/cron/contract.crontab infra/cron/finance.crontab
 
-.PHONY: help up up-dev down logs ps build rebuild seed test test-backend test-libs lint format local-gate demo tag env clean
+.PHONY: help up up-dev down logs ps build rebuild seed test test-backend test-backend-host test-libs lint format local-gate local-gate-host demo tag env clean
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} \
@@ -48,6 +48,12 @@ test-backend: ## Run pytest in every backend service container
 		$(COMPOSE) run --rm $$service pytest; \
 	done
 
+test-backend-host: ## Run backend pytest and migration checks locally without Docker
+	@for service in $(BACKEND_SERVICES); do \
+		echo "==> local pytest $$service"; \
+		(cd services/$$service && python3 manage.py makemigrations --check --dry-run && python3 -m pytest -q); \
+	done
+
 test-libs: ## Run shared Python library unit tests
 	python3 -m pip install -q -e "libs/py-common[dev]" \
 		|| python3 -m pip install -q --break-system-packages -e "libs/py-common[dev]"
@@ -68,6 +74,22 @@ local-gate: ## Validate compose, scheduler crontabs, shared libs, and backend te
 	python3 -m pytest infra/tests
 	$(MAKE) test-libs
 	$(MAKE) test-backend
+
+local-gate-host: ## Run non-Docker lint, frontend checks, cron validation, libs, and backend pytest
+	ruff check .
+	npm run lint
+	npm run format:check
+	npm --prefix frontend run typecheck
+	npm --prefix frontend test
+	npm --prefix frontend run build
+	python3 -m py_compile infra/scripts/cron-runner.py
+	@for file in $(CRON_FILES); do \
+		echo "==> validating $$file"; \
+		python3 infra/scripts/cron-runner.py --dry-run $$file >/dev/null; \
+	done
+	python3 -m pytest infra/tests
+	$(MAKE) test-libs
+	$(MAKE) test-backend-host
 
 format: ## Apply ruff and prettier formatters
 	ruff format .

@@ -160,6 +160,7 @@ def handle_booking_approved(event: EventEnvelope) -> None:
             company_id=company_id,
             booking_id=booking_id,
             source=Payment.Source.BOOKING,
+            payment_type=Payment.PaymentType.RENTAL,
             amount=amount,
             due_date=due_date,
             reference_id="booking-approval",

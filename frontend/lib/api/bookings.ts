@@ -33,6 +33,20 @@ export interface BookingCreatePayload {
   notes?: string;
 }
 
+export interface BookingApprovePayload {
+  quoted_price?: string | number | null;
+  company_id?: string | null;
+  equipment_ids?: string[];
+}
+
+export interface BookingCalendarEvent {
+  id: string;
+  company_id: string;
+  space_id: string;
+  start_time: string;
+  end_time: string;
+}
+
 const api = getDefaultApiClient;
 
 export async function listBookings(): Promise<Booking[]> {
@@ -42,6 +56,11 @@ export async function listBookings(): Promise<Booking[]> {
 
 export async function listMyBookings(): Promise<Booking[]> {
   const { data } = await api().get<Booking[]>("/bookings/my/");
+  return data;
+}
+
+export async function listBookingCalendar(): Promise<BookingCalendarEvent[]> {
+  const { data } = await api().get<BookingCalendarEvent[]>("/bookings/calendar/");
   return data;
 }
 
@@ -55,8 +74,11 @@ export async function createPublicBooking(payload: BookingCreatePayload): Promis
   return data;
 }
 
-export async function approveBooking(id: string): Promise<Booking> {
-  const { data } = await api().patch<Booking>(`/bookings/${id}/approve/`);
+export async function approveBooking(
+  id: string,
+  payload: BookingApprovePayload = {},
+): Promise<Booking> {
+  const { data } = await api().patch<Booking>(`/bookings/${id}/approve/`, payload);
   return data;
 }
 

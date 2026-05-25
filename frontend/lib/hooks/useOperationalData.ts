@@ -8,9 +8,11 @@ import {
   cancelBooking,
   createBooking,
   createPublicBooking,
+  listBookingCalendar,
   listBookings,
   listMyBookings,
   rejectBooking,
+  type BookingApprovePayload,
   type BookingCreatePayload,
 } from "@/lib/api/bookings";
 import { listCompanyContracts, listContracts } from "@/lib/api/contracts";
@@ -22,6 +24,7 @@ import { tClient } from "@/lib/i18n/clientPortal";
 
 export const operationalKeys = {
   bookings: ["bookings"] as const,
+  bookingCalendar: ["bookings", "calendar"] as const,
   myBookings: ["bookings", "mine"] as const,
   contracts: ["contracts"] as const,
   companyContracts: (companyId: string) => ["contracts", "company", companyId] as const,
@@ -37,6 +40,14 @@ export const operationalKeys = {
 
 export function useBookings() {
   return useQuery({ queryKey: operationalKeys.bookings, queryFn: listBookings, staleTime: 30_000 });
+}
+
+export function useBookingCalendar() {
+  return useQuery({
+    queryKey: operationalKeys.bookingCalendar,
+    queryFn: listBookingCalendar,
+    staleTime: 30_000,
+  });
 }
 
 export function useMyBookings() {
@@ -74,7 +85,8 @@ export function useBookingActions() {
   };
   return {
     approve: useMutation({
-      mutationFn: approveBooking,
+      mutationFn: ({ id, payload }: { id: string; payload?: BookingApprovePayload }) =>
+        approveBooking(id, payload),
       onSuccess: () => {
         invalidate();
         message.success(tStaff("bookingActionSuccess"));

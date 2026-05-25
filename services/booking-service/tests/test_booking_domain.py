@@ -13,10 +13,14 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 
-def _client(role: str, company_id: uuid.UUID | None = None) -> APIClient:
+def _client(
+    role: str,
+    company_id: uuid.UUID | None = None,
+    user_id: uuid.UUID | None = None,
+) -> APIClient:
     client = APIClient()
     headers = {
-        "HTTP_X_USER_ID": str(uuid.uuid4()),
+        "HTTP_X_USER_ID": str(user_id or uuid.uuid4()),
         "HTTP_X_USER_ROLE": role,
     }
     if company_id is not None:
@@ -101,11 +105,30 @@ def test_staff_approve_can_set_quote_company_and_equipment_payload() -> None:
 
 
 @pytest.mark.django_db
+@override_settings(RABBITMQ_URL="amqp://rabbit")
+def test_approve_requires_quoted_price_for_rental_charge_contract() -> None:
+    booking = Booking.objects.create(
+        company_id=uuid.uuid4(),
+        space_id=uuid.uuid4(),
+        start_time=timezone.now() + timedelta(days=1),
+        end_time=timezone.now() + timedelta(days=1, hours=1),
+    )
+
+    response = _client("Staff").patch(f"/api/bookings/{booking.id}/approve/")
+
+    assert response.status_code == 400
+    booking.refresh_from_db()
+    assert booking.status == Booking.Status.PENDING
+
+
+@pytest.mark.django_db
 def test_public_external_booking_requires_requester_fields() -> None:
+    claimed_company = uuid.uuid4()
     response = APIClient().post(
         "/api/bookings/external/",
         data={
             **_payload(),
+            "company_id": str(claimed_company),
             "requester_name": "Public user",
             "requester_email": "public@example.test",
             "requester_phone": "+351 900 000 000",
@@ -118,6 +141,47 @@ def test_public_external_booking_requires_requester_fields() -> None:
 
 
 @pytest.mark.django_db
+def test_booking_calendar_filters_by_space_and_overlapping_window() -> None:
+    company_id = uuid.uuid4()
+    space_id = uuid.uuid4()
+    other_space_id = uuid.uuid4()
+    start = timezone.now() + timedelta(days=2)
+    matching = Booking.objects.create(
+        company_id=company_id,
+        space_id=space_id,
+        start_time=start,
+        end_time=start + timedelta(hours=2),
+        status=Booking.Status.APPROVED,
+    )
+    Booking.objects.create(
+        company_id=company_id,
+        space_id=other_space_id,
+        start_time=start,
+        end_time=start + timedelta(hours=2),
+        status=Booking.Status.APPROVED,
+    )
+    Booking.objects.create(
+        company_id=company_id,
+        space_id=space_id,
+        start_time=start + timedelta(days=7),
+        end_time=start + timedelta(days=7, hours=2),
+        status=Booking.Status.APPROVED,
+    )
+
+    response = _client("Staff").get(
+        "/api/bookings/calendar/",
+        {
+            "space_id": str(space_id),
+            "start": (start - timedelta(minutes=30)).isoformat(),
+            "end": (start + timedelta(minutes=30)).isoformat(),
+        },
+    )
+
+    assert response.status_code == 200
+    assert [row["id"] for row in response.json()] == [str(matching.id)]
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize("include_company", [False, True])
 def test_client_create_booking_uses_header_company(include_company: bool) -> None:
     company_id = uuid.uuid4()
@@ -125,6 +189,44 @@ def test_client_create_booking_uses_header_company(include_company: bool) -> Non
     response = _client("Client", company_id).post("/api/bookings/", data=payload, format="json")
     assert response.status_code == 201
     assert response.json()["company_id"] == str(company_id)
+
+
+@pytest.mark.django_db
+@override_settings(RABBITMQ_URL="amqp://rabbit")
+def test_client_cancel_requires_same_company_and_original_requester() -> None:
+    company_id = uuid.uuid4()
+    requester_id = uuid.uuid4()
+    other_user_id = uuid.uuid4()
+    booking = Booking.objects.create(
+        company_id=company_id,
+        space_id=uuid.uuid4(),
+        created_by_user_id=requester_id,
+        created_by_role="Client",
+        start_time=timezone.now() + timedelta(days=1),
+        end_time=timezone.now() + timedelta(days=1, hours=1),
+        quoted_price="10.00",
+        status=Booking.Status.APPROVED,
+    )
+
+    blocked = _client("Client", company_id, other_user_id).patch(
+        f"/api/bookings/{booking.id}/cancel/"
+    )
+    assert blocked.status_code == 403
+    booking.refresh_from_db()
+    assert booking.status == Booking.Status.APPROVED
+
+    with (
+        patch("core.services.transaction.on_commit") as on_commit,
+        patch("core.services.publish") as publish,
+    ):
+        allowed = _client("Client", company_id, requester_id).patch(
+            f"/api/bookings/{booking.id}/cancel/"
+        )
+        on_commit.call_args.args[0]()
+
+    assert allowed.status_code == 200
+    assert allowed.json()["status"] == Booking.Status.CANCELLED
+    assert publish.call_args.args[1] == "booking.cancelled"
 
 
 @pytest.mark.django_db

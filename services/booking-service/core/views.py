@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from drf_spectacular.utils import extend_schema
 from ilb_common.permissions import IsClientOwner, IsStaff
 from rest_framework import generics
@@ -30,6 +32,28 @@ def _role(request: Request) -> str:
 def _company_id(request: Request) -> str | None:
     value = getattr(request.user, "company_id", None)
     return str(value) if value else None
+
+
+def _validated_datetime_param(request: Request, *names: str):
+    for name in names:
+        value = request.query_params.get(name)
+        if value:
+            field = BookingCreateSerializer().fields["start_time"]
+            try:
+                return field.run_validation(value)
+            except Exception as exc:
+                raise ValidationError({name: "Must be a valid ISO-8601 datetime."}) from exc
+    return None
+
+
+def _validated_uuid_param(request: Request, name: str) -> UUID | None:
+    value = request.query_params.get(name)
+    if value is None:
+        return None
+    try:
+        return UUID(str(value))
+    except ValueError as exc:
+        raise ValidationError({name: "Must be a valid UUID."}) from exc
 
 
 class HealthView(APIView):
@@ -90,8 +114,10 @@ class PublicBookingCreateView(APIView):
     def post(self, request: Request) -> Response:
         serializer = PublicBookingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = dict(serializer.validated_data)
+        data["company_id"] = None
         booking = Booking.objects.create(
-            **serializer.validated_data,
+            **data,
             created_by_user_id=None,
             created_by_role="Public",
             is_public=True,
@@ -134,6 +160,8 @@ class BookingApproveView(APIView):
             booking.save(update_fields=[*update_fields, "updated_at"])
         if booking.company_id is None:
             raise ValidationError("Approved bookings require company_id")
+        if booking.quoted_price is None:
+            raise ValidationError("Approved bookings require quoted_price")
         set_status(booking, Booking.Status.APPROVED)
         return Response(BookingSerializer(booking).data)
 
@@ -155,10 +183,11 @@ class BookingCancelView(APIView):
     def patch(self, request: Request, booking_id: str) -> Response:
         booking = Booking.objects.get(id=booking_id)
         company_id = _company_id(request)
-        if _role(request) == "Client" and (
-            company_id is None or str(booking.company_id) != str(company_id)
-        ):
-            return Response({"detail": "Forbidden"}, status=http_status.HTTP_403_FORBIDDEN)
+        if _role(request) == "Client":
+            owns_company = company_id is not None and str(booking.company_id) == str(company_id)
+            owns_booking = str(booking.created_by_user_id) == str(request.user.id)
+            if not owns_company or not owns_booking:
+                return Response({"detail": "Forbidden"}, status=http_status.HTTP_403_FORBIDDEN)
         set_status(booking, Booking.Status.CANCELLED)
         return Response(BookingSerializer(booking).data)
 
@@ -178,9 +207,22 @@ class BookingCalendarView(APIView):
 
     @extend_schema(responses={200: list[dict]})
     def get(self, request: Request) -> Response:
-        queryset = scope_bookings(request.user)
+        queryset = scope_bookings(request.user).filter(status=Booking.Status.APPROVED)
+        space_id = _validated_uuid_param(request, "space_id") or _validated_uuid_param(
+            request, "spaceId"
+        )
+        if space_id:
+            queryset = queryset.filter(space_id=space_id)
+
+        starts_before = _validated_datetime_param(request, "end", "end_time", "to")
+        ends_after = _validated_datetime_param(request, "start", "start_time", "from")
+        if starts_before:
+            queryset = queryset.filter(start_time__lt=starts_before)
+        if ends_after:
+            queryset = queryset.filter(end_time__gt=ends_after)
+
         payload = []
-        for booking in queryset.filter(status=Booking.Status.APPROVED).order_by("start_time"):
+        for booking in queryset.order_by("start_time"):
             if (
                 _role(request) == "Client"
                 and _company_id(request)

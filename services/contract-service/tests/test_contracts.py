@@ -60,12 +60,19 @@ def _make_contract(company_id: str, **overrides: object) -> Contract:
 def test_contract_list_detail_company_scope_and_client_isolation() -> None:
     company_a = str(uuid4())
     company_b = str(uuid4())
-    _make_contract(company_id=company_a)
-    _make_contract(company_id=company_b)
+    contract_a = _make_contract(company_id=company_a, status=Contract.Status.ACTIVE)
+    _make_contract(company_id=company_b, status=Contract.Status.DRAFT)
 
     staff_response = _api_client("Staff").get("/api/contracts/")
     assert staff_response.status_code == 200
     assert len(staff_response.json()) == 2
+
+    filtered_response = _api_client("Staff").get(
+        "/api/contracts/",
+        data={"status": Contract.Status.ACTIVE, "company_id": company_a},
+    )
+    assert filtered_response.status_code == 200
+    assert {row["id"] for row in filtered_response.json()} == {str(contract_a.id)}
 
     own_list = _api_client("Client", company_a).get("/api/contracts/")
     assert own_list.status_code == 200

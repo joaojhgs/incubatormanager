@@ -1,3 +1,4 @@
+AGENTS.md
 node_modules
 # Nginx include snippets are not JS/CSS; Prettier mangles directives.
 gateway/includes/*.inc
@@ -19,3 +20,6 @@ frontend/playwright-report
 test-results
 playwright-report
 **/.venv*/
+
+# Generated Codex/OMX instruction overlays
+AGENTS.md

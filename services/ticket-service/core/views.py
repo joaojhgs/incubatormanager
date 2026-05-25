@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from ilb_common.permissions import IsClientOwner, IsStaff
@@ -15,7 +16,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import TicketMessage
+from core.models import Ticket, TicketMessage
 from core.permissions import IsTicketOwnerOrStaff
 from core.serializers import (
     TicketCreateSerializer,
@@ -131,6 +132,45 @@ class MyTicketsView(ListAPIView):
 
     def get_queryset(self):  # type: ignore[override]
         return ticket_scope_for_user(self.request.user).prefetch_related("messages")
+
+
+class TicketMetricsView(APIView):
+    """Staff-only operational ticket counters for dashboard aggregation."""
+
+    permission_classes = [IsAuthenticated, IsStaff]
+
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "total": {"type": "integer", "example": 10},
+                    "open_count": {"type": "integer", "example": 4},
+                    "by_status": {"type": "object"},
+                },
+            }
+        }
+    )
+    def get(self, request: Request) -> Response:
+        queryset = ticket_scope_for_user(request.user)
+        counts = {
+            row["status"]: row["total"]
+            for row in queryset.values("status").annotate(total=Count("id")).order_by("status")
+        }
+        by_status = {status: int(counts.get(status, 0)) for status, _label in Ticket.Status.choices}
+        open_statuses = {
+            Ticket.Status.OPEN,
+            Ticket.Status.IN_PROGRESS,
+            Ticket.Status.WAITING_RESPONSE,
+        }
+
+        return Response(
+            {
+                "total": sum(by_status.values()),
+                "open_count": sum(by_status[status] for status in open_statuses),
+                "by_status": by_status,
+            }
+        )
 
 
 class TicketMessageCreateView(APIView):

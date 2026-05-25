@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from hashlib import sha256
 from uuid import uuid4
 
+from django.core.cache import cache
+from django.db.models import Count, Max
 from drf_spectacular.utils import extend_schema
 from ilb_common.permissions import IsStaff
 from rest_framework import generics
@@ -96,7 +99,16 @@ class SpaceListCreateView(generics.ListCreateAPIView):
     serializer_class = SpaceSerializer
 
     def get_queryset(self):  # type: ignore[override]
-        return scoped_spaces(self.request)
+        queryset = scoped_spaces(self.request)
+        status = self.request.query_params.get("status")
+        if status:
+            queryset = queryset.filter(status=status)
+        space_type = self.request.query_params.get("type") or self.request.query_params.get(
+            "space_type"
+        )
+        if space_type:
+            queryset = queryset.filter(space_type_id=space_type)
+        return queryset
 
     def get_permissions(self):  # type: ignore[override]
         if self.request.method == "POST":
@@ -122,8 +134,24 @@ class SpaceOccupancyMapView(APIView):
 
     @extend_schema(responses={200: SpaceOccupancySerializer(many=True)})
     def get(self, request: Request) -> Response:
+        spaces = scoped_spaces(request)
+        space_signature = spaces.aggregate(updated=Max("updated_at"), total=Count("id"))
+        booking_signature = SpaceBookingRecord.objects.aggregate(
+            updated=Max("updated_at"),
+            total=Count("id"),
+        )
+        cache_source = (
+            f"{_role(request)}:{_company_id(request) or 'staff'}:"
+            f"{space_signature['updated']}:{space_signature['total']}:"
+            f"{booking_signature['updated']}:{booking_signature['total']}"
+        )
+        cache_key = f"space-occupancy:{sha256(cache_source.encode()).hexdigest()}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         result = []
-        for space in scoped_spaces(request):
+        for space in spaces:
             occupancy = occupancy_for_space(space)
             occupancy_percent = occupancy["occupancy_percent"]
             result.append(
@@ -138,6 +166,7 @@ class SpaceOccupancyMapView(APIView):
             )
         serializer = SpaceOccupancySerializer(data=result, many=True)
         serializer.is_valid(raise_exception=True)
+        cache.set(cache_key, serializer.data, timeout=10)
         return Response(serializer.data)
 
 
