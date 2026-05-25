@@ -98,13 +98,27 @@ test.describe("remaining UI workflow coverage", () => {
         201,
       );
     });
+    await page.route("**/api/auth/users/", (route) =>
+      fulfillJson(route, [
+        {
+          id: "staff-user-1",
+          email: "staff@test.local",
+          role: "Staff",
+          first_name: "Staff",
+          last_name: "One",
+          company_id: null,
+          is_active: true,
+        },
+      ]),
+    );
 
     await page.goto("/tickets?status=Open");
     await expect(page.getByRole("cell", { name: "Porta bloqueada" })).toBeVisible();
     await page.getByRole("button", { name: "Abrir" }).click();
     await expect(page.getByRole("heading", { name: "Porta bloqueada" })).toBeVisible();
 
-    await page.getByPlaceholder("UUID do colaborador").fill("staff-user-1");
+    await page.getByRole("combobox", { name: "Atribuir colaborador" }).click();
+    await page.getByText("Staff One").click();
     await page.getByRole("button", { name: "Atualizar" }).click();
     await expect.poll(() => patchSeen).toBe(true);
 
