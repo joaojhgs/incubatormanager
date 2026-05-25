@@ -13,6 +13,8 @@ export interface Equipment {
   name: string;
   equipment_type: string;
   serial_number: string;
+  assigned_space_id: string | null;
+  rental_cost: string | null;
   status: string;
   notes: string;
   is_active: boolean;
