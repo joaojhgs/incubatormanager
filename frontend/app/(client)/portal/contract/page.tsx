@@ -16,7 +16,7 @@ import {
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { formatCurrency, formatDate, statusTag } from "@/components/operations/format";
-import { useCompanyContracts } from "@/lib/hooks";
+import { useCompanyContracts, useSpaces } from "@/lib/hooks";
 import { tClient } from "@/lib/i18n/clientPortal";
 
 function daysUntil(value: string | null | undefined): number | null {
@@ -30,9 +30,11 @@ export default function ClientContractPage() {
   const { user, isReady } = useAuth();
   const companyId = user?.companyId ?? null;
   const { data, isLoading, isError } = useCompanyContracts(companyId);
+  const spaces = useSpaces();
   const contract = data?.[0];
 
-  if (!isReady || isLoading) return <Spin size="large" tip={tClient("pageLoading")} />;
+  if (!isReady || isLoading || spaces.isLoading)
+    return <Spin size="large" tip={tClient("pageLoading")} />;
   if (!companyId)
     return (
       <Result
@@ -41,10 +43,13 @@ export default function ClientContractPage() {
         subTitle={tClient("pageNoCompanyAction")}
       />
     );
-  if (isError) return <Result status="error" title={tClient("clientLoadError")} />;
+  if (isError || spaces.isError)
+    return <Result status="error" title={tClient("clientLoadError")} />;
   if (!contract) return <Result status="info" title={tClient("clientEmptyData")} />;
 
   const remainingDays = daysUntil(contract.end_date);
+  const spaceName =
+    spaces.data?.find((space) => space.id === contract.space_id)?.name ?? contract.space_id;
 
   return (
     <Space direction="vertical" size="large" style={{ width: "100%" }}>
@@ -114,9 +119,7 @@ export default function ClientContractPage() {
           <Descriptions.Item label={tClient("columnStatus")}>
             {statusTag(contract.status)}
           </Descriptions.Item>
-          <Descriptions.Item label={tClient("contractSpace")}>
-            {contract.space_id}
-          </Descriptions.Item>
+          <Descriptions.Item label={tClient("contractSpace")}>{spaceName}</Descriptions.Item>
           <Descriptions.Item label={tClient("contractArea")}>
             {contract.area_sqm} m²
           </Descriptions.Item>

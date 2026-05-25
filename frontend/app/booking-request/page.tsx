@@ -8,16 +8,17 @@ import {
   Input,
   InputNumber,
   Result,
+  Select,
   Typography,
   message,
 } from "antd";
 import type { Dayjs } from "dayjs";
 
-import { useCreatePublicBooking } from "@/lib/hooks";
+import { useCreatePublicBooking, useSpaces } from "@/lib/hooks";
 import { tPublicBooking } from "@/lib/i18n/publicBooking";
 
 interface PublicBookingFormValues {
-  company_id: string;
+  company_name: string;
   space_id: string;
   requester_name: string;
   requester_email: string;
@@ -30,11 +31,11 @@ interface PublicBookingFormValues {
 
 export default function PublicBookingRequestPage() {
   const createPublicBooking = useCreatePublicBooking();
+  const spaces = useSpaces();
 
   const submit = (values: PublicBookingFormValues) => {
     createPublicBooking.mutate(
       {
-        company_id: values.company_id,
         space_id: values.space_id,
         requester_name: values.requester_name,
         requester_email: values.requester_email,
@@ -42,7 +43,12 @@ export default function PublicBookingRequestPage() {
         start_time: values.start_time.toISOString(),
         end_time: values.end_time.toISOString(),
         quoted_price: String(values.quoted_price ?? 0),
-        notes: values.notes,
+        notes: [
+          values.company_name ? `Empresa externa: ${values.company_name}` : null,
+          values.notes,
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
       },
       {
         onSuccess: () => message.success(tPublicBooking("success")),
@@ -61,10 +67,10 @@ export default function PublicBookingRequestPage() {
         <Typography.Paragraph type="secondary">{tPublicBooking("pageIntro")}</Typography.Paragraph>
         <Form layout="vertical" onFinish={submit}>
           <Form.Item
-            name="company_id"
-            label={tPublicBooking("companyIdLabel")}
-            help={tPublicBooking("companyIdHelp")}
-            rules={[{ required: true, message: tPublicBooking("companyIdRequired") }]}
+            name="company_name"
+            label={tPublicBooking("companyNameLabel")}
+            help={tPublicBooking("companyNameHelp")}
+            rules={[{ required: true, message: tPublicBooking("companyNameRequired") }]}
           >
             <Input />
           </Form.Item>
@@ -74,7 +80,19 @@ export default function PublicBookingRequestPage() {
             help={tPublicBooking("spaceIdHelp")}
             rules={[{ required: true, message: tPublicBooking("spaceIdRequired") }]}
           >
-            <Input />
+            <Select
+              aria-label={tPublicBooking("spaceIdLabel")}
+              showSearch
+              loading={spaces.isLoading}
+              optionFilterProp="label"
+              options={(spaces.data ?? [])
+                .filter((space) => space.is_active)
+                .map((space) => ({
+                  label: `${space.name} · ${space.capacity} pessoas`,
+                  value: space.id,
+                }))}
+              placeholder={tPublicBooking("spacePlaceholder")}
+            />
           </Form.Item>
           <Form.Item
             name="requester_name"
@@ -110,7 +128,19 @@ export default function PublicBookingRequestPage() {
           <Form.Item
             name="end_time"
             label={tPublicBooking("endTimeLabel")}
-            rules={[{ required: true, message: tPublicBooking("endTimeRequired") }]}
+            dependencies={["start_time"]}
+            rules={[
+              { required: true, message: tPublicBooking("endTimeRequired") },
+              ({ getFieldValue }) => ({
+                validator(_, value: Dayjs | undefined) {
+                  const start = getFieldValue("start_time") as Dayjs | undefined;
+                  if (!value || !start || value.isAfter(start)) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error(tPublicBooking("endTimeAfterStart")));
+                },
+              }),
+            ]}
           >
             <DatePicker showTime style={{ width: "100%" }} />
           </Form.Item>

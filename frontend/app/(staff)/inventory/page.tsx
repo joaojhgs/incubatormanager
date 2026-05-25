@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Button,
@@ -9,6 +9,7 @@ import {
   Descriptions,
   Form,
   Input,
+  InputNumber,
   Modal,
   Result,
   Row,
@@ -28,6 +29,7 @@ import {
   useEquipmentActions,
   useEquipmentAssignments,
   useEquipmentTypes,
+  useCompanies,
   useSpaceBookingRecords,
   useSpaces,
 } from "@/lib/hooks";
@@ -52,15 +54,25 @@ export default function InventoryPage() {
   const actions = useEquipmentActions();
   const types = useEquipmentTypes();
   const spaces = useSpaces();
+  const companies = useCompanies({ page_size: 200, is_active: true });
   const spaceBookings = useSpaceBookingRecords();
   const assignments = useEquipmentAssignments();
   const [equipmentForm] = Form.useForm();
   const [typeForm] = Form.useForm();
   const [assignForm] = Form.useForm();
+  const [releaseForm] = Form.useForm<{ booking_id: string }>();
+  const assignmentsRef = useRef<HTMLDivElement | null>(null);
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [equipmentModalOpen, setEquipmentModalOpen] = useState(false);
   const [typeModalOpen, setTypeModalOpen] = useState(false);
   const [assigningEquipment, setAssigningEquipment] = useState<Equipment | null>(null);
+  const [releasingEquipment, setReleasingEquipment] = useState<Equipment | null>(null);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("focus") === "assignments") {
+      assignmentsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
 
   const openEquipmentModal = (item?: Equipment) => {
     setEditingEquipment(item ?? null);
@@ -83,6 +95,7 @@ export default function InventoryPage() {
   const spacesData = useMemo(() => spaces.data ?? [], [spaces.data]);
   const bookingRecords = useMemo(() => spaceBookings.data ?? [], [spaceBookings.data]);
   const assignmentData = useMemo(() => assignments.data ?? [], [assignments.data]);
+  const companiesData = useMemo(() => companies.data?.results ?? [], [companies.data?.results]);
 
   const spaceNames = useMemo(
     () => new Map(spacesData.map((space) => [space.id, space.name])),
@@ -96,6 +109,51 @@ export default function InventoryPage() {
   const equipmentTypeNames = useMemo(
     () => new Map((types.data ?? []).map((type) => [type.id, type.name])),
     [types.data],
+  );
+  const companyNames = useMemo(
+    () => new Map(companiesData.map((company) => [company.id, company.name])),
+    [companiesData],
+  );
+  const companyOptions = useMemo(
+    () => companiesData.map((company) => ({ label: company.name, value: company.id })),
+    [companiesData],
+  );
+  const bookingOptions = useMemo(
+    () =>
+      bookingRecords
+        .filter((record) => isActiveBookingStatus(record.status))
+        .map((record) => ({
+          label: [
+            spaceNames.get(record.space_id) ?? record.space_id,
+            record.start_time ? formatDateTime(record.start_time) : null,
+            record.company_id ? (companyNames.get(record.company_id) ?? record.company_id) : null,
+          ]
+            .filter(Boolean)
+            .join(" · "),
+          value: record.id,
+        })),
+    [bookingRecords, companyNames, spaceNames],
+  );
+  const releaseBookingOptions = useMemo(
+    () =>
+      assignmentData
+        .filter(
+          (assignment) =>
+            assignment.equipment_id === releasingEquipment?.id &&
+            isActiveBookingStatus(assignment.status),
+        )
+        .map((assignment) => ({
+          label: [
+            assignment.equipment_name || equipmentNames.get(assignment.equipment_id),
+            spaceNames.get(assignment.assigned_space_id ?? ""),
+            companyNames.get(assignment.company_id) ?? assignment.company_id,
+            assignment.booking_id,
+          ]
+            .filter(Boolean)
+            .join(" · "),
+          value: assignment.booking_id,
+        })),
+    [assignmentData, companyNames, equipmentNames, releasingEquipment?.id, spaceNames],
   );
 
   const spaceInventoryRows = useMemo<SpaceInventoryRow[]>(() => {
@@ -178,31 +236,11 @@ export default function InventoryPage() {
           </Button>
           <Button
             size="small"
-            disabled={!row.assigned_space_id}
-            onClick={() =>
-              Modal.confirm({
-                title: "Libertar equipamento",
-                content: (
-                  <Input
-                    id="release-booking-id"
-                    placeholder="ID da reserva"
-                    onChange={(event) => {
-                      (window as unknown as { __releaseBookingId?: string }).__releaseBookingId =
-                        event.target.value;
-                    }}
-                  />
-                ),
-                onOk: () =>
-                  actions.release.mutate({
-                    id: row.id,
-                    payload: {
-                      booking_id:
-                        (window as unknown as { __releaseBookingId?: string }).__releaseBookingId ??
-                        "",
-                    },
-                  }),
-              })
-            }
+            disabled={assignmentData.every((assignment) => assignment.equipment_id !== row.id)}
+            onClick={() => {
+              setReleasingEquipment(row);
+              releaseForm.resetFields();
+            }}
           >
             Libertar
           </Button>
@@ -297,6 +335,7 @@ export default function InventoryPage() {
   if (
     equipment.isLoading ||
     types.isLoading ||
+    companies.isLoading ||
     spaces.isLoading ||
     spaceBookings.isLoading ||
     assignments.isLoading
@@ -306,6 +345,7 @@ export default function InventoryPage() {
   if (
     equipment.isError ||
     types.isError ||
+    companies.isError ||
     spaces.isError ||
     spaceBookings.isError ||
     assignments.isError
@@ -414,17 +454,19 @@ export default function InventoryPage() {
         </Col>
       </Row>
 
-      <Card title={tStaff("inventoryRecentAssignmentsTitle")}>
-        <Table<EquipmentAssignment>
-          rowKey="id"
-          columns={assignmentColumns}
-          dataSource={recentAssignments}
-          locale={{ emptyText: tStaff("emptyData") }}
-          pagination={{ pageSize: 6, hideOnSinglePage: true }}
-          scroll={{ x: 1000 }}
-          size="small"
-        />
-      </Card>
+      <div ref={assignmentsRef}>
+        <Card title={tStaff("inventoryRecentAssignmentsTitle")}>
+          <Table<EquipmentAssignment>
+            rowKey="id"
+            columns={assignmentColumns}
+            dataSource={recentAssignments}
+            locale={{ emptyText: tStaff("emptyData") }}
+            pagination={{ pageSize: 6, hideOnSinglePage: true }}
+            scroll={{ x: 1000 }}
+            size="small"
+          />
+        </Card>
+      </div>
       <Modal
         title={editingEquipment ? "Editar equipamento" : "Novo equipamento"}
         open={equipmentModalOpen}
@@ -476,7 +518,7 @@ export default function InventoryPage() {
             />
           </Form.Item>
           <Form.Item name="rental_cost" label={tStaff("inventoryRentalCost")}>
-            <Input placeholder="25.00" />
+            <InputNumber min={0} precision={2} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item name="status" label={tStaff("columnStatus")} rules={[{ required: true }]}>
             <Select
@@ -560,10 +602,61 @@ export default function InventoryPage() {
             />
           </Form.Item>
           <Form.Item name="booking_id" label={tStaff("inventoryBookingReference")}>
-            <Input placeholder="ID da reserva" />
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={bookingOptions}
+              placeholder="Selecionar reserva"
+              onChange={(bookingId) => {
+                const booking = bookingRecords.find((record) => record.id === bookingId);
+                if (booking?.company_id) {
+                  assignForm.setFieldValue("company_id", booking.company_id);
+                }
+              }}
+            />
           </Form.Item>
           <Form.Item name="company_id" label={tStaff("columnCompany")}>
-            <Input placeholder="ID da empresa" />
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={companyOptions}
+              placeholder="Selecionar empresa"
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title="Libertar equipamento"
+        open={Boolean(releasingEquipment)}
+        onCancel={() => setReleasingEquipment(null)}
+        onOk={() => releaseForm.submit()}
+        confirmLoading={actions.release.isPending}
+        destroyOnClose
+      >
+        <Form
+          form={releaseForm}
+          layout="vertical"
+          onFinish={(values) => {
+            if (!releasingEquipment) return;
+            actions.release.mutate(
+              { id: releasingEquipment.id, payload: { booking_id: values.booking_id } },
+              { onSuccess: () => setReleasingEquipment(null) },
+            );
+          }}
+        >
+          <Form.Item
+            name="booking_id"
+            label={tStaff("inventoryBookingReference")}
+            rules={[{ required: true, message: "Selecione a reserva a libertar." }]}
+          >
+            <Select
+              showSearch
+              optionFilterProp="label"
+              options={releaseBookingOptions}
+              placeholder="Selecionar reserva atribuída"
+            />
           </Form.Item>
         </Form>
       </Modal>

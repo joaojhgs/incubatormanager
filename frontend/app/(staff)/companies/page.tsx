@@ -55,6 +55,15 @@ export default function CompaniesListPage() {
   const [activeOnly, setActiveOnly] = useState(true);
   const [page, setPage] = useState(1);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const active = params.get("is_active");
+    if (active === "false") setActiveOnly(false);
+    if (active === "true") setActiveOnly(true);
+    const search = params.get("search");
+    if (search) setSearchInput(search);
+  }, []);
+
   // Debounce search input: 300ms delay before triggering API query
   useEffect(() => {
     if (debounceTimer.current !== null) clearTimeout(debounceTimer.current);

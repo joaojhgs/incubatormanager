@@ -228,6 +228,21 @@ test.describe("QA hardening smoke coverage", () => {
     });
     await page.route("**/api/bookings/my/", (route) => fulfillJson(route, []));
     await page.route("**/api/tickets/my/", (route) => fulfillJson(route, []));
+    await page.route("**/api/spaces/", (route) =>
+      fulfillJson(route, [
+        {
+          id: "space-1",
+          name: "Sala de Reunião",
+          space_type: "type-1",
+          capacity: 8,
+          status: "Available",
+          company_id: null,
+          is_active: true,
+          created_at: "2026-05-01T09:00:00Z",
+          updated_at: "2026-05-01T09:00:00Z",
+        },
+      ]),
+    );
 
     await page.goto("/portal");
 
@@ -291,6 +306,36 @@ test.describe("QA hardening smoke coverage", () => {
         },
       ]),
     );
+    await page.route(/\/api\/companies\/(?:\?|$)/, (route) =>
+      fulfillJson(route, {
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: companyId,
+            name: "Empresa QA",
+            tax_id: "501000001",
+            address: null,
+            phone: null,
+            email: null,
+            legal_representative: "QA Rep",
+            description: null,
+            is_active: true,
+            created_at: "2026-05-20T09:00:00Z",
+            updated_at: "2026-05-20T09:00:00Z",
+            cae: { id: "cae-1", code: "62010", description: "Software" },
+            maturity_stage: {
+              id: "stage-1",
+              name: "Startup",
+              rate_per_sqm: 10,
+              description: "Startup",
+              display_order: 1,
+            },
+          },
+        ],
+      }),
+    );
     await page.route("**/api/spaces/bookings/records/", (route) =>
       fulfillJson(route, [
         {
@@ -335,12 +380,30 @@ test.describe("QA hardening smoke coverage", () => {
   test("public booking request remains unauthenticated and validates required fields", async ({
     page,
   }) => {
+    await page.route("**/api/spaces/", (route) =>
+      fulfillJson(route, [
+        {
+          id: "space-1",
+          name: "Sala de Reunião",
+          space_type: "Meeting",
+          capacity: 8,
+          status: "Available",
+          company_id: null,
+          is_active: true,
+          created_at: "2026-05-20T09:00:00Z",
+          updated_at: "2026-05-20T09:00:00Z",
+        },
+      ]),
+    );
+
     await page.goto("/booking-request");
 
     await expect(page.getByText("Pedido público de reserva")).toBeVisible();
     await expect(
       page.getByText("Submeta um pedido de reserva para análise pela equipa da incubadora."),
     ).toBeVisible();
+    await page.getByRole("combobox", { name: "Espaço" }).click();
+    await expect(page.getByText("Sala de Reunião · 8 pessoas")).toBeVisible();
 
     await page.getByRole("button", { name: "Submeter pedido" }).click();
 

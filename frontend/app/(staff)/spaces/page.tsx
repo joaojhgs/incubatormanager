@@ -7,7 +7,9 @@ import {
   Col,
   Form,
   Input,
+  InputNumber,
   Modal,
+  Popconfirm,
   Progress,
   Result,
   Row,
@@ -167,9 +169,11 @@ export default function SpacesPage() {
           <Button size="small" onClick={() => openSpaceModal(row)}>
             Editar
           </Button>
-          <Button
-            size="small"
-            onClick={() =>
+          <Popconfirm
+            title={row.is_active ? "Bloquear espaço?" : "Ativar espaço?"}
+            okText={row.is_active ? "Bloquear" : "Ativar"}
+            cancelText="Cancelar"
+            onConfirm={() =>
               actions.update.mutate({
                 id: row.id,
                 payload: {
@@ -179,8 +183,8 @@ export default function SpacesPage() {
               })
             }
           >
-            {row.is_active ? "Bloquear" : "Ativar"}
-          </Button>
+            <Button size="small">{row.is_active ? "Bloquear" : "Ativar"}</Button>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -349,7 +353,7 @@ export default function SpacesPage() {
             />
           </Form.Item>
           <Form.Item name="capacity" label={tStaff("columnCapacity")} rules={[{ required: true }]}>
-            <Input type="number" min={1} />
+            <InputNumber min={1} precision={0} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item name="status" label={tStaff("columnStatus")} rules={[{ required: true }]}>
             <Select
