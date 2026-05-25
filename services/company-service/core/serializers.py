@@ -15,11 +15,32 @@ class CAESerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
+class CompanyWriteSerializer(serializers.ModelSerializer):
+    """Writable serializer for create/update endpoints."""
+
+    class Meta:
+        model = Company
+        fields = [
+            "id",
+            "name",
+            "tax_id",
+            "address",
+            "phone",
+            "email",
+            "legal_representative",
+            "description",
+            "is_active",
+            "cae",
+            "maturity_stage",
+        ]
+        read_only_fields = ["id"]
+
+
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = ["id", "name", "type", "start_date", "end_date", "is_active"]
-        read_only_fields = ["id", "name", "type", "start_date", "end_date", "is_active"]
+        read_only_fields = ["id"]
 
 
 class MaturityStageSerializer(serializers.ModelSerializer):
