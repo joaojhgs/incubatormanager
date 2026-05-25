@@ -10,6 +10,7 @@ export default function InventoryPage() {
       statusUpText={tStaff("serviceHealthUp")}
       statusDownText={tStaff("serviceHealthDown")}
       unknownStatusText={tStaff("serviceHealthUnknown")}
+      statusLabelText={tStaff("serviceHealthStatus")}
       unavailableText={tStaff("serviceHealthDown")}
     />
   );

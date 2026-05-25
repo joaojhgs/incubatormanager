@@ -5,10 +5,16 @@ from __future__ import annotations
 import os
 
 from django.core.management.base import BaseCommand, CommandError
-
 from ilb_common import event_bus
 
 from core.handlers import handle_event
+
+DEFAULT_ROUTING_KEYS = [
+    "contract.activated",
+    "contract.expired",
+    "contract.terminated",
+    "booking.approved",
+]
 
 
 class Command(BaseCommand):
@@ -28,8 +34,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--routing-key",
             action="append",
-            default=["contract.activated", "booking.approved"],
-            help="Repeated routing key for bindings (defaults to contract.activated, booking.approved).",
+            default=DEFAULT_ROUTING_KEYS,
+            help="Repeated routing key for finance event bindings.",
         )
 
     def handle(self, *args: object, **options: object) -> None:
@@ -39,7 +45,7 @@ class Command(BaseCommand):
 
         routing_keys = list(options["routing_key"])
         if not routing_keys:
-            routing_keys = ["contract.activated", "booking.approved"]
+            routing_keys = DEFAULT_ROUTING_KEYS
 
         event_bus.subscribe(
             rabbitmq_url,

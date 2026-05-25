@@ -10,17 +10,22 @@ from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
+from ilb_common.permissions import IsStaff
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ilb_common.permissions import IsStaff
 
 from core.handlers import publish_payment_recorded
 from core.models import Payment
+from core.serializers import (
+    DashboardSerializer,
+    PaymentPatchSerializer,
+    PaymentSerializer,
+    ReportSerializer,
+)
 from core.services import payment_scope_for_user
-from core.serializers import DashboardSerializer, PaymentPatchSerializer, PaymentSerializer, ReportSerializer
 from core.utils import rabbitmq_url
 
 
@@ -78,18 +83,17 @@ class PaymentDetailView(generics.RetrieveUpdateAPIView):
         paid_at = serializer.validated_data.get("paid_at")
 
         if desired_status == Payment.Status.PAID:
-            if payment.mark_paid(paid_at):
-                if rabbitmq_url():
-                    transaction.on_commit(
-                        lambda: publish_payment_recorded(
-                            payment_id=payment.id,
-                            amount=payment.amount,
-                            company_id=payment.company_id,
-                            contract_id=payment.contract_id,
-                            booking_id=payment.booking_id,
-                            paid_at=payment.paid_at or timezone.now(),
-                        )
+            if payment.mark_paid(paid_at) and rabbitmq_url():
+                transaction.on_commit(
+                    lambda: publish_payment_recorded(
+                        payment_id=payment.id,
+                        amount=payment.amount,
+                        company_id=payment.company_id,
+                        contract_id=payment.contract_id,
+                        booking_id=payment.booking_id,
+                        paid_at=payment.paid_at or timezone.now(),
                     )
+                )
             serializer.instance = payment
             return
 
@@ -145,10 +149,18 @@ class FinanceDashboardView(APIView):
             "paid": paid_qs.count(),
             "pending": pending_qs.count(),
             "overdue": overdue_qs.count(),
-            "total_amount": qs.aggregate(total=Coalesce(Sum("amount"), Decimal("0"), output_field=DecimalField()))["total"],
-            "paid_amount": paid_qs.aggregate(total=Coalesce(Sum("amount"), Decimal("0"), output_field=DecimalField()))["total"],
-            "pending_amount": pending_qs.aggregate(total=Coalesce(Sum("amount"), Decimal("0"), output_field=DecimalField()))["total"],
-            "overdue_amount": overdue_qs.aggregate(total=Coalesce(Sum("amount"), Decimal("0"), output_field=DecimalField()))["total"],
+            "total_amount": qs.aggregate(
+                total=Coalesce(Sum("amount"), Decimal("0"), output_field=DecimalField())
+            )["total"],
+            "paid_amount": paid_qs.aggregate(
+                total=Coalesce(Sum("amount"), Decimal("0"), output_field=DecimalField())
+            )["total"],
+            "pending_amount": pending_qs.aggregate(
+                total=Coalesce(Sum("amount"), Decimal("0"), output_field=DecimalField())
+            )["total"],
+            "overdue_amount": overdue_qs.aggregate(
+                total=Coalesce(Sum("amount"), Decimal("0"), output_field=DecimalField())
+            )["total"],
         }
 
         serializer = DashboardSerializer(payload)

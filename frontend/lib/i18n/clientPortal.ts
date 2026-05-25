@@ -54,6 +54,10 @@ const clientMessages = {
   pageNoCompany: "A sua conta de utilizador não está associada a uma empresa.",
   pageNoCompanyAction: "Contacte o administrador da incubadora.",
   serviceUnavailable: "Serviço indisponível no momento.",
+  serviceHealthStatus: "Estado",
+  serviceHealthUnknown: "Desconhecido",
+  serviceHealthUp: "Disponível",
+  serviceHealthDown: "Indisponível",
   serviceHealthUnavailable: "Serviço em construção",
   serviceHealthHint:
     "Esta página mostra o estado atual do serviço enquanto os fluxos de negócio ainda estão em implementação.",
@@ -74,6 +78,11 @@ const clientMessages = {
   portalTicketsColumnUpdatedAt: "Atualizado em",
   portalTicketsEmpty: "Ainda não tem pedidos de suporte registados.",
   portalTicketsLoadError: "Não foi possível carregar os seus pedidos de suporte.",
+  portalTicketStatusOpen: "Aberto",
+  portalTicketStatusInProgress: "Em curso",
+  portalTicketStatusWaitingResponse: "A aguardar resposta",
+  portalTicketStatusResolved: "Resolvido",
+  portalTicketStatusClosed: "Fechado",
   portalTicketRolePrefix: "Criado por",
 } as const;
 

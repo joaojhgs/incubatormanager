@@ -6,8 +6,8 @@ from django.urls import path
 
 from core.views import (
     BookingApproveView,
-    BookingCancelView,
     BookingCalendarView,
+    BookingCancelView,
     BookingCompleteView,
     BookingDetailView,
     BookingListCreateView,
@@ -20,7 +20,6 @@ from core.views import (
 urlpatterns = [
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/bookings/health/", HealthView.as_view(), name="health-bookings"),
-
     path("api/bookings/", BookingListCreateView.as_view(), name="booking-list-create"),
     path("api/bookings/external/", PublicBookingCreateView.as_view(), name="booking-public-create"),
     path(

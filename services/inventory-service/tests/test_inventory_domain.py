@@ -22,7 +22,9 @@ def _client(role: str = "Staff", company_id: uuid.UUID | None = None) -> APIClie
 @pytest.mark.django_db
 def test_equipment_crud_assign_release_and_client_assignment_scope() -> None:
     company_id = uuid.uuid4()
-    type_response = _client().post("/api/inventory/equipment-types/", data={"name": "Projector"}, format="json")
+    type_response = _client().post(
+        "/api/inventory/equipment-types/", data={"name": "Projector"}, format="json"
+    )
     assert type_response.status_code == 201
     equipment_response = _client().post(
         "/api/inventory/equipment/",

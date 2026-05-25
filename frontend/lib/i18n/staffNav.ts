@@ -28,6 +28,7 @@ const staffMessages = {
   serviceHealthUp: "Disponível",
   serviceHealthDown: "Indisponível",
   serviceHealthLoading: "A carregar estado do serviço…",
+  pageLoading: "A carregar…",
 
   // Tickets (staff view)
   ticketsListTitle: "Pedidos de suporte",
@@ -38,6 +39,11 @@ const staffMessages = {
   ticketsColumnOwner: "Criado por",
   ticketsEmpty: "Sem pedidos de suporte para apresentar.",
   ticketsLoadError: "Não foi possível carregar os pedidos de suporte.",
+  ticketStatusOpen: "Aberto",
+  ticketStatusInProgress: "Em curso",
+  ticketStatusWaitingResponse: "A aguardar resposta",
+  ticketStatusResolved: "Resolvido",
+  ticketStatusClosed: "Fechado",
 } as const;
 
 export type StaffI18nKey = keyof typeof staffMessages;

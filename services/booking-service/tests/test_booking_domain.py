@@ -49,7 +49,10 @@ def test_staff_create_and_approve_booking_publishes_event() -> None:
     booking = Booking.objects.get(company_id=company_id)
     assert booking.company_id == company_id
 
-    with patch("core.services.transaction.on_commit") as on_commit, patch("core.services.publish") as publish:
+    with (
+        patch("core.services.transaction.on_commit") as on_commit,
+        patch("core.services.publish") as publish,
+    ):
         approve = _client("Staff").patch(f"/api/bookings/{booking.id}/approve/")
         assert approve.status_code == 200
         assert approve.json()["status"] == Booking.Status.APPROVED

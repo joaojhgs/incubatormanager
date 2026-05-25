@@ -16,7 +16,15 @@ class Command(BaseCommand):
             return
         subscribe(
             settings.RABBITMQ_URL,
-            ["contract.activated", "contract.terminated", "contract.expired", "booking.approved", "booking.rejected", "booking.cancelled", "booking.completed"],
+            [
+                "contract.activated",
+                "contract.terminated",
+                "contract.expired",
+                "booking.approved",
+                "booking.rejected",
+                "booking.cancelled",
+                "booking.completed",
+            ],
             dispatch_event,
             queue="space.domain-events",
             durable_queue=True,

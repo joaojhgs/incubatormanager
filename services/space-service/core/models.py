@@ -110,7 +110,9 @@ class SpaceBookingRecord(models.Model):
     booking_id = models.UUIDField(db_index=True, unique=True)
     space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name="bookings")
     company_id = models.UUIDField(db_index=True)
-    status = models.CharField(max_length=24, choices=Status.choices, default=Status.APPROVED, db_index=True)
+    status = models.CharField(
+        max_length=24, choices=Status.choices, default=Status.APPROVED, db_index=True
+    )
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
     quoted_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Callable
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from ilb_common import event_bus
 from ilb_common.event_bus import EventEnvelope
 
@@ -14,17 +16,20 @@ from core.models import BillingContract, Payment, ProcessedEvent
 from core.utils import rabbitmq_url
 
 
-def _already_processed(event: EventEnvelope) -> bool:
-    """Return True when a processing attempt has already handled the event."""
+def _run_once(event: EventEnvelope, handler: Callable[[], None]) -> None:
+    """Run a handler once per event_id with marker and side effects atomic."""
 
-    if ProcessedEvent.objects.filter(event_id=event["event_id"]).exists():
-        return True
-
-    return False
-
-
-def _mark_processed(event: EventEnvelope) -> None:
-    ProcessedEvent.objects.create(event_id=event["event_id"], event_type=event["event_type"])
+    try:
+        with transaction.atomic():
+            ProcessedEvent.objects.create(
+                event_id=event["event_id"],
+                event_type=event["event_type"],
+            )
+            handler()
+    except IntegrityError:
+        if ProcessedEvent.objects.filter(event_id=event["event_id"]).exists():
+            return
+        raise
 
 
 def _to_uuid(payload: dict[str, object], key: str) -> UUID:
@@ -91,23 +96,22 @@ def handle_contract_activated(event: EventEnvelope) -> None:
     start_date = _to_date(payload, "start_date")
     end_date = _parse_end_date(payload)
 
-    if _already_processed(event):
-        return
+    def upsert_contract() -> None:
+        BillingContract.objects.update_or_create(
+            contract_id=contract_id,
+            defaults={
+                "company_id": company_id,
+                "space_id": space_id,
+                "area_sqm": area_sqm,
+                "rate_per_sqm": rate_per_sqm,
+                "monthly_fee": monthly_fee,
+                "start_date": start_date,
+                "end_date": end_date,
+                "is_active": True,
+            },
+        )
 
-    BillingContract.objects.update_or_create(
-        contract_id=contract_id,
-        defaults={
-            "company_id": company_id,
-            "space_id": space_id,
-            "area_sqm": area_sqm,
-            "rate_per_sqm": rate_per_sqm,
-            "monthly_fee": monthly_fee,
-            "start_date": start_date,
-            "end_date": end_date,
-            "is_active": True,
-        },
-    )
-    _mark_processed(event)
+    _run_once(event, upsert_contract)
 
 
 def handle_booking_approved(event: EventEnvelope) -> None:
@@ -127,19 +131,30 @@ def handle_booking_approved(event: EventEnvelope) -> None:
     else:
         due_date = None
 
-    if _already_processed(event):
-        return
+    def create_payment() -> None:
+        Payment.objects.create(
+            company_id=company_id,
+            booking_id=booking_id,
+            source=Payment.Source.BOOKING,
+            amount=amount,
+            due_date=due_date,
+            reference_id="booking-approval",
+            status=Payment.Status.PENDING,
+        )
 
-    Payment.objects.create(
-        company_id=company_id,
-        booking_id=booking_id,
-        source=Payment.Source.BOOKING,
-        amount=amount,
-        due_date=due_date,
-        reference_id="booking-approval",
-        status=Payment.Status.PENDING,
-    )
-    _mark_processed(event)
+    _run_once(event, create_payment)
+
+
+def handle_contract_inactive(event: EventEnvelope) -> None:
+    """Deactivate a billing contract when a contract ends upstream."""
+
+    payload = event["payload"]
+    contract_id = _to_uuid(payload, "contract_id")
+
+    def deactivate_contract() -> None:
+        BillingContract.objects.filter(contract_id=contract_id).update(is_active=False)
+
+    _run_once(event, deactivate_contract)
 
 
 def handle_event(event: EventEnvelope) -> None:
@@ -148,6 +163,8 @@ def handle_event(event: EventEnvelope) -> None:
     event_type = event["event_type"]
     if event_type == "contract.activated":
         handle_contract_activated(event)
+    elif event_type in {"contract.expired", "contract.terminated"}:
+        handle_contract_inactive(event)
     elif event_type == "booking.approved":
         handle_booking_approved(event)
     else:

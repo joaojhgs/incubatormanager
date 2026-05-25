@@ -71,9 +71,7 @@ def test_contract_list_detail_company_scope_and_client_isolation() -> None:
     assert own_list.status_code == 200
     assert len(own_list.json()) == 1
 
-    foreign_list = _api_client("Client", company_a).get(
-        f"/api/contracts/company/{company_b}/"
-    )
+    foreign_list = _api_client("Client", company_a).get(f"/api/contracts/company/{company_b}/")
     assert foreign_list.status_code == 403
 
     own_list_by_company = _api_client("Client", company_a).get(
@@ -109,10 +107,11 @@ def test_activate_contract_emits_contract_activated_event_on_commit() -> None:
     assert created.status_code == 201
     contract_id = created.json()["id"]
 
-    with patch("core.events._rabbit_url", return_value="amqp://rabbit"), patch(
-        "core.events.transaction.on_commit") as on_commit, patch(
-        "core.events.event_bus.publish"
-    ) as publish:
+    with (
+        patch("core.events._rabbit_url", return_value="amqp://rabbit"),
+        patch("core.events.transaction.on_commit") as on_commit,
+        patch("core.events.event_bus.publish") as publish,
+    ):
         response = _api_client("Staff").patch(
             f"/api/contracts/{contract_id}/activate/",
             data={},
@@ -144,11 +143,11 @@ def test_terminate_contract_emits_contract_terminated_event_and_freezes_reason()
     )
     assert response.status_code == 200
 
-    with patch("core.events._rabbit_url", return_value="amqp://rabbit"), patch(
-        "core.events.transaction.on_commit"
-    ) as on_commit, patch(
-        "core.events.event_bus.publish"
-    ) as publish:
+    with (
+        patch("core.events._rabbit_url", return_value="amqp://rabbit"),
+        patch("core.events.transaction.on_commit") as on_commit,
+        patch("core.events.event_bus.publish") as publish,
+    ):
         response = _api_client("Staff").patch(
             f"/api/contracts/{contract_id}/terminate/",
             data={"reason": "breach"},
@@ -178,11 +177,12 @@ def test_expire_contracts_command_is_idempotent() -> None:
         status=Contract.Status.ACTIVE,
     )
 
-    with patch(
-        "core.management.commands.expire_contracts.publish_contract_expired"
-    ) as publish, patch(
-        "core.events.transaction.on_commit",
-        side_effect=lambda callback: callback(),
+    with (
+        patch("core.management.commands.expire_contracts.publish_contract_expired") as publish,
+        patch(
+            "core.events.transaction.on_commit",
+            side_effect=lambda callback: callback(),
+        ),
     ):
         call_command("expire_contracts")
         active_to_expire.refresh_from_db()

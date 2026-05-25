@@ -8,7 +8,6 @@ from uuid import UUID
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError, transaction
 from django.utils import timezone
-
 from ilb_common.event_bus import EventEnvelope
 
 from core.models import ProcessedEvent, Space, SpaceBookingRecord, SpaceContract
@@ -72,17 +71,16 @@ def apply_contract_event(envelope: EventEnvelope) -> None:
     except ObjectDoesNotExist:
         return
 
-    defaults = {
-        "company_id": company_id,
-        "space": space,
-        "area_sqm": _parse_decimal(payload["area_sqm"]),
-        "rate_per_sqm": _parse_decimal(payload["rate_per_sqm"]),
-        "monthly_fee": _parse_decimal(payload["monthly_fee"]),
-        "start_date": payload["start_date"],
-        "end_date": payload["end_date"],
-    }
-
     if event_type == "contract.activated":
+        defaults = {
+            "company_id": company_id,
+            "space": space,
+            "area_sqm": _parse_decimal(payload["area_sqm"]),
+            "rate_per_sqm": _parse_decimal(payload["rate_per_sqm"]),
+            "monthly_fee": _parse_decimal(payload["monthly_fee"]),
+            "start_date": payload["start_date"],
+            "end_date": payload["end_date"],
+        }
         SpaceContract.objects.update_or_create(
             contract_id=contract_id,
             defaults={**defaults, "status": SpaceContract.Status.ACTIVE},
@@ -98,29 +96,24 @@ def apply_contract_event(envelope: EventEnvelope) -> None:
     )
     contract = SpaceContract.objects.filter(contract_id=contract_id).first()
     if contract is None:
-        contract = SpaceContract.objects.create(
-            contract_id=contract_id,
-            status=status,
-            termination_reason="",
-            **defaults,
-        )
-    else:
-        for field, value in {**defaults, "status": status}.items():
-            setattr(contract, field, value)
-        if event_type == "contract.terminated":
-            contract.termination_reason = str(payload.get("reason", ""))
-        contract.save(update_fields=[
+        # Minimal contract.expired events can arrive after missed/replayed history.
+        # Mark them processed without inventing a projection from incomplete data.
+        return
+
+    contract.company_id = company_id
+    contract.space = space
+    contract.status = status
+    if event_type == "contract.terminated":
+        contract.termination_reason = str(payload.get("reason", ""))
+    contract.save(
+        update_fields=[
             "company_id",
             "space",
             "status",
-            "area_sqm",
-            "rate_per_sqm",
-            "monthly_fee",
-            "start_date",
-            "end_date",
             "termination_reason",
             "updated_at",
-        ])
+        ]
+    )
 
     if status in {SpaceContract.Status.EXPIRED, SpaceContract.Status.TERMINATED}:
         space.status = Space.Status.MAINTENANCE

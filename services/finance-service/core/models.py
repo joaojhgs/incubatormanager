@@ -13,7 +13,9 @@ class BillingContract(models.Model):
 
     class Meta:
         ordering = ("company_id", "contract_id")
-        indexes = [models.Index(fields=["company_id", "is_active"], name="bcontract_company_active_idx")]
+        indexes = [
+            models.Index(fields=["company_id", "is_active"], name="bcontract_company_active_idx")
+        ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     contract_id = models.UUIDField(unique=True)
@@ -35,9 +37,7 @@ class BillingContract(models.Model):
             return False
         if self.start_date > on_date:
             return False
-        if self.end_date is not None and self.end_date < on_date:
-            return False
-        return True
+        return self.end_date is None or self.end_date >= on_date
 
 
 class Payment(models.Model):
@@ -59,7 +59,9 @@ class Payment(models.Model):
     source = models.CharField(max_length=16, choices=Source.choices)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=8, default="EUR")
-    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING, db_index=True)
+    status = models.CharField(
+        max_length=16, choices=Status.choices, default=Status.PENDING, db_index=True
+    )
     due_date = models.DateField(blank=True, null=True, db_index=True)
     paid_at = models.DateTimeField(blank=True, null=True)
     period_start = models.DateField(blank=True, null=True)

@@ -207,7 +207,9 @@ class SpaceBookingRecordListView(generics.ListAPIView):
                     "status": record.status,
                     "start_time": record.start_time,
                     "end_time": record.end_time,
-                    "quoted_price": str(record.quoted_price) if record.quoted_price is not None else None,
+                    "quoted_price": str(record.quoted_price)
+                    if record.quoted_price is not None
+                    else None,
                     "equipment_ids": record.equipment_ids,
                 }
             )

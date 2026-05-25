@@ -25,6 +25,4 @@ class Command(BaseCommand):
             status=Payment.Status.PENDING,
             due_date__lt=today,
         ).update(status=Payment.Status.OVERDUE)
-        self.stdout.write(
-            self.style.SUCCESS(f"mark_overdue_payments: updated={count}")
-        )
+        self.stdout.write(self.style.SUCCESS(f"mark_overdue_payments: updated={count}"))

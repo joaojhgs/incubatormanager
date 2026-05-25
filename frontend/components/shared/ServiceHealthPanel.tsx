@@ -14,6 +14,7 @@ export interface ServiceHealthPanelProps {
   statusUpText: string;
   statusDownText: string;
   unknownStatusText: string;
+  statusLabelText?: string;
   unavailableText?: string;
 }
 
@@ -24,6 +25,7 @@ export function ServiceHealthPanel({
   statusUpText,
   statusDownText,
   unknownStatusText,
+  statusLabelText = "Status",
   unavailableText,
 }: ServiceHealthPanelProps) {
   const { data, isLoading, isError, dataUpdatedAt } = useServiceHealth(service);
@@ -62,7 +64,7 @@ export function ServiceHealthPanel({
     <Card title={title}>
       <div style={{ display: "grid", gap: 8 }}>
         <span>
-          <Text strong>{"Estado: "}</Text>
+          <Text strong>{statusLabelText}</Text>
           <Tag color={isUp ? "success" : "warning"} style={{ marginLeft: 8 }}>
             {isUp ? statusUpText : statusDownText}
           </Tag>

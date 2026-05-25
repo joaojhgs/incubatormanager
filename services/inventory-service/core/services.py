@@ -6,7 +6,6 @@ from uuid import UUID
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError, transaction
-
 from ilb_common.event_bus import EventEnvelope
 
 from core.models import Equipment, EquipmentAssignment, ProcessedEvent

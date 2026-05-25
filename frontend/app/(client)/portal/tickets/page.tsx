@@ -10,11 +10,11 @@ import type { Ticket } from "@/lib/hooks/useTickets";
 const { Text } = Typography;
 
 function statusTag(status: string) {
-  if (status === "Open") return <Tag color="red">{status}</Tag>;
-  if (status === "In progress") return <Tag color="blue">{status}</Tag>;
-  if (status === "Waiting response") return <Tag color="gold">{status}</Tag>;
-  if (status === "Resolved") return <Tag color="green">{status}</Tag>;
-  if (status === "Closed") return <Tag color="default">{status}</Tag>;
+  if (status === "Open") return <Tag color="red">{tClient("portalTicketStatusOpen")}</Tag>;
+  if (status === "In progress") return <Tag color="blue">{tClient("portalTicketStatusInProgress")}</Tag>;
+  if (status === "Waiting response") return <Tag color="gold">{tClient("portalTicketStatusWaitingResponse")}</Tag>;
+  if (status === "Resolved") return <Tag color="green">{tClient("portalTicketStatusResolved")}</Tag>;
+  if (status === "Closed") return <Tag color="default">{tClient("portalTicketStatusClosed")}</Tag>;
   return <Tag>{status}</Tag>;
 }
 

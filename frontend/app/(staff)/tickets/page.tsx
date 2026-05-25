@@ -1,20 +1,20 @@
 "use client";
 
 import type { ColumnsType } from "antd/es/table";
-import { Card, Result, Space, Spin, Tag, Typography } from "antd";
+import { Card, Result, Spin, Table, Tag, Typography } from "antd";
 
 import { useTickets } from "@/lib/hooks";
-import { tStaff, type StaffI18nKey } from "@/lib/i18n/staffNav";
+import { tStaff } from "@/lib/i18n/staffNav";
 import type { Ticket } from "@/lib/hooks/useTickets";
 
 const { Title, Text } = Typography;
 
 function statusTag(status: string) {
-  if (status === "Open") return <Tag color="red">{status}</Tag>;
-  if (status === "In progress") return <Tag color="blue">{status}</Tag>;
-  if (status === "Waiting response") return <Tag color="gold">{status}</Tag>;
-  if (status === "Resolved") return <Tag color="green">{status}</Tag>;
-  if (status === "Closed") return <Tag color="default">{status}</Tag>;
+  if (status === "Open") return <Tag color="red">{tStaff("ticketStatusOpen")}</Tag>;
+  if (status === "In progress") return <Tag color="blue">{tStaff("ticketStatusInProgress")}</Tag>;
+  if (status === "Waiting response") return <Tag color="gold">{tStaff("ticketStatusWaitingResponse")}</Tag>;
+  if (status === "Resolved") return <Tag color="green">{tStaff("ticketStatusResolved")}</Tag>;
+  if (status === "Closed") return <Tag color="default">{tStaff("ticketStatusClosed")}</Tag>;
   return <Tag>{status}</Tag>;
 }
 

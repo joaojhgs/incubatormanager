@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from decimal import Decimal
 from uuid import UUID
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
-
 from ilb_common.event_bus import EventEnvelope, publish
+from rest_framework.exceptions import ValidationError
 
 from core.models import Booking, ProcessedEvent
 
@@ -43,7 +40,9 @@ def _publish_booking_event(event_type: str, booking: Booking) -> None:
     if not settings.RABBITMQ_URL:
         return
     transaction.on_commit(
-        lambda: publish(settings.RABBITMQ_URL, event_type, booking_payload(booking), routing_key=event_type)
+        lambda: publish(
+            settings.RABBITMQ_URL, event_type, booking_payload(booking), routing_key=event_type
+        )
     )
 
 
@@ -51,7 +50,11 @@ def _assert_can_transition(from_status: str, to_status: str) -> None:
     if from_status == to_status:
         return
     matrix = {
-        Booking.Status.PENDING: {Booking.Status.APPROVED, Booking.Status.REJECTED, Booking.Status.CANCELLED},
+        Booking.Status.PENDING: {
+            Booking.Status.APPROVED,
+            Booking.Status.REJECTED,
+            Booking.Status.CANCELLED,
+        },
         Booking.Status.APPROVED: {Booking.Status.COMPLETED, Booking.Status.CANCELLED},
         Booking.Status.REJECTED: set(),
         Booking.Status.CANCELLED: set(),

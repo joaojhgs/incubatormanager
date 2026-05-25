@@ -10,6 +10,7 @@ export default function SpacesPage() {
       statusUpText={tStaff("serviceHealthUp")}
       statusDownText={tStaff("serviceHealthDown")}
       unknownStatusText={tStaff("serviceHealthUnknown")}
+      statusLabelText={tStaff("serviceHealthStatus")}
       unavailableText={tStaff("serviceHealthDown")}
     />
   );

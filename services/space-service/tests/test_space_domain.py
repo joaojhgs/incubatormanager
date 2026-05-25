@@ -6,7 +6,7 @@ import uuid
 from datetime import timedelta
 
 import pytest
-from core.models import ProcessedEvent, Space, SpaceBookingRecord, SpaceContract, SpaceType
+from core.models import ProcessedEvent, Space, SpaceBookingRecord, SpaceContract
 from core.services import apply_booking_event_dict, apply_contract_event
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -70,6 +70,22 @@ def test_contract_and_booking_events_are_idempotent() -> None:
     assert SpaceContract.objects.count() == 1
     assert ProcessedEvent.objects.count() == 1
 
+    expired_event = {
+        "event_id": str(uuid.uuid4()),
+        "event_type": "contract.expired",
+        "occurred_at": "",
+        "payload": {
+            "contract_id": contract_event["payload"]["contract_id"],
+            "company_id": contract_event["payload"]["company_id"],
+            "space_id": str(space.id),
+        },
+    }
+    apply_contract_event(expired_event)  # type: ignore[arg-type]
+    apply_contract_event(expired_event)  # type: ignore[arg-type]
+    contract = SpaceContract.objects.get()
+    assert contract.status == SpaceContract.Status.EXPIRED
+    assert ProcessedEvent.objects.count() == 2
+
     booking_event = {
         "event_id": str(uuid.uuid4()),
         "event_type": "booking.approved",
@@ -87,4 +103,4 @@ def test_contract_and_booking_events_are_idempotent() -> None:
     apply_booking_event_dict(booking_event)  # type: ignore[arg-type]
     apply_booking_event_dict(booking_event)  # type: ignore[arg-type]
     assert SpaceBookingRecord.objects.count() == 1
-    assert ProcessedEvent.objects.count() == 2
+    assert ProcessedEvent.objects.count() == 3

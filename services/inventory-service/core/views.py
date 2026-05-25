@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from drf_spectacular.utils import extend_schema
+from ilb_common.event_bus import EventEnvelope
+from ilb_common.permissions import IsStaff
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from drf_spectacular.utils import extend_schema
-from ilb_common.permissions import IsStaff
 
 from core.models import Equipment, EquipmentAssignment, EquipmentType
 from core.serializers import (
@@ -18,7 +19,6 @@ from core.serializers import (
     EquipmentTypeSerializer,
 )
 from core.services import apply_booking_event
-from ilb_common.event_bus import EventEnvelope
 
 
 def _role(request: Request) -> str:

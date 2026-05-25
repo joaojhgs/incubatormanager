@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from ilb_common.permissions import IsClientOwner, IsStaff
-from rest_framework import generics, status as http_status
+from rest_framework import generics
+from rest_framework import status as http_status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -15,8 +13,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.models import Booking
-from core.serializers import BookingCommandSerializer, BookingCreateSerializer, BookingSerializer, PublicBookingSerializer
-from core.services import set_status, scope_bookings
+from core.serializers import (
+    BookingCreateSerializer,
+    BookingSerializer,
+    PublicBookingSerializer,
+)
+from core.services import scope_bookings, set_status
 
 
 def _role(request: Request) -> str:
@@ -133,9 +135,11 @@ class BookingCancelView(APIView):
     @extend_schema(responses={200: BookingSerializer})
     def patch(self, request: Request, booking_id: str) -> Response:
         booking = Booking.objects.get(id=booking_id)
-        if _role(request) == "Client":
-            if _company_id(request) is None or str(booking.company_id) != str(_company_id(request)):
-                return Response({"detail": "Forbidden"}, status=http_status.HTTP_403_FORBIDDEN)
+        company_id = _company_id(request)
+        if _role(request) == "Client" and (
+            company_id is None or str(booking.company_id) != str(company_id)
+        ):
+            return Response({"detail": "Forbidden"}, status=http_status.HTTP_403_FORBIDDEN)
         set_status(booking, Booking.Status.CANCELLED)
         return Response(BookingSerializer(booking).data)
 
@@ -158,7 +162,11 @@ class BookingCalendarView(APIView):
         queryset = scope_bookings(request.user)
         payload = []
         for booking in queryset.filter(status=Booking.Status.APPROVED).order_by("start_time"):
-            if _role(request) == "Client" and _company_id(request) and str(booking.company_id) != str(_company_id(request)):
+            if (
+                _role(request) == "Client"
+                and _company_id(request)
+                and str(booking.company_id) != str(_company_id(request))
+            ):
                 continue
             payload.append(
                 {

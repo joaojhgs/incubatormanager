@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from core.models import Space, SpaceBookingRecord, SpaceContract, SpaceType
+from core.models import Space, SpaceContract, SpaceType
 
 
 class SpaceTypeSerializer(serializers.ModelSerializer):

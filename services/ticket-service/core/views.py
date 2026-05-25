@@ -32,7 +32,11 @@ class HealthView(APIView):
     authentication_classes = ()
     permission_classes = ()
 
-    @extend_schema(responses={200: {"type": "object", "properties": {"status": {"type": "string", "example": "ok"}}}})
+    @extend_schema(
+        responses={
+            200: {"type": "object", "properties": {"status": {"type": "string", "example": "ok"}}}
+        }
+    )
     def get(self, request: Request) -> Response:
         return Response({"status": "ok"})
 

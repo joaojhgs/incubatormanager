@@ -20,18 +20,15 @@ from core.views import (
 urlpatterns = [
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/spaces/health/", HealthView.as_view(), name="health-spaces"),
-
     path("api/space-types/", SpaceTypeListCreateView.as_view(), name="space-type-list-create"),
     path(
         "api/space-types/<uuid:type_id>/",
         SpaceTypeDetailView.as_view(),
         name="space-type-detail",
     ),
-
     path("api/spaces/", SpaceListCreateView.as_view(), name="space-list-create"),
     path("api/spaces/<uuid:space_id>/", SpaceDetailView.as_view(), name="space-detail"),
     path("api/spaces/occupancy-map/", SpaceOccupancyMapView.as_view(), name="space-occupancy"),
-
     path(
         "api/spaces/contracts/",
         SpaceContractListView.as_view(),

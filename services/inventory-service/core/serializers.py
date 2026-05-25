@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from core.models import Equipment, EquipmentAssignment, EquipmentType
+from core.models import Equipment, EquipmentType
 
 
 class EquipmentTypeSerializer(serializers.ModelSerializer):

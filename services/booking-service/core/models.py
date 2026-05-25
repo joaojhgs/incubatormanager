@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from decimal import Decimal
 
 from django.db import models
 
@@ -26,7 +25,9 @@ class Booking(models.Model):
     end_time = models.DateTimeField()
     quoted_price = models.DecimalField(max_digits=12, decimal_places=2)
     equipment_ids = models.JSONField(default=list, blank=True)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True
+    )
     notes = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
