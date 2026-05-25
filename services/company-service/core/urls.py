@@ -31,11 +31,6 @@ urlpatterns = [
     path("api/companies/cae/", CAEListCreateView.as_view(), name="cae-list-create"),
     path("api/companies/stats/", CompanyStatsView.as_view(), name="company-stats"),
     path(
-        "api/companies/<uuid:pk>/maturity-stage/",
-        CompanyMaturityStageChangeView.as_view(),
-        name="company-maturity-stage-change",
-    ),
-    path(
         "api/companies/<uuid:company_id>/employees/",
         CompanyEmployeeListCreateView.as_view(),
         name="company-employee-list-create",
@@ -46,7 +41,7 @@ urlpatterns = [
         name="company-employee-detail",
     ),
     path(
-        "api/companies/<uuid:pk>/employees/stats/",
+        "api/companies/<uuid:company_id>/employees/stats/",
         CompanyEmployeeStatsView.as_view(),
         name="company-employee-stats",
     ),

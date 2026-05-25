@@ -24,8 +24,20 @@ def _api_client(role: str, company_id: str | None = None) -> APIClient:
 
 
 @pytest.fixture
-def cae_seed(db) -> CAE:
-    return CAE.objects.create(code="MGM001", description="Company tests")
+def company_payloads(db) -> tuple[CAE, MaturityStage, MaturityStage]:
+    token = uuid.uuid4().hex[:8]
+    cae = CAE.objects.create(code=f"X{token}", description="Test CAE")
+    startup = MaturityStage.objects.create(
+        name=f"Incubated {token}",
+        rate_per_sqm="10.00",
+        display_order=10,
+    )
+    growth = MaturityStage.objects.create(
+        name=f"Startup {token}",
+        rate_per_sqm="20.00",
+        display_order=20,
+    )
+    return cae, startup, growth
 
 
 @pytest.fixture

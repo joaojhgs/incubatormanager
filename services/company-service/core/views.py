@@ -235,14 +235,8 @@ class CompanyEmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
             return EmployeeWriteSerializer
         return EmployeeSerializer
 
-    def get_queryset(self):  # type: ignore[override]
-        scoped_company = _resolve_company_for_client_or_staff(
-            self.request.user,
-            self.kwargs["company_id"],
-        )
-        if scoped_company is None:
-            return Employee.objects.none()
-        return Employee.objects.filter(company_id=scoped_company)
+        if not user_company_id or str(user_company_id) != str(company_id):
+            raise Http404
 
     def perform_update(self, serializer):  # type: ignore[override]
         employee = cast("Employee", serializer.save())
@@ -256,10 +250,15 @@ class CompanyEmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
 class CompanyEmployeeStatsView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request, pk: str) -> Response:
-        scoped_company = _resolve_company_for_client_or_staff(request.user, pk)
-        if scoped_company is None:
-            raise NotFound("Employee stats for this company are unavailable")
+    def get(self, request: Request, company_id: str) -> Response:
+        role, user_company_id = _role_and_company(request.user)
+        if role not in {"Staff", "Director"}:
+            if not user_company_id or str(user_company_id) != str(company_id):
+                raise Http404
+
+        company = get_object_or_404(Company.active, pk=company_id)
+        queryset = Employee.objects.filter(company=company)
+        by_type = {choice: queryset.filter(type=choice).count() for choice in Employee.Type.values}
 
         stats = (
             Employee.objects.filter(company_id=scoped_company)
