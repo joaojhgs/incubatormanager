@@ -5,9 +5,12 @@
 - [ ] Confirm the branch contains the latest integrated Phase 2 changes.
 - [ ] Generate or verify local `.env` without committing secrets.
 - [ ] Confirm Docker socket access on the demo machine.
+- [ ] Review `docs/user.md` for the staff, client, and public booking walkthrough.
 - [ ] Run `make demo` on a machine with Docker access.
 - [ ] Run `make seed` after stack startup.
 - [ ] Run the gateway Playwright smoke command if the live stack is available.
+- [ ] Update `docs/defense/local-qa-evidence.md` with the latest pass/fail commands and blockers.
+- [ ] Update `docs/defense/release-evidence.md` before defense sign-off.
 - [ ] Export `docs/defense/slides.md` to PDF if a PDF is required by the defense format.
 - [ ] Record a 3-minute backup demo if live compose remains environment-sensitive.
 - [ ] Keep demo credentials in private notes, not in repository files.

@@ -19,6 +19,10 @@ NODE_PATH="$PWD/frontend/node_modules" frontend/node_modules/.bin/playwright tes
 
 If Docker socket access is unavailable, state that the live compose path is host-blocked and use the backup recording path in section 5.
 
+User guide reference: `docs/user.md` contains the staff, client, public booking, and troubleshooting steps in operator-facing form.
+
+Release evidence reference: update `docs/defense/release-evidence.md` with the latest command results before sign-off.
+
 ## 1. Opening narrative, 30 seconds
 
 Say:

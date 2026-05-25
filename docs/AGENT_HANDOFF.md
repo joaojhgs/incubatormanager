@@ -66,3 +66,14 @@ NODE_PATH="$PWD/frontend/node_modules" frontend/node_modules/.bin/playwright tes
 ```
 
 If additional changes land, also rerun the relevant service tests plus frontend `typecheck`, tests, lint, and build.
+
+## Documentation and release evidence refresh
+
+- `docs/user.md` now provides the operator/user walkthrough for staff, client,
+  and public booking paths.
+- `docs/defense/local-qa-evidence.md` records the current QA command evidence
+  and distinguishes frontend TypeScript/build blockers from Docker host-access
+  blockers.
+- `docs/defense/release-evidence.md` is the release-facing command and blocker index.
+- `docs/defense/checklist.md` and `docs/defense/demo-script.md` point operators
+  to the user guide and latest evidence refresh before a defense run.
