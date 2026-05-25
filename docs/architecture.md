@@ -109,19 +109,19 @@ events** rather than shared tables.
 The following event types are part of the platform catalogue; full payload
 contracts and publisher notes are summarised in `docs/events.md`.
 
-| `event_type`       | Summary                                                                                                                                                                            |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `company.created`   | New company created; downstream services may create company-scoped state and indexes. |
-| `company.archived`  | A company has been moved to an archived state; downstream services should stop treating it as active for operational workflows and may tighten access.                             |
-| `employee.changed`  | Employment or affiliation data for a person relative to a company has changed (e.g. role, assignment, or end of association); consumers refresh denormalized person–company views. |
-| `contract.activated` | Contract entered active state for a company/space pair; consumers can create/update billing and availability state. |
-| `contract.terminated` | Contract terminated early; consumers should unblock future booking windows and recompute financial status. |
-| `contract.expired`   | Contract reached end date without termination; consumers should deactivate operational availability. |
-| `booking.approved`   | Booking approved and ready for service execution; consumers may reserve inventory and prepare billing state. |
-| `booking.rejected`   | Booking rejected; consumers should release tentative reservations and invalidate pending booking-side state. |
-| `booking.cancelled`  | Booking cancelled and must release resources and block execution. |
-| `booking.completed`  | Booking completed and can trigger final invoice and occupancy reconciliation. |
-| `payment.recorded`   | Payment recorded in finance; consumers should refresh financial aggregates. |
+| `event_type`          | Summary                                                                                                                                                                            |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `company.created`     | New company created; downstream services may create company-scoped state and indexes.                                                                                              |
+| `company.archived`    | A company has been moved to an archived state; downstream services should stop treating it as active for operational workflows and may tighten access.                             |
+| `employee.changed`    | Employment or affiliation data for a person relative to a company has changed (e.g. role, assignment, or end of association); consumers refresh denormalized person–company views. |
+| `contract.activated`  | Contract entered active state for a company/space pair; consumers can create/update billing and availability state.                                                                |
+| `contract.terminated` | Contract terminated early; consumers should unblock future booking windows and recompute financial status.                                                                         |
+| `contract.expired`    | Contract reached end date without termination; consumers should deactivate operational availability.                                                                               |
+| `booking.approved`    | Booking approved and ready for service execution; consumers may reserve inventory and prepare billing state.                                                                       |
+| `booking.rejected`    | Booking rejected; consumers should release tentative reservations and invalidate pending booking-side state.                                                                       |
+| `booking.cancelled`   | Booking cancelled and must release resources and block execution.                                                                                                                  |
+| `booking.completed`   | Booking completed and can trigger final invoice and occupancy reconciliation.                                                                                                      |
+| `payment.recorded`    | Payment recorded in finance; consumers should refresh financial aggregates.                                                                                                        |
 
 Both use the standard envelope in §1.3. Naming is stable: new subscribers **must
 not** infer different semantics for the same `event_type`.

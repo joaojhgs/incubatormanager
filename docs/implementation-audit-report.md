@@ -10,18 +10,18 @@ The Phase 2 backend gap has been closed for the core demo path. Contract, Financ
 
 ## Service status
 
-| Service | Status | Notes |
-|---|---:|---|
-| Auth | Complete | JWT, user CRUD, gateway verification, RBAC. |
-| Company | Complete for Phase 2 wave | Create/update, maturity change, employees, stats, events. |
-| Document | Complete | MinIO-backed upload/download/list/delete. |
-| Contract | Implemented | Lifecycle endpoints, monthly fee snapshot, expiration command, events. |
-| Finance | Implemented | Payments, billing/overdue commands, event handlers, reports. |
-| Space | Implemented | Types, CRUD, occupancy, contract/booking projections. |
-| Booking | Implemented | Staff/client/public booking flows, lifecycle events, completion command. |
-| Inventory | Implemented | Equipment/type CRUD, assignment/release, booking event handlers. |
-| Ticket | Implemented | Scoped tickets and message threads. |
-| Dashboard | Implemented | Service health and metric aggregation endpoints. |
+| Service   |                    Status | Notes                                                                    |
+| --------- | ------------------------: | ------------------------------------------------------------------------ |
+| Auth      |                  Complete | JWT, user CRUD, gateway verification, RBAC.                              |
+| Company   | Complete for Phase 2 wave | Create/update, maturity change, employees, stats, events.                |
+| Document  |                  Complete | MinIO-backed upload/download/list/delete.                                |
+| Contract  |               Implemented | Lifecycle endpoints, monthly fee snapshot, expiration command, events.   |
+| Finance   |               Implemented | Payments, billing/overdue commands, event handlers, reports.             |
+| Space     |               Implemented | Types, CRUD, occupancy, contract/booking projections.                    |
+| Booking   |               Implemented | Staff/client/public booking flows, lifecycle events, completion command. |
+| Inventory |               Implemented | Equipment/type CRUD, assignment/release, booking event handlers.         |
+| Ticket    |               Implemented | Scoped tickets and message threads.                                      |
+| Dashboard |               Implemented | Service health and metric aggregation endpoints.                         |
 
 ## Event chains
 

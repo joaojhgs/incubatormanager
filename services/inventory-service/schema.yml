@@ -8,13 +8,13 @@ paths:
     post:
       operationId: api_inventory_bookings_create
       parameters:
-      - in: path
-        name: event_type
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: event_type
+          schema:
+            type: string
+          required: true
       tags:
-      - api
+        - api
       responses:
         '200':
           description: No response body
@@ -22,7 +22,7 @@ paths:
     get:
       operationId: api_inventory_equipment_list
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -35,7 +35,7 @@ paths:
     post:
       operationId: api_inventory_equipment_create
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -59,7 +59,7 @@ paths:
     get:
       operationId: api_inventory_equipment_types_list
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -72,7 +72,7 @@ paths:
     post:
       operationId: api_inventory_equipment_types_create
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -96,14 +96,14 @@ paths:
     get:
       operationId: api_inventory_equipment_types_retrieve
       parameters:
-      - in: path
-        name: type_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -114,14 +114,14 @@ paths:
     put:
       operationId: api_inventory_equipment_types_update
       parameters:
-      - in: path
-        name: type_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -144,14 +144,14 @@ paths:
     patch:
       operationId: api_inventory_equipment_types_partial_update
       parameters:
-      - in: path
-        name: type_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -173,14 +173,14 @@ paths:
     delete:
       operationId: api_inventory_equipment_types_destroy
       parameters:
-      - in: path
-        name: type_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '204':
           description: No response body
@@ -188,14 +188,14 @@ paths:
     get:
       operationId: api_inventory_equipment_retrieve
       parameters:
-      - in: path
-        name: equipment_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: equipment_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -206,14 +206,14 @@ paths:
     put:
       operationId: api_inventory_equipment_update
       parameters:
-      - in: path
-        name: equipment_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: equipment_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -236,14 +236,14 @@ paths:
     patch:
       operationId: api_inventory_equipment_partial_update
       parameters:
-      - in: path
-        name: equipment_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: equipment_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -265,14 +265,14 @@ paths:
     delete:
       operationId: api_inventory_equipment_destroy
       parameters:
-      - in: path
-        name: equipment_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: equipment_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '204':
           description: No response body
@@ -280,14 +280,14 @@ paths:
     post:
       operationId: api_inventory_equipment_assign_create
       parameters:
-      - in: path
-        name: equipment_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: equipment_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -310,14 +310,14 @@ paths:
     post:
       operationId: api_inventory_equipment_release_create
       parameters:
-      - in: path
-        name: equipment_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: equipment_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -341,7 +341,7 @@ paths:
     get:
       operationId: api_inventory_health_retrieve
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -357,7 +357,7 @@ paths:
     get:
       operationId: api_inventory_my_assignments_list
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -371,7 +371,7 @@ paths:
     get:
       operationId: health_retrieve
       tags:
-      - health
+        - health
       responses:
         '200':
           content:
@@ -425,11 +425,11 @@ components:
           format: date-time
           readOnly: true
       required:
-      - created_at
-      - equipment_type
-      - id
-      - name
-      - updated_at
+        - created_at
+        - equipment_type
+        - id
+        - name
+        - updated_at
     EquipmentAssign:
       type: object
       properties:
@@ -450,7 +450,7 @@ components:
           type: string
           format: uuid
       required:
-      - booking_id
+        - booking_id
     EquipmentType:
       type: object
       properties:
@@ -472,10 +472,10 @@ components:
           format: date-time
           readOnly: true
       required:
-      - created_at
-      - id
-      - name
-      - updated_at
+        - created_at
+        - id
+        - name
+        - updated_at
     PatchedEquipment:
       type: object
       properties:
@@ -537,9 +537,9 @@ components:
           readOnly: true
     StatusEnum:
       enum:
-      - Available
-      - In use
-      - Maintenance
+        - Available
+        - In use
+        - Maintenance
       type: string
       description: |-
         * `Available` - Available

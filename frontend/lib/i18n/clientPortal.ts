@@ -62,7 +62,6 @@ const clientMessages = {
   companyFieldSection: "Dados da empresa",
   documentsTitle: "Documentos",
 
-
   // Client operational data
   clientLoadError: "Não foi possível carregar os dados.",
   clientEmptyData: "Sem registos para apresentar.",
