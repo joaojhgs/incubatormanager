@@ -21,6 +21,23 @@ const staffMessages = {
   pageHomeTitle: "Painel",
   pageHomeIntro: "Área reservada à equipa do incubador. Utilize o menu lateral para navegar.",
   pagePlaceholderBody: "Conteúdo em desenvolvimento.",
+
+  // Service status pages (finance/contracts/bookings/...) currently backed by service health.
+  serviceHealthStatus: "Estado do serviço",
+  serviceHealthUnknown: "Desconhecido",
+  serviceHealthUp: "Disponível",
+  serviceHealthDown: "Indisponível",
+  serviceHealthLoading: "A carregar estado do serviço…",
+
+  // Tickets (staff view)
+  ticketsListTitle: "Pedidos de suporte",
+  ticketsColumnCompany: "Empresa",
+  ticketsColumnSubject: "Assunto",
+  ticketsColumnStatus: "Estado",
+  ticketsColumnUpdatedAt: "Atualizado em",
+  ticketsColumnOwner: "Criado por",
+  ticketsEmpty: "Sem pedidos de suporte para apresentar.",
+  ticketsLoadError: "Não foi possível carregar os pedidos de suporte.",
 } as const;
 
 export type StaffI18nKey = keyof typeof staffMessages;

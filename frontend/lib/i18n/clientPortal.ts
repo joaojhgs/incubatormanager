@@ -42,13 +42,39 @@ const clientMessages = {
   requestBooking: "Solicitar reserva",
   openTicket: "Abrir pedido de suporte",
 
-  // Placeholder pages
+  // Placeholder/service pages
   pageCompanyTitle: "A minha empresa",
   pageContractTitle: "O meu contrato",
   pagePaymentsTitle: "Pagamentos",
   pageBookingsTitle: "Reservas",
   pageSupportTitle: "Suporte",
   pagePlaceholderBody: "Conteúdo em desenvolvimento.",
+  pageLoading: "A carregar…",
+  pageLoadError: "Não foi possível carregar os dados.",
+  pageNoCompany: "A sua conta de utilizador não está associada a uma empresa.",
+  pageNoCompanyAction: "Contacte o administrador da incubadora.",
+  serviceUnavailable: "Serviço indisponível no momento.",
+  serviceHealthUnavailable: "Serviço em construção",
+  serviceHealthHint:
+    "Esta página mostra o estado atual do serviço enquanto os fluxos de negócio ainda estão em implementação.",
+
+  // Company page details
+  companyFieldCompany: "Empresa",
+  companyFieldTaxId: "NIF",
+  companyFieldLegalRepresentative: "Representante legal",
+  companyFieldPhone: "Telefone",
+  companyFieldEmail: "Email",
+  companyFieldAddress: "Morada",
+  companyFieldSection: "Dados da empresa",
+
+  // Tickets (client view)
+  portalTicketsTitle: "Pedidos de suporte",
+  portalTicketsColumnSubject: "Assunto",
+  portalTicketsColumnStatus: "Estado",
+  portalTicketsColumnUpdatedAt: "Atualizado em",
+  portalTicketsEmpty: "Ainda não tem pedidos de suporte registados.",
+  portalTicketsLoadError: "Não foi possível carregar os seus pedidos de suporte.",
+  portalTicketRolePrefix: "Criado por",
 } as const;
 
 export type ClientPortalI18nKey = keyof typeof clientMessages;

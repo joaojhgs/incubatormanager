@@ -1,5 +1,16 @@
-import { PlaceholderSection } from "@/components/staff/PlaceholderSection";
+import { ServiceHealthPanel } from "@/components/shared/ServiceHealthPanel";
+import { tStaff } from "@/lib/i18n/staffNav";
 
 export default function BookingsPage() {
-  return <PlaceholderSection titleKey="navBookings" />;
+  return (
+    <ServiceHealthPanel
+      title={tStaff("navBookings")}
+      service="bookings"
+      loadingMessage={tStaff("serviceHealthLoading")}
+      statusUpText={tStaff("serviceHealthUp")}
+      statusDownText={tStaff("serviceHealthDown")}
+      unknownStatusText={tStaff("serviceHealthUnknown")}
+      unavailableText={tStaff("serviceHealthDown")}
+    />
+  );
 }
