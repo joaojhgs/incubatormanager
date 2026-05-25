@@ -46,7 +46,7 @@ test.describe("smoke: login → users list → create user → re-login", () => 
   test("full flow with mocked auth API", async ({ page }) => {
     let refreshRole: "director" | "staff" = "director";
 
-    await page.route("**/api/auth/refresh", async (route) => {
+    await page.route("**/api/auth/refresh**", async (route) => {
       if (route.request().method() !== "POST") {
         await route.continue();
         return;

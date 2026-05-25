@@ -7,7 +7,7 @@ function upstreamLoginUrl(): string {
     process.env.INTERNAL_API_URL?.trim() ||
     process.env.NEXT_PUBLIC_API_URL?.trim() ||
     "http://localhost/api";
-  return `${base.replace(/\/$/, "")}/auth/login`;
+  return `${base.replace(/\/$/, "")}/auth/login/`;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

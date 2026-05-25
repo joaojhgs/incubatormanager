@@ -242,6 +242,96 @@ test.describe("QA hardening smoke coverage", () => {
     );
   });
 
+  test("staff inventory correlates spaces, booking records, and equipment assignments", async ({
+    context,
+    page,
+  }) => {
+    await seedSession(page, context, "director", { email: "director@test.local" });
+
+    await page.route("**/api/inventory/equipment/", (route) =>
+      fulfillJson(route, [
+        {
+          id: "equipment-1",
+          name: "Projetor QA",
+          equipment_type: "Projector",
+          serial_number: "QA-001",
+          assigned_space_id: "space-1",
+          rental_cost: "10.00",
+          status: "In use",
+          notes: "Reservado para demonstrações",
+          is_active: true,
+          created_at: "2026-05-20T09:00:00Z",
+          updated_at: "2026-05-25T11:00:00Z",
+        },
+      ]),
+    );
+    await page.route("**/api/inventory/equipment-types/", (route) =>
+      fulfillJson(route, [
+        {
+          id: "type-1",
+          name: "Projector",
+          is_active: true,
+          created_at: "2026-05-20T09:00:00Z",
+          updated_at: "2026-05-20T09:00:00Z",
+        },
+      ]),
+    );
+    await page.route("**/api/spaces/", (route) =>
+      fulfillJson(route, [
+        {
+          id: "space-1",
+          name: "Sala 1",
+          space_type: "Meeting",
+          capacity: 8,
+          status: "Reserved",
+          company_id: companyId,
+          is_active: true,
+          created_at: "2026-05-20T09:00:00Z",
+          updated_at: "2026-05-25T09:00:00Z",
+        },
+      ]),
+    );
+    await page.route("**/api/spaces/bookings/records/", (route) =>
+      fulfillJson(route, [
+        {
+          id: "booking-1",
+          space_id: "space-1",
+          company_id: companyId,
+          status: "Approved",
+          start_time: "2026-05-26T10:00:00Z",
+          end_time: "2026-05-26T11:00:00Z",
+          quoted_price: "25.00",
+          equipment_ids: ["equipment-1"],
+        },
+      ]),
+    );
+    await page.route("**/api/inventory/assignments/", (route) =>
+      fulfillJson(route, [
+        {
+          id: "assignment-1",
+          equipment_id: "equipment-1",
+          equipment_name: "Projetor QA",
+          booking_id: "booking-1",
+          company_id: companyId,
+          assigned_space_id: "space-1",
+          status: "Assigned",
+          created_at: "2026-05-25T10:00:00Z",
+          updated_at: "2026-05-25T11:00:00Z",
+        },
+      ]),
+    );
+
+    await page.goto("/inventory");
+
+    await expect(page.getByText("Inventário por espaço e reservas")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Sala 1").first()).toBeVisible();
+    await expect(page.getByText("Projetor QA").first()).toBeVisible();
+    await expect(page.getByText("Histórico recente de atribuições")).toBeVisible();
+    await expect(page.getByText("booking-1")).toBeVisible();
+  });
+
   test("public booking request remains unauthenticated and validates required fields", async ({
     page,
   }) => {

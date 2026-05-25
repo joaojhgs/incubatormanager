@@ -36,7 +36,7 @@ describe("createApiClient", () => {
     nock(BASE)
       .get(`${BASE_PATH}/resource`)
       .reply(401)
-      .post(`${BASE_PATH}/auth/refresh`)
+      .post(`${BASE_PATH}/auth/refresh/`)
       .reply(200, { access_token: "fresh" })
       .get(`${BASE_PATH}/resource`)
       .reply(200, { ok: true });
@@ -52,7 +52,7 @@ describe("createApiClient", () => {
     const client = createApiClient({ baseURL: `${BASE}${BASE_PATH}` });
 
     nock(BASE).get(`${BASE_PATH}/resource`).reply(401);
-    nock(BASE).post(`${BASE_PATH}/auth/refresh`).reply(401, {});
+    nock(BASE).post(`${BASE_PATH}/auth/refresh/`).reply(401, {});
 
     await expect(client.get("/resource")).rejects.toMatchObject({
       response: { status: 401 },
@@ -66,9 +66,9 @@ describe("createApiClient", () => {
     setAccessToken("x");
     const client = createApiClient({ baseURL: `${BASE}${BASE_PATH}` });
 
-    nock(BASE).post(`${BASE_PATH}/auth/refresh`).reply(401, {});
+    nock(BASE).post(`${BASE_PATH}/auth/refresh/`).reply(401, {});
 
-    await expect(client.post("/auth/refresh", {})).rejects.toMatchObject({
+    await expect(client.post("/auth/refresh/", {})).rejects.toMatchObject({
       response: { status: 401 },
     });
     expect(nock.pendingMocks()).toHaveLength(0);
@@ -77,9 +77,9 @@ describe("createApiClient", () => {
   it("does not refresh on login 401", async () => {
     const client = createApiClient({ baseURL: `${BASE}${BASE_PATH}` });
 
-    nock(BASE).post(`${BASE_PATH}/auth/login`, { user: "u" }).reply(401, {});
+    nock(BASE).post(`${BASE_PATH}/auth/login/`, { user: "u" }).reply(401, {});
 
-    await expect(client.post("/auth/login", { user: "u" })).rejects.toMatchObject({
+    await expect(client.post("/auth/login/", { user: "u" })).rejects.toMatchObject({
       response: { status: 401 },
     });
     expect(nock.pendingMocks()).toHaveLength(0);
@@ -90,7 +90,7 @@ describe("createApiClient", () => {
     const client = createApiClient({ baseURL: `${BASE}${BASE_PATH}` });
 
     nock(BASE).get(`${BASE_PATH}/resource`).reply(401);
-    nock(BASE).post(`${BASE_PATH}/auth/refresh`).reply(200, { access: "renewed-via-access" });
+    nock(BASE).post(`${BASE_PATH}/auth/refresh/`).reply(200, { access: "renewed-via-access" });
     nock(BASE).get(`${BASE_PATH}/resource`).reply(200, { ok: true });
 
     const { data } = await client.get("/resource");
@@ -106,7 +106,7 @@ describe("createApiClient", () => {
     let refreshCount = 0;
     nock(BASE).get(`${BASE_PATH}/a`).times(2).reply(401);
     nock(BASE)
-      .post(`${BASE_PATH}/auth/refresh`)
+      .post(`${BASE_PATH}/auth/refresh/`)
       .reply(() => {
         refreshCount += 1;
         return [200, { access_token: "renewed" }];
@@ -125,7 +125,7 @@ describe("createApiClient", () => {
     const client = createApiClient({ baseURL: `${BASE}${BASE_PATH}` });
 
     nock(BASE).get(`${BASE_PATH}/denied`).reply(401);
-    nock(BASE).post(`${BASE_PATH}/auth/refresh`).reply(200, { access_token: "new" });
+    nock(BASE).post(`${BASE_PATH}/auth/refresh/`).reply(200, { access_token: "new" });
     nock(BASE).get(`${BASE_PATH}/denied`).reply(401);
 
     await expect(client.get("/denied")).rejects.toMatchObject({

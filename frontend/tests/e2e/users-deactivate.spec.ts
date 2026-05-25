@@ -85,7 +85,7 @@ test.describe("users list: show inactive toggle + deactivate", () => {
       },
     ];
 
-    await page.route("**/api/auth/refresh", async (route) => {
+    await page.route("**/api/auth/refresh**", async (route) => {
       if (route.request().method() !== "POST") {
         await route.continue();
         return;

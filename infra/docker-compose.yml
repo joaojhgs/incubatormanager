@@ -16,6 +16,7 @@ x-django-env: &django-env
   JWT_AUDIENCE: ilb-gateway
   JWT_ACCESS_TTL_SECONDS: '900'
   JWT_REFRESH_TTL_SECONDS: '604800'
+  AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
 
 x-service-build: &service-build
   context: ${COMPOSE_REPO_ROOT:-${PWD}}
@@ -452,6 +453,8 @@ services:
       TZ: Europe/Lisbon
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost/api}
+      INTERNAL_API_URL: http://auth-service:8001/api
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
     healthcheck:
       test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:3000/']
       interval: 15s
