@@ -27,7 +27,7 @@ import type { ColumnsType } from "antd/es/table";
 import Link from "next/link";
 
 import { ArchivedBadge, MaturityStageTag } from "@/components/companies";
-import { useArchiveCompany, useCompanies } from "@/lib/hooks";
+import { useArchiveCompany, useCAECodes, useCompanies, useMaturityStages } from "@/lib/hooks";
 import { tCompany } from "@/lib/i18n/companies";
 import type { Company } from "@/lib/api/companies";
 
@@ -69,6 +69,26 @@ export default function CompaniesListPage() {
   });
 
   const archiveMutation = useArchiveCompany();
+  const caeQuery = useCAECodes();
+  const maturityQuery = useMaturityStages();
+
+  const caeOptions = useMemo(
+    () =>
+      (caeQuery.data ?? []).map((cae) => ({
+        value: cae.id,
+        label: `${cae.code} — ${cae.description}`,
+      })),
+    [caeQuery.data],
+  );
+
+  const maturityOptions = useMemo(
+    () =>
+      (maturityQuery.data ?? []).map((stage) => ({
+        value: stage.id,
+        label: stage.name,
+      })),
+    [maturityQuery.data],
+  );
 
   // ── Handlers ─────────────────────────────────────────────────────────
   const handleArchive = useCallback(
@@ -187,7 +207,6 @@ export default function CompaniesListPage() {
             onChange={(e) => setSearchInput(e.target.value)}
             style={{ width: 280 }}
           />
-          {/* Maturity Stage filter — will be populated from API */}
           <Select
             allowClear
             placeholder={tCompany("listFilterMaturityStage")}
@@ -197,9 +216,11 @@ export default function CompaniesListPage() {
               setPage(1);
             }}
             style={{ width: 200 }}
-            options={[]}
+            loading={maturityQuery.isLoading}
+            options={maturityOptions}
+            showSearch
+            optionFilterProp="label"
           />
-          {/* Sector (CAE) filter — will be populated from API */}
           <Select
             allowClear
             placeholder={tCompany("listFilterSector")}
@@ -209,7 +230,10 @@ export default function CompaniesListPage() {
               setPage(1);
             }}
             style={{ width: 200 }}
-            options={[]}
+            loading={caeQuery.isLoading}
+            options={caeOptions}
+            showSearch
+            optionFilterProp="label"
           />
           <Space>
             <Switch
