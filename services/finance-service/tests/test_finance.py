@@ -103,12 +103,13 @@ def test_payment_detail_patch_marks_paid_and_publishes_event() -> None:
         os.environ["RABBITMQ_URL"] = "amqp://rabbit"
         response = _api_client("Staff", company_id=company_id).patch(
             f"/api/finance/payments/{payment.id}/",
-            data={"status": Payment.Status.PAID},
+            data={"status": Payment.Status.PAID, "reference_id": "bank-transfer-123"},
             format="json",
         )
         assert response.status_code == 200
         payment.refresh_from_db()
         assert payment.status == Payment.Status.PAID
+        assert payment.reference_id == "bank-transfer-123"
         assert on_commit.call_count == 1
 
         callback = on_commit.call_args.args[0]
@@ -214,6 +215,8 @@ def test_contract_and_booking_handlers_are_idempotent() -> None:
         )
     )
     assert Payment.objects.filter(source=Payment.Source.BOOKING).count() == 1
+    rental_payment = Payment.objects.get(source=Payment.Source.BOOKING)
+    assert rental_payment.payment_type == Payment.PaymentType.RENTAL
 
 
 @pytest.mark.django_db
@@ -262,6 +265,48 @@ def test_generate_monthly_billing_is_idempotent() -> None:
 
     call_command("generate_monthly_billing", as_of="2026-06-20")
     assert Payment.objects.filter(source=Payment.Source.CONTRACT).count() == 1
+
+
+@pytest.mark.django_db
+def test_director_can_trigger_manual_billing_generation() -> None:
+    BillingContract.objects.create(
+        contract_id=uuid.uuid4(),
+        company_id=uuid.uuid4(),
+        space_id=uuid.uuid4(),
+        area_sqm="12.5",
+        rate_per_sqm="8.00",
+        monthly_fee="100.00",
+        start_date=dt.date(2026, 1, 1),
+        is_active=True,
+    )
+
+    response = _api_client("Director").post(
+        "/api/finance/billing/generate/",
+        data={"as_of": "2026-06-17"},
+        format="json",
+    )
+    assert response.status_code == 200
+    assert response.json()["created"] == 1
+    assert Payment.objects.filter(source=Payment.Source.CONTRACT).count() == 1
+
+    response = _api_client("Director").post(
+        "/api/finance/billing/generate/",
+        data={"as_of": "2026-06-20"},
+        format="json",
+    )
+    assert response.status_code == 200
+    assert response.json()["existing_skipped"] == 1
+    assert Payment.objects.filter(source=Payment.Source.CONTRACT).count() == 1
+
+
+@pytest.mark.django_db
+def test_manual_billing_generation_is_director_only() -> None:
+    response = _api_client("Staff").post(
+        "/api/finance/billing/generate/",
+        data={"as_of": "2026-06-17"},
+        format="json",
+    )
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -327,10 +372,55 @@ def test_dashboard_and_reports_are_scoped() -> None:
     client_resp = _api_client("Client", company_id=str(cid1)).get("/api/finance/dashboard/")
     assert client_resp.status_code == 200
     assert client_resp.json()["total_payments"] == 3
+    assert client_resp.json()["status_breakdown"]
+    assert client_resp.json()["payment_type_breakdown"]
 
     reports = _api_client("Staff").get("/api/finance/reports/")
     assert reports.status_code == 200
-    assert len(reports.json()) == 2
+    assert reports.json()["type"] == "revenue_by_company"
+    assert len(reports.json()["results"]) == 2
+
+    status_summary = _api_client("Staff").get(
+        "/api/finance/reports/",
+        data={"type": "payment_status_summary"},
+    )
+    assert status_summary.status_code == 200
+    assert {row["status"] for row in status_summary.json()["results"]} == {
+        Payment.Status.PAID,
+        Payment.Status.PENDING,
+        Payment.Status.OVERDUE,
+    }
+
+
+@pytest.mark.django_db
+def test_next_due_payment_is_client_scoped() -> None:
+    mine = str(uuid.uuid4())
+    other = str(uuid.uuid4())
+    own_later = _create_payment(
+        company_id=mine,
+        amount="90.00",
+        due_date=dt.date(2026, 5, 20),
+    )
+    own_earlier = _create_payment(
+        company_id=mine,
+        amount="70.00",
+        due_date=dt.date(2026, 5, 10),
+    )
+    _create_payment(
+        company_id=other,
+        amount="10.00",
+        due_date=dt.date(2026, 5, 1),
+    )
+    own_later.refresh_from_db()
+
+    response = _api_client("Client", company_id=mine).get("/api/finance/payments/next-due/")
+    assert response.status_code == 200
+    assert response.json()["payment_id"] == str(own_earlier.id)
+    assert response.json()["company_id"] == mine
+
+    staff_response = _api_client("Staff").get("/api/finance/payments/next-due/")
+    assert staff_response.status_code == 200
+    assert staff_response.json()["due_date"] == "2026-05-01"
 
 
 @pytest.mark.django_db

@@ -4,6 +4,43 @@ info:
   version: 0.1.0
   description: Finance bounded context API.
 paths:
+  /api/finance/billing/generate/:
+    post:
+      operationId: api_finance_billing_generate_create
+      description: Director-only wrapper around the idempotent monthly billing command.
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingGenerate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BillingGenerate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BillingGenerate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingGenerateResult'
+          description: ''
+  /api/finance/dashboard/:
+    get:
+      operationId: api_finance_dashboard_retrieve
+      description: Summary totals for dashboard cards.
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+          description: ''
   /api/finance/health/:
     get:
       operationId: api_finance_health_retrieve
@@ -20,6 +57,191 @@ paths:
                   status:
                     type: string
                     example: ok
+          description: ''
+  /api/finance/payments/:
+    get:
+      operationId: api_finance_payments_list
+      description: List payments visible to the caller.
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+          description: ''
+  /api/finance/payments/{payment_id}/:
+    get:
+      operationId: api_finance_payments_retrieve
+      description: Retrieve or patch a payment.
+      parameters:
+        - in: path
+          name: payment_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+    put:
+      operationId: api_finance_payments_update
+      description: Retrieve or patch a payment.
+      parameters:
+        - in: path
+          name: payment_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentPatch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentPatch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPatch'
+          description: ''
+    patch:
+      operationId: api_finance_payments_partial_update
+      description: Retrieve or patch a payment.
+      parameters:
+        - in: path
+          name: payment_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPaymentPatch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPaymentPatch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPaymentPatch'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPatch'
+          description: ''
+  /api/finance/payments/company/{company_id}/:
+    get:
+      operationId: api_finance_payments_company_list
+      description: List payments for a specific company.
+      parameters:
+        - in: path
+          name: company_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+          description: ''
+  /api/finance/payments/next-due/:
+    get:
+      operationId: api_finance_payments_next_due_retrieve
+      description: Return the earliest unpaid payment visible to the caller.
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NextDuePayment'
+          description: ''
+  /api/finance/reports/:
+    get:
+      operationId: api_finance_reports_list
+      description: Aggregate payment reports by requested Week-3 report type.
+      parameters:
+        - in: query
+          name: date_from
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: date_to
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: group_by
+          schema:
+            enum:
+              - day
+              - month
+            type: string
+            default: month
+            minLength: 1
+          description: |-
+            * `day` - day
+            * `month` - month
+        - in: query
+          name: type
+          schema:
+            enum:
+              - revenue_by_company
+              - revenue_by_maturity
+              - payment_status_summary
+              - cash_flow_trend
+            type: string
+            default: revenue_by_company
+            minLength: 1
+          description: |-
+            * `revenue_by_company` - revenue_by_company
+            * `revenue_by_maturity` - revenue_by_maturity
+            * `payment_status_summary` - payment_status_summary
+            * `cash_flow_trend` - cash_flow_trend
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Report'
           description: ''
   /health/:
     get:
@@ -38,4 +260,273 @@ paths:
                     type: string
                     example: ok
           description: ''
-components: {}
+components:
+  schemas:
+    BillingGenerate:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date
+    BillingGenerateResult:
+      type: object
+      properties:
+        created:
+          type: integer
+        existing_skipped:
+          type: integer
+        inactive_skipped:
+          type: integer
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+      required:
+        - created
+        - existing_skipped
+        - inactive_skipped
+        - period_end
+        - period_start
+    Dashboard:
+      type: object
+      properties:
+        total_payments:
+          type: integer
+        total_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        paid:
+          type: integer
+        paid_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        pending:
+          type: integer
+        pending_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        overdue:
+          type: integer
+        overdue_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        status_breakdown:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        source_breakdown:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        payment_type_breakdown:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        by_sector:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+        - overdue
+        - overdue_amount
+        - paid
+        - paid_amount
+        - pending
+        - pending_amount
+        - total_amount
+        - total_payments
+    NextDuePayment:
+      type: object
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+          nullable: true
+        company_id:
+          type: string
+          format: uuid
+          nullable: true
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        status:
+          type: string
+        source:
+          type: string
+        payment_type:
+          type: string
+      required:
+        - amount
+        - company_id
+        - due_date
+        - payment_id
+        - payment_type
+        - source
+        - status
+    PatchedPaymentPatch:
+      type: object
+      description: Writable fields for partial payment updates.
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+        reference_id:
+          type: string
+          maxLength: 255
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        company_id:
+          type: string
+          format: uuid
+        contract_id:
+          type: string
+          format: uuid
+          nullable: true
+        booking_id:
+          type: string
+          format: uuid
+          nullable: true
+        source:
+          allOf:
+            - $ref: '#/components/schemas/SourceEnum'
+          readOnly: true
+        payment_type:
+          allOf:
+            - $ref: '#/components/schemas/PaymentTypeEnum'
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+        period_start:
+          type: string
+          format: date
+          nullable: true
+        period_end:
+          type: string
+          format: date
+          nullable: true
+        reference_id:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - amount
+        - company_id
+        - created_at
+        - currency
+        - id
+        - payment_type
+        - reference_id
+        - source
+        - updated_at
+    PaymentPatch:
+      type: object
+      description: Writable fields for partial payment updates.
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+        reference_id:
+          type: string
+          maxLength: 255
+      required:
+        - status
+    PaymentTypeEnum:
+      enum:
+        - monthly
+        - rental
+      type: string
+      description: |-
+        * `monthly` - monthly
+        * `rental` - rental
+    Report:
+      type: object
+      properties:
+        company_id:
+          type: string
+          format: uuid
+          nullable: true
+        total:
+          type: integer
+        paid:
+          type: integer
+        pending:
+          type: integer
+        overdue:
+          type: integer
+        collected_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+        - collected_amount
+        - overdue
+        - paid
+        - pending
+        - total
+    SourceEnum:
+      enum:
+        - contract
+        - booking
+      type: string
+      description: |-
+        * `contract` - contract
+        * `booking` - booking
+    StatusEnum:
+      enum:
+        - pending
+        - paid
+        - overdue
+      type: string
+      description: |-
+        * `pending` - pending
+        * `paid` - paid
+        * `overdue` - overdue
