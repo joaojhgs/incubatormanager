@@ -25,16 +25,6 @@ from core.serializers import (
 )
 from core.services import ticket_scope_for_user
 
-from core.models import Ticket, TicketMessage
-from core.permissions import IsTicketOwnerOrStaff
-from core.serializers import (
-    TicketCreateSerializer,
-    TicketMessageCreateSerializer,
-    TicketMessageSerializer,
-    TicketSerializer,
-)
-from core.services import ticket_scope_for_user
-
 
 class HealthView(APIView):
     """Liveness/readiness-style health payload."""
@@ -42,25 +32,18 @@ class HealthView(APIView):
     authentication_classes = ()
     permission_classes = ()
 
-    @extend_schema(
-        responses={
-            200: {
-                "type": "object",
-                "properties": {"status": {"type": "string", "example": "ok"}},
-            }
-        }
-    )
+    @extend_schema(responses={200: {"type": "object", "properties": {"status": {"type": "string", "example": "ok"}}}})
     def get(self, request: Request) -> Response:
         return Response({"status": "ok"})
 
 
 class TicketListCreateView(ListCreateAPIView):
-    """List tickets (scoped by role) and create new ticket."""
+    """List tickets (scoped by role) and create new tickets."""
 
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):  # type: ignore[override]
-        return ticket_scope_for_user(self.request.user)
+        return ticket_scope_for_user(self.request.user).prefetch_related("messages")
 
     def get_serializer_class(self):  # type: ignore[override]
         if self.request.method == "POST":
@@ -75,22 +58,14 @@ class TicketListCreateView(ListCreateAPIView):
             company_id = getattr(user, "company_id", None)
             if company_id is None:
                 raise ValidationError("Client users must be bound to a company")
-            serializer.save(
-                company_id=company_id,
-                created_by_user_id=user.id,
-                created_by_role=role,
-            )
+            serializer.save(company_id=company_id, created_by_user_id=user.id, created_by_role=role)
             return
 
         if role in {"Staff", "Director"}:
             company_id = serializer.validated_data.get("company_id")
             if company_id is None:
                 raise ValidationError("staff tickets require company_id")
-            serializer.save(
-                company_id=company_id,
-                created_by_user_id=user.id,
-                created_by_role=role,
-            )
+            serializer.save(company_id=company_id, created_by_user_id=user.id, created_by_role=role)
             return
 
         raise ValidationError("Unsupported role")
@@ -104,7 +79,7 @@ class TicketDetailView(RetrieveUpdateAPIView):
     lookup_url_kwarg = "ticket_id"
 
     def get_queryset(self):  # type: ignore[override]
-        return ticket_scope_for_user(self.request.user)
+        return ticket_scope_for_user(self.request.user).prefetch_related("messages")
 
     def get_permissions(self):  # type: ignore[override]
         if self.request.method in {"PATCH", "PUT"}:
@@ -119,7 +94,7 @@ class MyTicketsView(ListAPIView):
     serializer_class = TicketSerializer
 
     def get_queryset(self):  # type: ignore[override]
-        return ticket_scope_for_user(self.request.user)
+        return ticket_scope_for_user(self.request.user).prefetch_related("messages")
 
 
 class TicketMessageCreateView(APIView):
@@ -130,15 +105,14 @@ class TicketMessageCreateView(APIView):
     @extend_schema(request=TicketMessageCreateSerializer, responses={201: TicketMessageSerializer})
     def post(self, request: Request, ticket_id: UUID) -> Response:
         ticket = get_object_or_404(ticket_scope_for_user(request.user), id=ticket_id)
+        self.check_object_permissions(request, ticket)
 
         serializer = TicketMessageCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         message = TicketMessage.objects.create(
             ticket=ticket,
             author_user_id=request.user.id,
             author_role=request.user.role,
             content=serializer.validated_data["content"],
         )
-        output = TicketMessageSerializer(message)
-        return Response(output.data, status=status.HTTP_201_CREATED)
+        return Response(TicketMessageSerializer(message).data, status=status.HTTP_201_CREATED)

@@ -41,6 +41,12 @@ def company_payloads(db) -> tuple[CAE, MaturityStage, MaturityStage]:
 
 
 @pytest.fixture
+def cae_seed(db) -> CAE:
+    token = uuid.uuid4().hex[:8]
+    return CAE.objects.create(code=f"M{token}", description="Management CAE")
+
+
+@pytest.fixture
 def stage_startup(db) -> MaturityStage:
     stage, _ = MaturityStage.objects.get_or_create(
         name=MaturityStage.Name.STARTUP,

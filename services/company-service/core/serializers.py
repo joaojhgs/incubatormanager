@@ -15,27 +15,6 @@ class CAESerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
-class CompanyWriteSerializer(serializers.ModelSerializer):
-    """Writable serializer for create/update endpoints."""
-
-    class Meta:
-        model = Company
-        fields = [
-            "id",
-            "name",
-            "tax_id",
-            "address",
-            "phone",
-            "email",
-            "legal_representative",
-            "description",
-            "is_active",
-            "cae",
-            "maturity_stage",
-        ]
-        read_only_fields = ["id"]
-
-
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
@@ -48,55 +27,6 @@ class EmployeeWriteSerializer(serializers.ModelSerializer):
         model = Employee
         fields = ["id", "name", "type", "start_date", "end_date", "is_active"]
         read_only_fields = ["id"]
-
-
-class CompanyWriteSerializer(serializers.ModelSerializer):
-    """Writable company payload for create/update operations."""
-
-    class Meta:
-        model = Company
-        fields = [
-            "id",
-            "name",
-            "tax_id",
-            "address",
-            "phone",
-            "email",
-            "legal_representative",
-            "description",
-            "is_active",
-            "cae",
-            "maturity_stage",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at"]
-
-
-class EmployeeWriteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Employee
-        fields = ["id", "name", "type", "start_date", "end_date", "is_active"]
-        read_only_fields = ["id"]
-
-
-class CompanyWriteSerializer(serializers.ModelSerializer):
-    """Writable company payload for create/update operations."""
-
-    class Meta:
-        model = Company
-        fields = [
-            "id",
-            "name",
-            "tax_id",
-            "address",
-            "phone",
-            "email",
-            "legal_representative",
-            "description",
-            "is_active",
-            "cae",
-            "maturity_stage",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class MaturityStageSerializer(serializers.ModelSerializer):
@@ -112,6 +42,27 @@ class MaturityStageSerializer(serializers.ModelSerializer):
         return update_maturity_stage(instance, **validated_data)
 
 
+class CompanyWriteSerializer(serializers.ModelSerializer):
+    """Writable company payload for create/update operations."""
+
+    class Meta:
+        model = Company
+        fields = [
+            "id",
+            "name",
+            "tax_id",
+            "address",
+            "phone",
+            "email",
+            "legal_representative",
+            "description",
+            "is_active",
+            "cae",
+            "maturity_stage",
+        ]
+        read_only_fields = ["id"]
+
+
 class CompanyMaturityStageUpdateSerializer(serializers.Serializer):
     """Payload for PATCH /api/companies/{id}/maturity-stage/."""
 
@@ -119,7 +70,7 @@ class CompanyMaturityStageUpdateSerializer(serializers.Serializer):
 
 
 class CompanyListSerializer(serializers.ModelSerializer):
-    """Company row for GET /companies; nested FKs via select_related (no employee list)."""
+    """Company row for GET /companies; nested FKs via select_related."""
 
     cae = CAESerializer(read_only=True)
     maturity_stage = MaturityStageSerializer(read_only=True)
@@ -151,7 +102,3 @@ class CompanyDetailSerializer(CompanyListSerializer):
 
     class Meta(CompanyListSerializer.Meta):
         fields = [*CompanyListSerializer.Meta.fields, "employees"]
-
-
-class CompanyMaturityStageUpdateSerializer(serializers.Serializer):
-    maturity_stage = serializers.UUIDField()

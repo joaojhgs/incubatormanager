@@ -46,6 +46,11 @@ urlpatterns = [
         name="company-employee-stats",
     ),
     path(
+        "api/companies/<uuid:pk>/maturity-stage/",
+        CompanyMaturityStageChangeView.as_view(),
+        name="company-maturity-stage-change",
+    ),
+    path(
         "api/companies/<uuid:pk>/",
         CompanyDetailUpdateDeleteView.as_view(),
         name="company-detail",

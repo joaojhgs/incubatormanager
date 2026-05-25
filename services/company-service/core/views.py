@@ -45,12 +45,11 @@ def _scope_company_id(user: object) -> str | None:
     return str(company_id) if company_id is not None else None
 
 
-def _resolve_company_for_client_or_staff(user: object, company_id: str | UUID) -> str | None:
+def _resolve_company_for_user(user: object, company_id: str | UUID) -> str | None:
     company_id_str = str(company_id)
     role = _scope_role_key(user)
     if role == "Client":
-        scope = _scope_company_id(user)
-        return company_id_str if scope == company_id_str else None
+        return company_id_str if _scope_company_id(user) == company_id_str else None
     if role in {"Director", "Staff"}:
         return company_id_str
     return None
@@ -69,9 +68,7 @@ def _publish_company_created(company: Company) -> None:
         "maturity_stage_id": str(company.maturity_stage_id),
         "maturity_stage_name": company.maturity_stage.name,
     }
-    transaction.on_commit(
-        lambda: event_bus.publish(rabbitmq_url, "company.created", payload)
-    )
+    transaction.on_commit(lambda: event_bus.publish(rabbitmq_url, "company.created", payload))
 
 
 def _publish_employee_changed(employee: Employee, *, action: str) -> None:
@@ -85,9 +82,7 @@ def _publish_employee_changed(employee: Employee, *, action: str) -> None:
         "action": action,
         "employee_type": employee.type,
     }
-    transaction.on_commit(
-        lambda: event_bus.publish(rabbitmq_url, "employee.changed", payload)
-    )
+    transaction.on_commit(lambda: event_bus.publish(rabbitmq_url, "employee.changed", payload))
 
 
 @extend_schema(
@@ -111,9 +106,7 @@ class CompanyCreateUpdateView(generics.ListCreateAPIView):
         return [IsAuthenticated()]
 
     def get_queryset(self):  # type: ignore[override]
-        role = _scope_role_key(self.request.user)
-        company_id = _scope_company_id(self.request.user)
-        return company_list_queryset(role, company_id)
+        return company_list_queryset(_scope_role_key(self.request.user), _scope_company_id(self.request.user))
 
     def get_serializer_class(self):  # type: ignore[override]
         if self.request is not None and self.request.method == "POST":
@@ -128,9 +121,8 @@ class CompanyCreateUpdateView(generics.ListCreateAPIView):
 @extend_schema(
     description=(
         "Company detail including CAE and maturity-stage relations (select_related) and "
-        "active employees (prefetch_related). Uses active companies only. Staff and "
-        "Directors may retrieve any active company by id. Clients only retrieve their "
-        "company (`X-Company-Id`)."
+        "active employees (prefetch_related). Staff and Directors may retrieve any active "
+        "company by id. Clients only retrieve their company (`X-Company-Id`)."
     ),
 )
 class CompanyDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
@@ -143,9 +135,7 @@ class CompanyDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
         return [IsAuthenticated()]
 
     def get_queryset(self):  # type: ignore[override]
-        role = _scope_role_key(self.request.user)
-        company_id = _scope_company_id(self.request.user)
-        return company_detail_queryset(role, company_id)
+        return company_detail_queryset(_scope_role_key(self.request.user), _scope_company_id(self.request.user))
 
     def get_serializer_class(self):  # type: ignore[override]
         if self.request is not None and self.request.method in {"PATCH", "PUT"}:
@@ -154,7 +144,7 @@ class CompanyDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):  # type: ignore[override]
         instance.is_active = False
-        instance.save(update_fields=("is_active",))
+        instance.save(update_fields=("is_active", "updated_at"))
 
 
 @extend_schema(description="Patch the maturity stage for an active company by uuid.")
@@ -165,40 +155,26 @@ class CompanyMaturityStageChangeView(APIView):
         serializer = CompanyMaturityStageUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         stage_id = serializer.validated_data["maturity_stage"]
-
-        role = _scope_role_key(request.user)
-        scope_company_id = _scope_company_id(request.user)
-        qs = company_detail_queryset(role, scope_company_id)
-        company = get_object_or_404(qs, id=pk)
-
+        company = get_object_or_404(
+            company_detail_queryset(_scope_role_key(request.user), _scope_company_id(request.user)),
+            id=pk,
+        )
         stage = MaturityStage.objects.filter(id=stage_id).first()
         if stage is None:
             raise NotFound("Maturity stage not found")
-
         company.maturity_stage = stage
         company.save(update_fields=("maturity_stage", "updated_at"))
         return Response(CompanyDetailSerializer(company).data)
 
 
-@extend_schema(
-    description=(
-        "List or create employees for a company. Staff and Directors can manage "
-        "employees; other roles are denied."
-    ),
-)
+@extend_schema(description="List or create employees for a company. Staff and Directors can manage employees.")
 class CompanyEmployeeListCreateView(generics.ListCreateAPIView):
     serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_permissions(self):  # type: ignore[override]
-        return [IsAuthenticated(), IsStaff()]
+    permission_classes = [IsAuthenticated, IsStaff]
 
     def get_queryset(self):  # type: ignore[override]
         company_id = self.kwargs["company_id"]
-        scoped_company = _resolve_company_for_client_or_staff(
-            self.request.user,
-            company_id,
-        )
+        scoped_company = _resolve_company_for_user(self.request.user, company_id)
         if scoped_company is None:
             return Employee.objects.none()
         return Employee.objects.select_related("company").filter(company_id=scoped_company)
@@ -209,34 +185,32 @@ class CompanyEmployeeListCreateView(generics.ListCreateAPIView):
         return EmployeeSerializer
 
     def perform_create(self, serializer):  # type: ignore[override]
-        company = Company.objects.get(pk=self.kwargs["company_id"])
+        company_id = self.kwargs["company_id"]
+        scoped_company = _resolve_company_for_user(self.request.user, company_id)
+        if scoped_company is None:
+            raise PermissionDenied("Company is outside the caller scope")
+        company = get_object_or_404(Company.active, pk=scoped_company)
         employee = cast("Employee", serializer.save(company=company))
         _publish_employee_changed(employee, action="created")
 
 
-@extend_schema(
-    description=(
-        "Patch or delete an employee. PATCH and DELETE are staff/director-only. "
-        "PATCH returns a full row payload."
-    ),
-)
+@extend_schema(description="Patch or delete an employee for a company.")
 class CompanyEmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsStaff]
     lookup_url_kwarg = "employee_id"
 
-    def get_permissions(self):  # type: ignore[override]
-        if self.request.method in {"PATCH", "DELETE"}:
-            return [IsAuthenticated(), IsStaff()]
-        return [IsAuthenticated(), IsStaff()]
+    def get_queryset(self):  # type: ignore[override]
+        company_id = self.kwargs["company_id"]
+        scoped_company = _resolve_company_for_user(self.request.user, company_id)
+        if scoped_company is None:
+            return Employee.objects.none()
+        return Employee.objects.select_related("company").filter(company_id=scoped_company)
 
     def get_serializer_class(self):  # type: ignore[override]
         if self.request is not None and self.request.method in {"PATCH", "PUT"}:
             return EmployeeWriteSerializer
         return EmployeeSerializer
-
-        if not user_company_id or str(user_company_id) != str(company_id):
-            raise Http404
 
     def perform_update(self, serializer):  # type: ignore[override]
         employee = cast("Employee", serializer.save())
@@ -251,28 +225,18 @@ class CompanyEmployeeStatsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, company_id: str) -> Response:
-        role, user_company_id = _role_and_company(request.user)
-        if role not in {"Staff", "Director"}:
-            if not user_company_id or str(user_company_id) != str(company_id):
-                raise Http404
-
-        company = get_object_or_404(Company.active, pk=company_id)
-        queryset = Employee.objects.filter(company=company)
-        by_type = {choice: queryset.filter(type=choice).count() for choice in Employee.Type.values}
-
-        stats = (
-            Employee.objects.filter(company_id=scoped_company)
-            .values("type")
-            .annotate(total=Count("id"))
-        )
+        scoped_company = _resolve_company_for_user(request.user, company_id)
+        if scoped_company is None:
+            raise PermissionDenied("Company is outside the caller scope")
+        get_object_or_404(Company.active, pk=scoped_company)
+        stats = Employee.objects.filter(company_id=scoped_company).values("type").annotate(total=Count("id"))
         by_type = {row["type"]: row["total"] for row in stats}
         active = Employee.objects.filter(company_id=scoped_company, is_active=True).count()
         inactive = Employee.objects.filter(company_id=scoped_company, is_active=False).count()
-        total = active + inactive
         return Response(
             {
                 "company_id": str(scoped_company),
-                "total": total,
+                "total": active + inactive,
                 "active": active,
                 "inactive": inactive,
                 "by_type": by_type,
@@ -295,14 +259,11 @@ class CompanyStatsView(APIView):
         else:
             company_qs = Company.objects.none()
 
-        total = company_qs.count()
-        active = company_qs.filter(is_active=True).count()
-        inactive = company_qs.filter(is_active=False).count()
         return Response(
             {
-                "total": total,
-                "active": active,
-                "inactive": inactive,
+                "total": company_qs.count(),
+                "active": company_qs.filter(is_active=True).count(),
+                "inactive": company_qs.filter(is_active=False).count(),
             }
         )
 
@@ -317,8 +278,7 @@ class CAEListCreateView(APIView):
 
     @extend_schema(responses={200: CAESerializer(many=True)})
     def get(self, request: Request) -> Response:
-        qs = CAE.objects.all()
-        serializer = CAESerializer(qs, many=True)
+        serializer = CAESerializer(CAE.objects.all(), many=True)
         return Response(serializer.data)
 
     @extend_schema(request=CAESerializer, responses={201: CAESerializer})
@@ -335,13 +295,6 @@ class HealthView(APIView):
     authentication_classes = ()
     permission_classes = ()
 
-    @extend_schema(
-        responses={
-            200: {
-                "type": "object",
-                "properties": {"status": {"type": "string", "example": "ok"}},
-            }
-        }
-    )
+    @extend_schema(responses={200: {"type": "object", "properties": {"status": {"type": "string", "example": "ok"}}}})
     def get(self, request: Request) -> Response:
         return Response({"status": "ok"})
