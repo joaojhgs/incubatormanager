@@ -15,7 +15,18 @@ import {
   type BookingApprovePayload,
   type BookingCreatePayload,
 } from "@/lib/api/bookings";
-import { listCompanyContracts, listContracts } from "@/lib/api/contracts";
+import {
+  activateContract,
+  createContract,
+  deleteContract,
+  listCompanyContracts,
+  listContracts,
+  terminateContract,
+  updateContract,
+  type ContractCreatePayload,
+  type ContractTerminatePayload,
+  type ContractUpdatePayload,
+} from "@/lib/api/contracts";
 import {
   getFinanceDashboard,
   getFinanceReport,
@@ -28,13 +39,40 @@ import {
   type PaymentPatchPayload,
 } from "@/lib/api/finance";
 import {
+  assignEquipment,
+  createEquipment,
+  createEquipmentType,
+  deleteEquipment,
+  deleteEquipmentType,
   listEquipment,
   listEquipmentAssignments,
   listEquipmentTypes,
   listMyAssignedEquipment,
+  releaseEquipment,
+  updateEquipment,
+  updateEquipmentType,
+  type EquipmentAssignPayload,
   type EquipmentAssignmentFilters,
+  type EquipmentCreatePayload,
+  type EquipmentReleasePayload,
+  type EquipmentTypePayload,
+  type EquipmentUpdatePayload,
 } from "@/lib/api/inventory";
-import { listSpaceBookingRecords, listSpaceOccupancy, listSpaces } from "@/lib/api/spaces";
+import {
+  createSpace,
+  createSpaceType,
+  deleteSpace,
+  deleteSpaceType,
+  listSpaceBookingRecords,
+  listSpaceOccupancy,
+  listSpaces,
+  listSpaceTypes,
+  updateSpace,
+  updateSpaceType,
+  type SpaceCreatePayload,
+  type SpaceTypePayload,
+  type SpaceUpdatePayload,
+} from "@/lib/api/spaces";
 import { tStaff } from "@/lib/i18n/staffNav";
 import { tClient } from "@/lib/i18n/clientPortal";
 
@@ -55,6 +93,7 @@ export const operationalKeys = {
     ["inventory", "assignments", filters?.bookingId ?? null, filters?.equipmentId ?? null] as const,
   myAssignedEquipment: (bookingId?: string) => ["inventory", "myAssignments", bookingId] as const,
   spaces: ["spaces"] as const,
+  spaceTypes: ["spaces", "types"] as const,
   occupancy: ["spaces", "occupancy"] as const,
   spaceBookingRecords: ["spaces", "bookings", "records"] as const,
 };
@@ -150,6 +189,61 @@ export function useCompanyContracts(companyId: string | null | undefined) {
   });
 }
 
+export function useContractActions() {
+  const queryClient = useQueryClient();
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: operationalKeys.contracts });
+    void queryClient.invalidateQueries({ queryKey: ["contracts"] });
+    void queryClient.invalidateQueries({ queryKey: ["finance"] });
+    void queryClient.invalidateQueries({ queryKey: operationalKeys.spaces });
+    void queryClient.invalidateQueries({ queryKey: operationalKeys.spaceBookingRecords });
+  };
+  return {
+    create: useMutation({
+      mutationFn: (payload: ContractCreatePayload) => createContract(payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Contrato guardado.");
+      },
+      onError: () => message.error("Não foi possível guardar o contrato."),
+    }),
+    update: useMutation({
+      mutationFn: ({ id, payload }: { id: string; payload: ContractUpdatePayload }) =>
+        updateContract(id, payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Contrato atualizado.");
+      },
+      onError: () => message.error("Não foi possível atualizar o contrato."),
+    }),
+    remove: useMutation({
+      mutationFn: deleteContract,
+      onSuccess: () => {
+        invalidate();
+        message.success("Contrato removido.");
+      },
+      onError: () => message.error("Não foi possível remover o contrato."),
+    }),
+    activate: useMutation({
+      mutationFn: activateContract,
+      onSuccess: () => {
+        invalidate();
+        message.success("Contrato ativado.");
+      },
+      onError: () => message.error("Não foi possível ativar o contrato."),
+    }),
+    terminate: useMutation({
+      mutationFn: ({ id, payload }: { id: string; payload?: ContractTerminatePayload }) =>
+        terminateContract(id, payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Contrato terminado.");
+      },
+      onError: () => message.error("Não foi possível terminar o contrato."),
+    }),
+  };
+}
+
 export function usePayments(filters?: PaymentListFilters) {
   return useQuery({
     queryKey: operationalKeys.payments(filters),
@@ -225,6 +319,87 @@ export function useEquipmentTypes() {
   });
 }
 
+export function useEquipmentActions() {
+  const queryClient = useQueryClient();
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: operationalKeys.equipment });
+    void queryClient.invalidateQueries({ queryKey: operationalKeys.equipmentTypes });
+    void queryClient.invalidateQueries({ queryKey: ["inventory"] });
+    void queryClient.invalidateQueries({ queryKey: operationalKeys.spaces });
+    void queryClient.invalidateQueries({ queryKey: operationalKeys.spaceBookingRecords });
+  };
+  return {
+    create: useMutation({
+      mutationFn: (payload: EquipmentCreatePayload) => createEquipment(payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Equipamento guardado.");
+      },
+      onError: () => message.error("Não foi possível guardar o equipamento."),
+    }),
+    update: useMutation({
+      mutationFn: ({ id, payload }: { id: string; payload: EquipmentUpdatePayload }) =>
+        updateEquipment(id, payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Equipamento atualizado.");
+      },
+      onError: () => message.error("Não foi possível atualizar o equipamento."),
+    }),
+    remove: useMutation({
+      mutationFn: deleteEquipment,
+      onSuccess: () => {
+        invalidate();
+        message.success("Equipamento removido.");
+      },
+      onError: () => message.error("Não foi possível remover o equipamento."),
+    }),
+    createType: useMutation({
+      mutationFn: (payload: EquipmentTypePayload) => createEquipmentType(payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Tipo de equipamento guardado.");
+      },
+      onError: () => message.error("Não foi possível guardar o tipo de equipamento."),
+    }),
+    updateType: useMutation({
+      mutationFn: ({ id, payload }: { id: string; payload: Partial<EquipmentTypePayload> }) =>
+        updateEquipmentType(id, payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Tipo de equipamento atualizado.");
+      },
+      onError: () => message.error("Não foi possível atualizar o tipo de equipamento."),
+    }),
+    deleteType: useMutation({
+      mutationFn: deleteEquipmentType,
+      onSuccess: () => {
+        invalidate();
+        message.success("Tipo de equipamento removido.");
+      },
+      onError: () => message.error("Não foi possível remover o tipo de equipamento."),
+    }),
+    assign: useMutation({
+      mutationFn: ({ id, payload }: { id: string; payload: EquipmentAssignPayload }) =>
+        assignEquipment(id, payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Equipamento atribuído.");
+      },
+      onError: () => message.error("Não foi possível atribuir o equipamento."),
+    }),
+    release: useMutation({
+      mutationFn: ({ id, payload }: { id: string; payload: EquipmentReleasePayload }) =>
+        releaseEquipment(id, payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Equipamento libertado.");
+      },
+      onError: () => message.error("Não foi possível libertar o equipamento."),
+    }),
+  };
+}
+
 export function useMyAssignedEquipment(bookingId?: string) {
   return useQuery({
     queryKey: operationalKeys.myAssignedEquipment(bookingId),
@@ -243,6 +418,76 @@ export function useEquipmentAssignments(filters: EquipmentAssignmentFilters = {}
 
 export function useSpaces() {
   return useQuery({ queryKey: operationalKeys.spaces, queryFn: listSpaces, staleTime: 30_000 });
+}
+
+export function useSpaceTypes() {
+  return useQuery({
+    queryKey: operationalKeys.spaceTypes,
+    queryFn: listSpaceTypes,
+    staleTime: 60_000,
+  });
+}
+
+export function useSpaceActions() {
+  const queryClient = useQueryClient();
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: operationalKeys.spaces });
+    void queryClient.invalidateQueries({ queryKey: operationalKeys.spaceTypes });
+    void queryClient.invalidateQueries({ queryKey: operationalKeys.occupancy });
+    void queryClient.invalidateQueries({ queryKey: operationalKeys.spaceBookingRecords });
+  };
+  return {
+    create: useMutation({
+      mutationFn: (payload: SpaceCreatePayload) => createSpace(payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Espaço guardado.");
+      },
+      onError: () => message.error("Não foi possível guardar o espaço."),
+    }),
+    update: useMutation({
+      mutationFn: ({ id, payload }: { id: string; payload: SpaceUpdatePayload }) =>
+        updateSpace(id, payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Espaço atualizado.");
+      },
+      onError: () => message.error("Não foi possível atualizar o espaço."),
+    }),
+    remove: useMutation({
+      mutationFn: deleteSpace,
+      onSuccess: () => {
+        invalidate();
+        message.success("Espaço removido.");
+      },
+      onError: () => message.error("Não foi possível remover o espaço."),
+    }),
+    createType: useMutation({
+      mutationFn: (payload: SpaceTypePayload) => createSpaceType(payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Tipo de espaço guardado.");
+      },
+      onError: () => message.error("Não foi possível guardar o tipo de espaço."),
+    }),
+    updateType: useMutation({
+      mutationFn: ({ id, payload }: { id: string; payload: Partial<SpaceTypePayload> }) =>
+        updateSpaceType(id, payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Tipo de espaço atualizado.");
+      },
+      onError: () => message.error("Não foi possível atualizar o tipo de espaço."),
+    }),
+    deleteType: useMutation({
+      mutationFn: deleteSpaceType,
+      onSuccess: () => {
+        invalidate();
+        message.success("Tipo de espaço removido.");
+      },
+      onError: () => message.error("Não foi possível remover o tipo de espaço."),
+    }),
+  };
 }
 
 export function useSpaceOccupancy() {

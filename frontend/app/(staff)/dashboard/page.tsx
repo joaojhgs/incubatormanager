@@ -87,22 +87,24 @@ export default function StaffDashboardPage() {
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} sm={12} lg={6}>
-        <Card extra={<Link href="/companies">{tStaff("dashboardViewDetails")}</Link>}>
+        <Card
+          extra={<Link href="/companies?is_active=true">{tStaff("dashboardViewDetails")}</Link>}
+        >
           <Statistic title={tStaff("dashboardKpiCompanies")} value={companies.data?.count ?? 0} />
         </Card>
       </Col>
       <Col xs={24} sm={12} lg={6}>
-        <Card extra={<Link href="/contracts">{tStaff("dashboardViewDetails")}</Link>}>
+        <Card extra={<Link href="/contracts?status=active">{tStaff("dashboardViewDetails")}</Link>}>
           <Statistic title={tStaff("dashboardKpiContracts")} value={contracts.data?.length ?? 0} />
         </Card>
       </Col>
       <Col xs={24} sm={12} lg={6}>
-        <Card extra={<Link href="/bookings">{tStaff("dashboardViewDetails")}</Link>}>
+        <Card extra={<Link href="/bookings?status=Pending">{tStaff("dashboardViewDetails")}</Link>}>
           <Statistic title={tStaff("dashboardKpiPendingBookings")} value={pendingBookings} />
         </Card>
       </Col>
       <Col xs={24} sm={12} lg={6}>
-        <Card extra={<Link href="/tickets">{tStaff("dashboardViewDetails")}</Link>}>
+        <Card extra={<Link href="/tickets?status=Open">{tStaff("dashboardViewDetails")}</Link>}>
           <Statistic title={tStaff("dashboardKpiOpenTickets")} value={openTickets} />
         </Card>
       </Col>
@@ -110,7 +112,7 @@ export default function StaffDashboardPage() {
       <Col xs={24} lg={16}>
         <Card
           title={tStaff("dashboardFinanceSummary")}
-          extra={<Link href="/finance">{tStaff("dashboardOpenReport")}</Link>}
+          extra={<Link href="/finance?status=overdue">{tStaff("dashboardOpenReport")}</Link>}
         >
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={8}>
@@ -160,10 +162,10 @@ export default function StaffDashboardPage() {
           title={tStaff("dashboardRecentBookings")}
           extra={
             <Space>
-              <Button size="small" href="/bookings">
+              <Button size="small" href="/bookings?status=Pending">
                 {tStaff("dashboardBookingDrillthrough")}
               </Button>
-              <Button size="small" href="/inventory">
+              <Button size="small" href="/inventory?focus=assignments">
                 {tStaff("dashboardInventoryDrillthrough")}
               </Button>
             </Space>

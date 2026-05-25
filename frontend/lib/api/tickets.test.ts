@@ -10,7 +10,7 @@ vi.mock("./client", async (importOriginal) => {
 });
 
 import { createApiClient, getDefaultApiClient } from "./client";
-import { addTicketMessage, createTicket, getTicket } from "./tickets";
+import { addTicketMessage, createTicket, getTicket, updateTicket } from "./tickets";
 
 const BASE = "http://127.0.0.1:9";
 const BASE_PATH = "/api";
@@ -91,6 +91,20 @@ describe("ticket API", () => {
     await expect(
       addTicketMessage(ticketResponse.id, { content: response.content }),
     ).resolves.toEqual(response);
+    expect(nock.isDone()).toBe(true);
+  });
+
+  it("PATCH /tickets/:id/ updates staff workflow fields", async () => {
+    nock(BASE)
+      .patch(`${BASE_PATH}/tickets/${ticketResponse.id}/`, {
+        status: "In progress",
+        assigned_to: "staff-1",
+      })
+      .reply(200, { ...ticketResponse, status: "In progress", assigned_to: "staff-1" });
+
+    await expect(
+      updateTicket(ticketResponse.id, { status: "In progress", assigned_to: "staff-1" }),
+    ).resolves.toMatchObject({ status: "In progress", assigned_to: "staff-1" });
     expect(nock.isDone()).toBe(true);
   });
 });

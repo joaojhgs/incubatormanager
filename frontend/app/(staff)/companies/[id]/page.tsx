@@ -18,7 +18,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { ArchivedBadge, MaturityStageTag } from "@/components/companies";
-import { DocumentList } from "@/components/documents";
+import { DocumentManager } from "@/components/documents";
 import type { Employee } from "@/lib/api/companies";
 import { useCompany } from "@/lib/hooks";
 import { tCompany } from "@/lib/i18n/companies";
@@ -139,7 +139,7 @@ export default function CompanyDetailPage() {
       </Card>
 
       <Card title={tCompany("detailDocumentsTitle")}>
-        <DocumentList entityType="Company" entityId={id} readOnly />
+        <DocumentManager entityType="Company" entityId={id} />
       </Card>
     </Flex>
   );
