@@ -10,11 +10,9 @@ from core.views import (
     CAEListCreateView,
     CompanyCreateUpdateView,
     CompanyDetailUpdateDeleteView,
-    CompanyDetailView,
     CompanyEmployeeDetailView,
     CompanyEmployeeListCreateView,
     CompanyEmployeeStatsView,
-    CompanyListView,
     CompanyMaturityStageChangeView,
     CompanyStatsView,
     HealthView,
@@ -33,14 +31,14 @@ urlpatterns = [
     path("api/companies/cae/", CAEListCreateView.as_view(), name="cae-list-create"),
     path("api/companies/stats/", CompanyStatsView.as_view(), name="company-stats"),
     path(
-        "api/companies/<uuid:pk>/employees/stats/",
-        CompanyEmployeeStatsView.as_view(),
-        name="company-employee-stats",
+        "api/companies/<uuid:pk>/maturity-stage/",
+        CompanyMaturityStageChangeView.as_view(),
+        name="company-maturity-stage-change",
     ),
     path(
-        "api/companies/<uuid:pk>/employees/",
+        "api/companies/<uuid:company_id>/employees/",
         CompanyEmployeeListCreateView.as_view(),
-        name="company-employees",
+        name="company-employee-list-create",
     ),
     path(
         "api/companies/<uuid:company_id>/employees/<uuid:employee_id>/",
@@ -48,9 +46,9 @@ urlpatterns = [
         name="company-employee-detail",
     ),
     path(
-        "api/companies/<uuid:pk>/maturity-stage/",
-        CompanyMaturityStageChangeView.as_view(),
-        name="company-maturity-stage-change",
+        "api/companies/<uuid:pk>/employees/stats/",
+        CompanyEmployeeStatsView.as_view(),
+        name="company-employee-stats",
     ),
     path(
         "api/companies/<uuid:pk>/",
@@ -61,13 +59,6 @@ urlpatterns = [
         "api/companies/",
         CompanyCreateUpdateView.as_view(),
         name="company-list",
-    ),
-    # Kept for backward compatibility with existing tests/docs that call reverse("company-list")
-    # and for read-only compatibility with older read-only clients.
-    path(
-        "api/companies/legacy-list/",
-        CompanyListView.as_view(),
-        name="company-list-legacy",
     ),
     *router.urls,
 ]
