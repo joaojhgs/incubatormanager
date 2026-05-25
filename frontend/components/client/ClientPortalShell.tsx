@@ -16,11 +16,12 @@ import { Avatar, Breadcrumb, Button, Dropdown, Layout, Menu, Space, theme, Typog
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { logoutSession, redirectToCookieClearingLogout } from "@/lib/api/auth";
 import { type ClientPortalI18nKey, tClient } from "@/lib/i18n/clientPortal";
-import { clearAccessToken } from "@/lib/api/tokenStorage";
+import { useLanguagePreference, type UiLanguage } from "@/lib/i18n/language";
 
 import styles from "./ClientPortalShell.module.css";
 
@@ -85,6 +86,7 @@ export function ClientPortalShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logoutLocal } = useAuth();
+  const { languageLabel, setLanguage } = useLanguagePreference();
   const [collapsed, setCollapsed] = useState(false);
   const { token } = theme.useToken();
 
@@ -154,29 +156,37 @@ export function ClientPortalShell({ children }: { children: ReactNode }) {
 
   const languageMenu = useMemo(
     () => ({
-      items: [
-        { key: "pt", label: tClient("languagePt"), disabled: false },
-        { key: "en", label: tClient("languageEn"), disabled: true },
-      ],
+      onClick: ({ key }: { key: string }) => setLanguage(key as UiLanguage),
+      items: [{ key: "pt", label: tClient("languagePt") }],
     }),
-    [],
+    [setLanguage],
   );
 
-  const handleLogout = () => {
-    clearAccessToken();
-    logoutLocal();
-    router.push("/login");
-  };
+  const handleLogout = useCallback(() => {
+    void (async () => {
+      try {
+        await logoutSession();
+        logoutLocal();
+        router.push("/login");
+      } catch {
+        logoutLocal();
+        redirectToCookieClearingLogout("/login");
+      }
+    })();
+  }, [logoutLocal, router]);
 
   const accountMenu = useMemo(
     () => ({
       items: [
         { key: "profile", label: tClient("menuProfile") },
-        { key: "logout", label: tClient("menuLogout"), onClick: handleLogout },
+        {
+          key: "logout",
+          label: tClient("menuLogout"),
+          onClick: handleLogout,
+        },
       ],
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [logoutLocal],
+    [handleLogout],
   );
 
   return (
@@ -216,7 +226,7 @@ export function ClientPortalShell({ children }: { children: ReactNode }) {
                 icon={<GlobalOutlined aria-hidden />}
                 aria-label={tClient("headerLanguage")}
               >
-                PT
+                {languageLabel}
               </Button>
             </Dropdown>
             <Dropdown menu={accountMenu} trigger={["click"]}>

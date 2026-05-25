@@ -73,7 +73,7 @@ export default function TicketsPage() {
   const { data, isLoading, isError } = useTickets();
 
   if (isLoading) {
-    return <Spin size="large" tip={tStaff("pageLoading") ?? tStaff("serviceHealthLoading")} />;
+    return <Spin size="large" tip={tStaff("pageLoading")} />;
   }
 
   if (isError) {

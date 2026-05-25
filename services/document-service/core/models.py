@@ -13,6 +13,7 @@ class Document(models.Model):
     class EntityType(models.TextChoices):
         COMPANY = "Company", "Company"
         CONTRACT = "Contract", "Contract"
+        BOOKING = "Booking", "Booking"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     entity_type = models.CharField(max_length=16, choices=EntityType.choices, db_index=True)

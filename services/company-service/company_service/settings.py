@@ -99,7 +99,7 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "ILB Company Service API",
-    "DESCRIPTION": "Company bounded context API (stub).",
+    "DESCRIPTION": "Company bounded context API.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

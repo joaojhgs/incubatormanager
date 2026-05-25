@@ -16,14 +16,17 @@ class Booking(models.Model):
         COMPLETED = "Completed", "Completed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    company_id = models.UUIDField(db_index=True)
+    company_id = models.UUIDField(null=True, blank=True, db_index=True)
     space_id = models.UUIDField(db_index=True)
     created_by_user_id = models.UUIDField(null=True, blank=True)
     created_by_role = models.CharField(max_length=24, blank=True)
     is_public = models.BooleanField(default=False, db_index=True)
+    requester_name = models.CharField(max_length=255, blank=True, default="")
+    requester_email = models.EmailField(blank=True, default="")
+    requester_phone = models.CharField(max_length=64, blank=True, default="")
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    quoted_price = models.DecimalField(max_digits=12, decimal_places=2)
+    quoted_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     equipment_ids = models.JSONField(default=list, blank=True)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True

@@ -100,7 +100,7 @@ RABBITMQ_URL = os.environ.get("RABBITMQ_URL", "")
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "ILB Dashboard Service API",
-    "DESCRIPTION": "Dashboard bounded context API (stub).",
+    "DESCRIPTION": "Dashboard bounded context API.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

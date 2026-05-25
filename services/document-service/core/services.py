@@ -79,8 +79,12 @@ def create_document_from_upload(
     if content_type not in ALLOWED_CONTENT_TYPES:
         raise DocumentUnsupportedMimeType()
 
-    if entity_type not in {Document.EntityType.COMPANY, Document.EntityType.CONTRACT}:
-        msg = "entity_type must be Company or Contract."
+    if entity_type not in {
+        Document.EntityType.COMPANY,
+        Document.EntityType.CONTRACT,
+        Document.EntityType.BOOKING,
+    }:
+        msg = "entity_type must be Company, Contract, or Booking."
         raise ValueError(msg)
 
     _assert_upload_allowed_for_client(user, entity_type, entity_id)
@@ -118,8 +122,12 @@ def documents_for_list_request(
     entity_id: uuid.UUID,
 ) -> QuerySet[Document]:
     """Return active documents for the entity, enforcing list RBAC for Clients."""
-    if entity_type not in {Document.EntityType.COMPANY, Document.EntityType.CONTRACT}:
-        msg = "entity_type must be Company or Contract."
+    if entity_type not in {
+        Document.EntityType.COMPANY,
+        Document.EntityType.CONTRACT,
+        Document.EntityType.BOOKING,
+    }:
+        msg = "entity_type must be Company, Contract, or Booking."
         raise ValueError(msg)
 
     qs: QuerySet[Document] = Document.objects.filter(

@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 
 from core.models import Booking
 from core.serializers import (
+    BookingApproveSerializer,
     BookingCreateSerializer,
     BookingSerializer,
     PublicBookingSerializer,
@@ -114,7 +115,25 @@ class BookingApproveView(APIView):
 
     @extend_schema(responses={200: BookingSerializer})
     def patch(self, request: Request, booking_id: str) -> Response:
+        payload = BookingApproveSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
         booking = Booking.objects.get(id=booking_id)
+        update_fields = []
+        if "quoted_price" in payload.validated_data:
+            booking.quoted_price = payload.validated_data["quoted_price"]
+            update_fields.append("quoted_price")
+        if "company_id" in payload.validated_data:
+            booking.company_id = payload.validated_data["company_id"]
+            update_fields.append("company_id")
+        if "equipment_ids" in payload.validated_data:
+            booking.equipment_ids = [
+                str(value) for value in payload.validated_data["equipment_ids"]
+            ]
+            update_fields.append("equipment_ids")
+        if update_fields:
+            booking.save(update_fields=[*update_fields, "updated_at"])
+        if booking.company_id is None:
+            raise ValidationError("Approved bookings require company_id")
         set_status(booking, Booking.Status.APPROVED)
         return Response(BookingSerializer(booking).data)
 

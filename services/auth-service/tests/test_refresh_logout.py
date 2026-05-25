@@ -56,6 +56,67 @@ def test_refresh_returns_new_tokens(api_client: APIClient) -> None:
     assert data["refresh"] != tokens["refresh"]
 
 
+def test_refresh_uses_cookie_and_rotates_cookie(api_client: APIClient) -> None:
+    _user, tokens = _user_with_login(api_client)
+
+    r = api_client.post("/api/auth/refresh/", {}, format="json")
+
+    assert r.status_code == 200, r.json()
+    data = r.json()
+    assert data["refresh"] != tokens["refresh"]
+    cookie = r.cookies.get("ilb.refresh_token")
+    assert cookie is not None
+    assert cookie.value == data["refresh"]
+
+
+def test_logout_uses_cookie_and_clears_cookie(api_client: APIClient) -> None:
+    _user, tokens = _user_with_login(api_client)
+
+    out = api_client.post("/api/auth/logout/", {}, format="json")
+
+    assert out.status_code == 204
+    cookie = out.cookies.get("ilb.refresh_token")
+    assert cookie is not None
+    assert cookie.value == ""
+    bad = api_client.post("/api/auth/refresh/", {"refresh": tokens["refresh"]}, format="json")
+    assert bad.status_code == 401
+
+
+def test_refresh_deleted_user_clears_cookie(api_client: APIClient) -> None:
+    user, _tokens = _user_with_login(api_client)
+    user.delete()
+
+    r = api_client.post("/api/auth/refresh/", {}, format="json")
+
+    assert r.status_code == 401
+    cookie = r.cookies.get("ilb.refresh_token")
+    assert cookie is not None
+    assert cookie.value == ""
+
+
+def test_logout_validation_error_clears_cookie(api_client: APIClient) -> None:
+    _user, _tokens = _user_with_login(api_client)
+
+    r = api_client.post("/api/auth/logout/", {"refresh": ""}, format="json")
+
+    assert r.status_code == 400
+    cookie = r.cookies.get("ilb.refresh_token")
+    assert cookie is not None
+    assert cookie.value == ""
+
+
+def test_logout_get_clears_cookie_and_redirects(api_client: APIClient) -> None:
+    _user, _tokens = _user_with_login(api_client)
+
+    r = api_client.get("/api/auth/logout/?next=/login")
+
+    assert r.status_code == 302
+    assert r["Location"] == "/login"
+    cookie = r.cookies.get("ilb.refresh_token")
+    assert cookie is not None
+    assert cookie.value == ""
+
+
 def test_refresh_reuses_old_token_returns_401(api_client: APIClient) -> None:
     _user, tokens = _user_with_login(api_client)
     refresh_once = api_client.post(

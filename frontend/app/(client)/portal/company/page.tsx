@@ -1,9 +1,12 @@
 "use client";
 
-import { Card, Descriptions, Result, Spin, Typography } from "antd";
+import { Card, Descriptions, Flex, Result, Spin, Typography } from "antd";
+
+import { DocumentList } from "@/components/documents";
 
 import { useCompany } from "@/lib/hooks/useCompanies";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { tDocuments } from "@/lib/i18n/documents";
 import { tClient } from "@/lib/i18n/clientPortal";
 
 const { Text } = Typography;
@@ -61,6 +64,9 @@ export default function ClientCompanyPage() {
           {data.address || "—"}
         </Descriptions.Item>
       </Descriptions>
+      <Card type="inner" title={tClient("documentsTitle")} style={{ marginTop: 16 }}>
+        <DocumentList entityType="Company" entityId={data.id} readOnly />
+      </Card>
     </Card>
   );
 }

@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: ILB Company Service API
   version: 0.1.0
-  description: Company bounded context API (stub).
+  description: Company bounded context API.
 paths:
   /api/companies/:
     get:

@@ -52,6 +52,11 @@ def test_login_returns_jwt_pair_for_valid_credentials(api_client: APIClient) -> 
     assert isinstance(body["refresh"], str) and len(body["refresh"]) > 40
     assert RefreshToken(body["refresh"])["role"] == "staff"
     assert AccessToken(body["access"])["role"] == "staff"
+    cookie = response.cookies.get("ilb.refresh_token")
+    assert cookie is not None
+    assert cookie.value == body["refresh"]
+    assert cookie["httponly"]
+    assert cookie["samesite"] == "Lax"
 
 
 @pytest.mark.django_db

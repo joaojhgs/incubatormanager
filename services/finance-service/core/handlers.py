@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
@@ -83,6 +84,15 @@ def _parse_end_date(payload: dict[str, object]) -> dt.date | None:
     raise ValidationError("end_date must be an ISO date string")
 
 
+def _month_start(on_date: dt.date) -> dt.date:
+    return on_date.replace(day=1)
+
+
+def _month_end(on_date: dt.date) -> dt.date:
+    next_month = (on_date.replace(day=28) + timedelta(days=4)).replace(day=1)
+    return next_month - timedelta(days=1)
+
+
 def handle_contract_activated(event: EventEnvelope) -> None:
     """Upsert a BillingContract row from a ``contract.activated`` envelope."""
 
@@ -108,6 +118,20 @@ def handle_contract_activated(event: EventEnvelope) -> None:
                 "start_date": start_date,
                 "end_date": end_date,
                 "is_active": True,
+            },
+        )
+        period_start = _month_start(start_date)
+        Payment.objects.get_or_create(
+            contract_id=contract_id,
+            source=Payment.Source.CONTRACT,
+            period_start=period_start,
+            defaults={
+                "company_id": company_id,
+                "amount": monthly_fee,
+                "status": Payment.Status.PENDING,
+                "period_end": _month_end(start_date),
+                "due_date": _month_end(start_date),
+                "reference_id": f"contract:{contract_id}:{period_start.isoformat()}",
             },
         )
 
@@ -175,6 +199,24 @@ def maybe_handle_event(event: EventEnvelope) -> None:
     """Public entrypoint for command/consumer callers."""
 
     handle_event(event)
+
+
+def publish_payment_overdue(payment: Payment) -> None:
+    """Publish ``payment.overdue`` when a pending payment crosses its due date."""
+
+    rabbit_url = rabbitmq_url()
+    if not rabbit_url:
+        return
+
+    payload = {
+        "payment_id": str(payment.id),
+        "company_id": str(payment.company_id),
+        "contract_id": str(payment.contract_id) if payment.contract_id else None,
+        "booking_id": str(payment.booking_id) if payment.booking_id else None,
+        "amount": str(payment.amount),
+        "due_date": payment.due_date.isoformat() if payment.due_date else None,
+    }
+    event_bus.publish(rabbit_url, "payment.overdue", payload)
 
 
 def publish_payment_recorded(

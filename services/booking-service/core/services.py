@@ -27,12 +27,15 @@ def _mark_processed(envelope: EventEnvelope) -> bool:
 def booking_payload(booking: Booking) -> dict[str, str | None]:
     return {
         "booking_id": str(booking.id),
-        "company_id": str(booking.company_id),
+        "company_id": str(booking.company_id) if booking.company_id is not None else None,
         "space_id": str(booking.space_id),
         "start_time": booking.start_time.isoformat(),
         "end_time": booking.end_time.isoformat(),
-        "quoted_price": str(booking.quoted_price),
+        "quoted_price": str(booking.quoted_price) if booking.quoted_price is not None else None,
         "equipment_ids": booking.equipment_ids,
+        "requester_name": booking.requester_name,
+        "requester_email": booking.requester_email,
+        "requester_phone": booking.requester_phone,
     }
 
 

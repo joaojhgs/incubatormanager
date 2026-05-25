@@ -17,6 +17,9 @@ class BookingSerializer(serializers.ModelSerializer):
             "created_by_user_id",
             "created_by_role",
             "is_public",
+            "requester_name",
+            "requester_email",
+            "requester_phone",
             "start_time",
             "end_time",
             "quoted_price",
@@ -38,13 +41,16 @@ class BookingSerializer(serializers.ModelSerializer):
 
 
 class BookingCreateSerializer(serializers.ModelSerializer):
-    company_id = serializers.UUIDField(required=False)
+    company_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Booking
         fields = [
             "company_id",
             "space_id",
+            "requester_name",
+            "requester_email",
+            "requester_phone",
             "start_time",
             "end_time",
             "quoted_price",
@@ -59,8 +65,21 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
 
 class PublicBookingSerializer(BookingCreateSerializer):
-    company_id = serializers.UUIDField()
+    company_id = serializers.UUIDField(required=False, allow_null=True)
+    requester_name = serializers.CharField(required=True, allow_blank=False)
+    requester_email = serializers.EmailField(required=True, allow_blank=False)
+    requester_phone = serializers.CharField(required=True, allow_blank=False)
 
 
 class BookingCommandSerializer(serializers.Serializer):
     booking_id = serializers.UUIDField()
+
+
+class BookingApproveSerializer(serializers.Serializer):
+    company_id = serializers.UUIDField(required=False, allow_null=True)
+    quoted_price = serializers.DecimalField(
+        max_digits=12, decimal_places=2, required=False, allow_null=True
+    )
+    equipment_ids = serializers.ListField(
+        child=serializers.UUIDField(), required=False, allow_empty=True
+    )

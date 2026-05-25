@@ -2,14 +2,43 @@ openapi: 3.0.3
 info:
   title: ILB Dashboard Service API
   version: 0.1.0
-  description: Dashboard bounded context API (stub).
+  description: Dashboard bounded context API.
 paths:
+  /api/dashboard/companies/:
+    get:
+      operationId: api_dashboard_companies_retrieve
+      description: Company analytics from materialized company and employee projections.
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/dashboard/finance/:
+    get:
+      operationId: api_dashboard_finance_retrieve
+      description: Finance analytics from payment projections and cold-start finance
+        snapshots.
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/dashboard/health/:
     get:
       operationId: api_dashboard_health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -21,12 +50,97 @@ paths:
                     type: string
                     example: ok
           description: ''
+  /api/dashboard/overview/:
+    get:
+      operationId: api_dashboard_overview_retrieve
+      description: Staff dashboard with materialized KPIs and downstream health snapshots.
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/dashboard/reports/:
+    get:
+      operationId: api_dashboard_reports_retrieve
+      description: Simple report projection for staff overview pages.
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/dashboard/spaces/:
+    get:
+      operationId: api_dashboard_spaces_retrieve
+      description: Space utilization analytics from contract and booking projections.
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /dashboard/companies/:
+    get:
+      operationId: dashboard_companies_retrieve
+      description: Company analytics from materialized company and employee projections.
+      tags:
+      - dashboard
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /dashboard/finance/:
+    get:
+      operationId: dashboard_finance_retrieve
+      description: Finance analytics from payment projections and cold-start finance
+        snapshots.
+      tags:
+      - dashboard
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /dashboard/spaces/:
+    get:
+      operationId: dashboard_spaces_retrieve
+      description: Space utilization analytics from contract and booking projections.
+      tags:
+      - dashboard
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /health/:
     get:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-        - health
+      - health
       responses:
         '200':
           content:

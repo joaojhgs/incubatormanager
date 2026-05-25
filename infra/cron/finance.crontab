@@ -1,0 +1,5 @@
+# Finance scheduler sidecar jobs (Europe/Lisbon via container TZ).
+# Generate monthly contract payments on the first day of each month.
+0 2 1 * * python manage.py generate_monthly_billing
+# Mark pending payments overdue once per day.
+0 3 * * * python manage.py mark_overdue_payments

@@ -30,12 +30,14 @@ def _create_ticket(
     subject: str = "Default subject",
     description: str = "Default description",
     status: str = Ticket.Status.OPEN,
+    assigned_to: uuid.UUID | None = None,
 ) -> Ticket:
     return Ticket.objects.create(
         company_id=company_id,
         subject=subject,
         description=description,
         status=status,
+        assigned_to=assigned_to,
         created_by_user_id=uuid.uuid4(),
         created_by_role="Client",
     )
@@ -67,6 +69,54 @@ def test_ticket_list_staff_and_client_scopes() -> None:
     client_ids = {row["id"] for row in client_payload}
     assert str(mine.pk) in client_ids
     assert all(row["company_id"] == c1 for row in client_payload)
+
+
+@pytest.mark.django_db
+def test_ticket_list_staff_filters_by_status_company_and_assignee() -> None:
+    company_id = str(uuid.uuid4())
+    other_company_id = str(uuid.uuid4())
+    assignee = uuid.uuid4()
+    matching = _create_ticket(
+        company_id=company_id,
+        subject="Assigned",
+        status=Ticket.Status.IN_PROGRESS,
+        assigned_to=assignee,
+    )
+    _create_ticket(company_id=company_id, status=Ticket.Status.OPEN, assigned_to=assignee)
+    _create_ticket(
+        company_id=other_company_id,
+        status=Ticket.Status.IN_PROGRESS,
+        assigned_to=assignee,
+    )
+    _create_ticket(
+        company_id=company_id,
+        status=Ticket.Status.IN_PROGRESS,
+        assigned_to=uuid.uuid4(),
+    )
+
+    response = _api_client("Staff").get(
+        LIST_URL,
+        {
+            "company_id": company_id,
+            "status": Ticket.Status.IN_PROGRESS,
+            "assigned_to": str(assignee),
+        },
+    )
+
+    assert response.status_code == 200
+    assert [row["id"] for row in response.json()] == [str(matching.pk)]
+
+
+@pytest.mark.django_db
+def test_ticket_list_staff_can_filter_unassigned() -> None:
+    company_id = str(uuid.uuid4())
+    unassigned = _create_ticket(company_id=company_id, subject="Unassigned")
+    _create_ticket(company_id=company_id, assigned_to=uuid.uuid4())
+
+    response = _api_client("Staff").get(LIST_URL, {"assigned_to": "unassigned"})
+
+    assert response.status_code == 200
+    assert [row["id"] for row in response.json()] == [str(unassigned.pk)]
 
 
 @pytest.mark.django_db
@@ -154,6 +204,31 @@ def test_ticket_messages_are_client_or_staff_scoped() -> None:
 
 
 @pytest.mark.django_db
+def test_ticket_detail_includes_ordered_thread_messages() -> None:
+    company_id = str(uuid.uuid4())
+    ticket = _create_ticket(company_id=company_id, subject="Thread")
+    first = TicketMessage.objects.create(
+        ticket=ticket,
+        author_user_id=uuid.uuid4(),
+        author_role="Client",
+        content="Initial question",
+    )
+    second = TicketMessage.objects.create(
+        ticket=ticket,
+        author_user_id=uuid.uuid4(),
+        author_role="Staff",
+        content="Staff reply",
+    )
+
+    response = _api_client("Client", company_id=company_id).get(f"/api/tickets/{ticket.pk}/")
+
+    assert response.status_code == 200
+    messages = response.json()["messages"]
+    assert [row["id"] for row in messages] == [str(first.pk), str(second.pk)]
+    assert [row["content"] for row in messages] == ["Initial question", "Staff reply"]
+
+
+@pytest.mark.django_db
 def test_ticket_update_staff_only_and_client_forbidden() -> None:
     c = str(uuid.uuid4())
     ticket = _create_ticket(company_id=c)
@@ -161,11 +236,12 @@ def test_ticket_update_staff_only_and_client_forbidden() -> None:
     staff = _api_client("Staff")
     staff_update = staff.patch(
         f"/api/tickets/{ticket.pk}/",
-        data={"status": Ticket.Status.IN_PROGRESS},
+        data={"status": Ticket.Status.IN_PROGRESS, "assigned_to": str(uuid.uuid4())},
         format="json",
     )
     assert staff_update.status_code == 200
     assert staff_update.json()["status"] == Ticket.Status.IN_PROGRESS
+    assert staff_update.json()["assigned_to"] is not None
 
     client = _api_client("Client", company_id=c)
     client_update = client.patch(

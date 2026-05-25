@@ -100,7 +100,7 @@ RABBITMQ_URL = os.environ.get("RABBITMQ_URL", "")
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "ILB Space Service API",
-    "DESCRIPTION": "Space bounded context API (stub).",
+    "DESCRIPTION": "Space bounded context API.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

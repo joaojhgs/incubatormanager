@@ -8,6 +8,7 @@ from core.document_views import (
     DocumentDestroyView,
     DocumentDownloadView,
     DocumentListView,
+    DocumentPresignedUrlView,
     DocumentUploadView,
 )
 from core.views import HealthView
@@ -20,6 +21,11 @@ urlpatterns = [
         "api/documents/<uuid:document_id>/download/",
         DocumentDownloadView.as_view(),
         name="document-download",
+    ),
+    path(
+        "api/documents/<uuid:document_id>/presigned/",
+        DocumentPresignedUrlView.as_view(),
+        name="document-presigned",
     ),
     path(
         "api/documents/<uuid:document_id>/",

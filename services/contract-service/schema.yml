@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: ILB Contract Service API
   version: 0.1.0
-  description: Contracts bounded context API (stub).
+  description: Contracts bounded context API.
 paths:
   /api/contracts/health/:
     get:

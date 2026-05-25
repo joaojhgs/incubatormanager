@@ -98,7 +98,7 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "ILB Ticket Service API",
-    "DESCRIPTION": "Ticket bounded context API (stub).",
+    "DESCRIPTION": "Ticket bounded context API.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

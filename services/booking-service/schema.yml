@@ -2,14 +2,184 @@ openapi: 3.0.3
 info:
   title: ILB Booking Service API
   version: 0.1.0
-  description: Booking bounded context API (stub).
+  description: Booking bounded context API.
 paths:
+  /api/bookings/:
+    get:
+      operationId: api_bookings_list
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+          description: ''
+    post:
+      operationId: api_bookings_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingCreate'
+          description: ''
+  /api/bookings/{booking_id}/:
+    get:
+      operationId: api_bookings_retrieve
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
+  /api/bookings/{booking_id}/approve/:
+    patch:
+      operationId: api_bookings_approve_partial_update
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
+  /api/bookings/{booking_id}/cancel/:
+    patch:
+      operationId: api_bookings_cancel_partial_update
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
+  /api/bookings/{booking_id}/complete/:
+    patch:
+      operationId: api_bookings_complete_partial_update
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
+  /api/bookings/{booking_id}/reject/:
+    patch:
+      operationId: api_bookings_reject_partial_update
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
+  /api/bookings/calendar/:
+    get:
+      operationId: api_bookings_calendar_retrieve
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: {}
+          description: ''
+  /api/bookings/external/:
+    post:
+      operationId: api_bookings_external_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicBooking'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PublicBooking'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PublicBooking'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/health/:
     get:
       operationId: api_bookings_health_retrieve
-      description: Liveness/readiness-style health payload.
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -20,13 +190,26 @@ paths:
                   status:
                     type: string
                     example: ok
+          description: ''
+  /api/bookings/my/:
+    get:
+      operationId: api_bookings_my_list
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
           description: ''
   /health/:
     get:
       operationId: health_retrieve
-      description: Liveness/readiness-style health payload.
       tags:
-        - health
+      - health
       responses:
         '200':
           content:
@@ -38,4 +221,167 @@ paths:
                     type: string
                     example: ok
           description: ''
-components: {}
+components:
+  schemas:
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        company_id:
+          type: string
+          format: uuid
+          nullable: true
+        space_id:
+          type: string
+          format: uuid
+        created_by_user_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        created_by_role:
+          type: string
+          readOnly: true
+        is_public:
+          type: boolean
+          readOnly: true
+        requester_name:
+          type: string
+          maxLength: 255
+        requester_email:
+          type: string
+          format: email
+          maxLength: 254
+        requester_phone:
+          type: string
+          maxLength: 64
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        quoted_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        equipment_ids: {}
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - created_by_role
+      - created_by_user_id
+      - end_time
+      - id
+      - is_public
+      - space_id
+      - start_time
+      - status
+      - updated_at
+    BookingCreate:
+      type: object
+      properties:
+        company_id:
+          type: string
+          format: uuid
+          nullable: true
+        space_id:
+          type: string
+          format: uuid
+        requester_name:
+          type: string
+          maxLength: 255
+        requester_email:
+          type: string
+          format: email
+          maxLength: 254
+        requester_phone:
+          type: string
+          maxLength: 64
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        quoted_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        equipment_ids: {}
+        notes:
+          type: string
+      required:
+      - end_time
+      - space_id
+      - start_time
+    PublicBooking:
+      type: object
+      properties:
+        company_id:
+          type: string
+          format: uuid
+          nullable: true
+        space_id:
+          type: string
+          format: uuid
+        requester_name:
+          type: string
+        requester_email:
+          type: string
+          format: email
+        requester_phone:
+          type: string
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        quoted_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        equipment_ids: {}
+        notes:
+          type: string
+      required:
+      - end_time
+      - requester_email
+      - requester_name
+      - requester_phone
+      - space_id
+      - start_time
+    StatusEnum:
+      enum:
+      - Pending
+      - Approved
+      - Rejected
+      - Cancelled
+      - Completed
+      type: string
+      description: |-
+        * `Pending` - Pending
+        * `Approved` - Approved
+        * `Rejected` - Rejected
+        * `Cancelled` - Cancelled
+        * `Completed` - Completed

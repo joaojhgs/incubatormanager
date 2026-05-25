@@ -31,6 +31,7 @@ class TicketSerializer(serializers.ModelSerializer):
             "subject",
             "description",
             "status",
+            "assigned_to",
             "created_by_user_id",
             "created_by_role",
             "created_at",
@@ -54,7 +55,7 @@ class TicketCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ticket
-        fields = ["company_id", "subject", "description", "status"]
+        fields = ["company_id", "subject", "description", "status", "assigned_to"]
         read_only_fields = ["status"]
 
 

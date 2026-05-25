@@ -2,14 +2,346 @@ openapi: 3.0.3
 info:
   title: ILB Inventory Service API
   version: 0.1.0
-  description: Inventory bounded context API (stub).
+  description: Inventory bounded context API.
 paths:
+  /api/inventory/bookings/{event_type}/:
+    post:
+      operationId: api_inventory_bookings_create
+      parameters:
+      - in: path
+        name: event_type
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          description: No response body
+  /api/inventory/equipment/:
+    get:
+      operationId: api_inventory_equipment_list
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Equipment'
+          description: ''
+    post:
+      operationId: api_inventory_equipment_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Equipment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Equipment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Equipment'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+          description: ''
+  /api/inventory/equipment-types/:
+    get:
+      operationId: api_inventory_equipment_types_list
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EquipmentType'
+          description: ''
+    post:
+      operationId: api_inventory_equipment_types_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquipmentType'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EquipmentType'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EquipmentType'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentType'
+          description: ''
+  /api/inventory/equipment-types/{type_id}/:
+    get:
+      operationId: api_inventory_equipment_types_retrieve
+      parameters:
+      - in: path
+        name: type_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentType'
+          description: ''
+    put:
+      operationId: api_inventory_equipment_types_update
+      parameters:
+      - in: path
+        name: type_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquipmentType'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EquipmentType'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EquipmentType'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentType'
+          description: ''
+    patch:
+      operationId: api_inventory_equipment_types_partial_update
+      parameters:
+      - in: path
+        name: type_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEquipmentType'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEquipmentType'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEquipmentType'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentType'
+          description: ''
+    delete:
+      operationId: api_inventory_equipment_types_destroy
+      parameters:
+      - in: path
+        name: type_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '204':
+          description: No response body
+  /api/inventory/equipment/{equipment_id}/:
+    get:
+      operationId: api_inventory_equipment_retrieve
+      parameters:
+      - in: path
+        name: equipment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+          description: ''
+    put:
+      operationId: api_inventory_equipment_update
+      parameters:
+      - in: path
+        name: equipment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Equipment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Equipment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Equipment'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+          description: ''
+    patch:
+      operationId: api_inventory_equipment_partial_update
+      parameters:
+      - in: path
+        name: equipment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEquipment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEquipment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEquipment'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+          description: ''
+    delete:
+      operationId: api_inventory_equipment_destroy
+      parameters:
+      - in: path
+        name: equipment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '204':
+          description: No response body
+  /api/inventory/equipment/{equipment_id}/assign/:
+    post:
+      operationId: api_inventory_equipment_assign_create
+      parameters:
+      - in: path
+        name: equipment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquipmentAssign'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EquipmentAssign'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EquipmentAssign'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+          description: ''
+  /api/inventory/equipment/{equipment_id}/release/:
+    post:
+      operationId: api_inventory_equipment_release_create
+      parameters:
+      - in: path
+        name: equipment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquipmentRelease'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EquipmentRelease'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EquipmentRelease'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+          description: ''
   /api/inventory/health/:
     get:
       operationId: api_inventory_health_retrieve
-      description: Liveness/readiness-style health payload.
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -20,13 +352,26 @@ paths:
                   status:
                     type: string
                     example: ok
+          description: ''
+  /api/inventory/my-assignments/:
+    get:
+      operationId: api_inventory_my_assignments_list
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Equipment'
           description: ''
   /health/:
     get:
       operationId: health_retrieve
-      description: Liveness/readiness-style health payload.
       tags:
-        - health
+      - health
       responses:
         '200':
           content:
@@ -38,4 +383,165 @@ paths:
                     type: string
                     example: ok
           description: ''
-components: {}
+components:
+  schemas:
+    Equipment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        equipment_type:
+          type: string
+          format: uuid
+        serial_number:
+          type: string
+          maxLength: 128
+        assigned_space_id:
+          type: string
+          format: uuid
+          nullable: true
+        rental_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        notes:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - equipment_type
+      - id
+      - name
+      - updated_at
+    EquipmentAssign:
+      type: object
+      properties:
+        booking_id:
+          type: string
+          format: uuid
+        company_id:
+          type: string
+          format: uuid
+        assigned_space_id:
+          type: string
+          format: uuid
+          nullable: true
+    EquipmentRelease:
+      type: object
+      properties:
+        booking_id:
+          type: string
+          format: uuid
+      required:
+      - booking_id
+    EquipmentType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - updated_at
+    PatchedEquipment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        equipment_type:
+          type: string
+          format: uuid
+        serial_number:
+          type: string
+          maxLength: 128
+        assigned_space_id:
+          type: string
+          format: uuid
+          nullable: true
+        rental_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        notes:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedEquipmentType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    StatusEnum:
+      enum:
+      - Available
+      - In use
+      - Maintenance
+      type: string
+      description: |-
+        * `Available` - Available
+        * `In use` - In use
+        * `Maintenance` - Maintenance

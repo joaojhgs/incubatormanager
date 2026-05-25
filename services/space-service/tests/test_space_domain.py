@@ -69,6 +69,8 @@ def test_contract_and_booking_events_are_idempotent() -> None:
     apply_contract_event(contract_event)  # type: ignore[arg-type]
     assert SpaceContract.objects.count() == 1
     assert ProcessedEvent.objects.count() == 1
+    space.refresh_from_db()
+    assert space.status == Space.Status.OCCUPIED
 
     expired_event = {
         "event_id": str(uuid.uuid4()),
@@ -81,6 +83,8 @@ def test_contract_and_booking_events_are_idempotent() -> None:
     contract = SpaceContract.objects.get()
     assert contract.status == SpaceContract.Status.EXPIRED
     assert ProcessedEvent.objects.count() == 2
+    space.refresh_from_db()
+    assert space.status == Space.Status.AVAILABLE
 
     booking_event = {
         "event_id": str(uuid.uuid4()),
@@ -100,3 +104,18 @@ def test_contract_and_booking_events_are_idempotent() -> None:
     apply_booking_event_dict(booking_event)  # type: ignore[arg-type]
     assert SpaceBookingRecord.objects.count() == 1
     assert ProcessedEvent.objects.count() == 3
+    space.refresh_from_db()
+    assert space.status == Space.Status.RESERVED
+
+    cancelled_event = {
+        **booking_event,
+        "event_id": str(uuid.uuid4()),
+        "event_type": "booking.cancelled",
+        "payload": {
+            **booking_event["payload"],
+            "company_id": None,
+        },
+    }
+    apply_booking_event_dict(cancelled_event)  # type: ignore[arg-type]
+    space.refresh_from_db()
+    assert space.status == Space.Status.AVAILABLE

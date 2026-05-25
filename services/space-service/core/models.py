@@ -31,6 +31,8 @@ class Space(models.Model):
 
     class Status(models.TextChoices):
         AVAILABLE = "Available", "Available"
+        RESERVED = "Reserved", "Reserved"
+        OCCUPIED = "Occupied", "Occupied"
         MAINTENANCE = "Maintenance", "Maintenance"
         BLOCKED = "Blocked", "Blocked"
 

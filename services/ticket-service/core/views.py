@@ -47,7 +47,34 @@ class TicketListCreateView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):  # type: ignore[override]
-        return ticket_scope_for_user(self.request.user).prefetch_related("messages")
+        qs = ticket_scope_for_user(self.request.user)
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        company_id = self.request.query_params.get("company_id")
+        if company_id:
+            try:
+                company_uuid = UUID(str(company_id))
+            except ValueError as exc:
+                raise ValidationError({"company_id": "Must be a valid UUID."}) from exc
+            qs = qs.filter(company_id=company_uuid)
+
+        assigned_to = self.request.query_params.get("assigned_to")
+        assigned_to = assigned_to or self.request.query_params.get("assigned_to_user_id")
+        if assigned_to:
+            if assigned_to == "unassigned":
+                qs = qs.filter(assigned_to__isnull=True)
+            else:
+                try:
+                    assigned_uuid = UUID(str(assigned_to))
+                except ValueError as exc:
+                    raise ValidationError(
+                        {"assigned_to": "Must be a valid UUID or 'unassigned'."}
+                    ) from exc
+                qs = qs.filter(assigned_to=assigned_uuid)
+
+        return qs.prefetch_related("messages")
 
     def get_serializer_class(self):  # type: ignore[override]
         if self.request.method == "POST":
@@ -62,7 +89,12 @@ class TicketListCreateView(ListCreateAPIView):
             company_id = getattr(user, "company_id", None)
             if company_id is None:
                 raise ValidationError("Client users must be bound to a company")
-            serializer.save(company_id=company_id, created_by_user_id=user.id, created_by_role=role)
+            serializer.save(
+                company_id=company_id,
+                assigned_to=None,
+                created_by_user_id=user.id,
+                created_by_role=role,
+            )
             return
 
         if role in {"Staff", "Director"}:

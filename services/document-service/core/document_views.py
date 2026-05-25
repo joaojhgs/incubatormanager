@@ -21,7 +21,7 @@ from core.permissions import (
     CanUploadDocuments,
     DocumentAccessPermission,
 )
-from core.serializers import DocumentMetadataSerializer
+from core.serializers import DocumentMetadataSerializer, DocumentPresignedUrlSerializer
 from core.services import (
     MAX_UPLOAD_BYTES,
     DocumentPayloadTooLarge,
@@ -51,7 +51,7 @@ class DocumentUploadView(APIView):
                     "file": {"type": "string", "format": "binary"},
                     "entity_type": {
                         "type": "string",
-                        "enum": ["Company", "Contract"],
+                        "enum": ["Company", "Contract", "Booking"],
                         "description": "Owning aggregate type.",
                     },
                     "entity_id": {"type": "string", "format": "uuid"},
@@ -117,7 +117,7 @@ class DocumentUploadView(APIView):
         except ValueError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
-        out = DocumentMetadataSerializer(doc)
+        out = DocumentMetadataSerializer(doc, context={"request": request})
         return Response(out.data, status=status.HTTP_201_CREATED)
 
 
@@ -172,7 +172,7 @@ class DocumentListView(APIView):
                 type=str,
                 location=OpenApiParameter.QUERY,
                 required=True,
-                enum=["Company", "Contract"],
+                enum=["Company", "Contract", "Booking"],
                 description="Owning aggregate type.",
             ),
             OpenApiParameter(
@@ -213,7 +213,44 @@ class DocumentListView(APIView):
         except ValueError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
-        data = DocumentMetadataSerializer(qs, many=True).data
+        data = DocumentMetadataSerializer(qs, many=True, context={"request": request}).data
+        return Response(data)
+
+
+class DocumentPresignedUrlView(APIView):
+    """Return document metadata plus a temporary direct object-storage download URL."""
+
+    permission_classes = [IsAuthenticated, DocumentAccessPermission]
+
+    @extend_schema(
+        summary="Create a pre-signed document download URL",
+        responses={
+            200: DocumentPresignedUrlSerializer,
+            403: {"description": "Forbidden for this role or company scope."},
+            404: {"description": "Document not found."},
+            503: {"description": "Object storage could not generate a pre-signed URL."},
+        },
+    )
+    def get(self, request: Request, document_id: uuid.UUID) -> Response:
+        try:
+            document = Document.objects.get(pk=document_id, is_active=True)
+        except Document.DoesNotExist as exc:
+            raise Http404("Document not found.") from exc
+
+        self.check_object_permissions(request, document)
+
+        try:
+            url = storage.safe_presigned_url(document.file_path)
+        except storage.StorageError as exc:
+            return Response(
+                {"detail": "Object storage error.", "code": str(exc)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        data = DocumentPresignedUrlSerializer(
+            document,
+            context={"request": request, "presigned_url": url},
+        ).data
         return Response(data)
 
 

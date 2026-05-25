@@ -1,56 +1,39 @@
-# SDL Phase 2 Review Notes (Task 3)
+# SDL Phase 2 Review Notes
 
-Date: 2026-05-25
+Updated: 2026-05-25
 
-## Scope checked
-- Reviewed implementation status against `.omx/plans/prd-phase2-remaining-sdl.md` and
-  `.omx/plans/test-spec-phase2-remaining-sdl.md`.
-- Focused on code-quality and documentation updates in the canonical leader repo.
+## Current status
 
-## Findings (from repository snapshot)
+The Phase 2 handoff scope has been reconciled into the integration branch. The operational backend services now expose domain endpoints beyond health checks, event consumers use `event_id` idempotency where events are consumed, and the targeted staff/client placeholder pages have been replaced by API-backed operational pages and ticket/client views.
 
-### Backend route readiness
-- Company service exposes real non-health routes for companies/CAE/maturity via
-  `core/urls.py`.
-- Ticket service has CRUD/my/message routes and is the only domain beyond health checks.
-- Booking, Contract, Finance, Space, Inventory, and Dashboard services currently
-  only expose health endpoints and schema descriptions; these remain pending
-  implementation work.
+## Backend/event-chain coverage
 
-### Frontend placeholders
-- Staff placeholders remain in:
-  - `frontend/app/(staff)/spaces/page.tsx`
-  - `frontend/app/(staff)/finance/page.tsx`
-  - `frontend/app/(staff)/bookings/page.tsx`
-  - `frontend/app/(staff)/tickets/page.tsx`
-  - `frontend/app/(staff)/contracts/page.tsx`
-  - `frontend/app/(staff)/inventory/page.tsx`
-- Client placeholders remain in:
-  - `frontend/app/(client)/portal/bookings/page.tsx`
-  - `frontend/app/(client)/portal/tickets/page.tsx`
-  - `frontend/app/(client)/portal/payments/page.tsx`
-  - `frontend/app/(client)/portal/contract/page.tsx`
-  - `frontend/app/(client)/portal/company/page.tsx`
+Covered in the current branch:
 
-### Test surface currently present
-- Ticket service has non-health endpoint tests.
-- Company service has company/CAE/maturity endpoint tests.
-- Other phase domains (booking/contract/finance/space/inventory/dashboard) have only `test_health.py` plus a stub seed test in space.
-- This indicates missing regression coverage for the intended Phase 2 endpoint and
-  event flows.
+- Company create/update, detail, maturity, employees, stats, and event publishing paths.
+- Contract list/detail/create, activate, terminate, expiration command, and lifecycle event publishing.
+- Finance payment list/detail/company views, dashboard/report endpoints, monthly billing/overdue commands, and contract/booking event handlers.
+- Space list/type/occupancy, contract projections, booking projections, and minimal contract-ended event handling.
+- Booking public/internal/client flows and approve/reject/cancel/complete lifecycle events.
+- Inventory equipment/type CRUD, assign/release flows, booking event projection endpoint, and client assignment scoping.
+- Ticket create/list/my/detail/message flows with role and company scoping.
+- Dashboard overview/report aggregation against downstream services with guarded availability reporting.
+- Document upload/list/download/delete paths backed by the configured document storage adapter.
 
-### Service contract docs quality
-- Multiple service `schema.yml` and `settings.py` descriptions still referenced
-  these APIs as "stub" despite broader PRD requirements; these were updated in
-  this task.
-- Event catalogue docs were missing most phase-2 events and payload notes; updated
-  in `docs/events.md` and mirrored in `docs/architecture.md`.
+## Frontend coverage
 
-## Actionable documentation updates made in this task
-1. `docs/events.md`: completed event matrix with required SDL phase-2 event types and
-   suggested payload fields.
-2. `docs/architecture.md`: expanded the architecture event catalogue to match SDL
-   phase-2 event set.
-3. Service metadata docs (`schema.yml` + `settings.py` `SPECTACULAR_SETTINGS.DESCRIPTION`):
-   removed outdated "stub" suffix across phase-2 services.
+Covered in the current branch:
 
+- Staff operational routes for contracts, finance, spaces, bookings, inventory, dashboard, and tickets no longer use placeholder sections.
+- Client portal company, contract, payments, bookings, and tickets routes no longer use placeholder sections.
+- User-facing strings added by the Phase 2 work are routed through the existing i18n dictionaries.
+
+## Verification status
+
+Local verification is the merge gate for this branch. The latest local evidence is recorded in `docs/AGENT_HANDOFF.md` and includes service checks/tests, frontend format/typecheck/lint/test/build, ruff, integration smoke checks, code review, and QA. Live Docker-dependent checks remain environment-gated when the Docker socket is unavailable.
+
+## Remaining non-blocking hardening ideas
+
+- Add richer domain-specific staff forms/detail pages as time allows.
+- Expand browser e2e coverage once Docker access is available.
+- Regenerate committed OpenAPI schema snapshots after any future endpoint or metadata changes.

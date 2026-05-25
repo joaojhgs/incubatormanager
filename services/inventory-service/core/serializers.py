@@ -22,6 +22,8 @@ class EquipmentSerializer(serializers.ModelSerializer):
             "name",
             "equipment_type",
             "serial_number",
+            "assigned_space_id",
+            "rental_cost",
             "status",
             "notes",
             "is_active",
@@ -32,8 +34,20 @@ class EquipmentSerializer(serializers.ModelSerializer):
 
 
 class EquipmentAssignSerializer(serializers.Serializer):
-    booking_id = serializers.UUIDField()
-    company_id = serializers.UUIDField()
+    booking_id = serializers.UUIDField(required=False)
+    company_id = serializers.UUIDField(required=False)
+    assigned_space_id = serializers.UUIDField(required=False, allow_null=True)
+
+    def validate(self, attrs):
+        has_booking_assignment = "booking_id" in attrs and "company_id" in attrs
+        has_space_assignment = "assigned_space_id" in attrs
+        if not has_booking_assignment and not has_space_assignment:
+            raise serializers.ValidationError(
+                "Provide assigned_space_id or both booking_id and company_id"
+            )
+        if ("booking_id" in attrs) != ("company_id" in attrs):
+            raise serializers.ValidationError("booking_id and company_id must be provided together")
+        return attrs
 
 
 class EquipmentReleaseSerializer(serializers.Serializer):

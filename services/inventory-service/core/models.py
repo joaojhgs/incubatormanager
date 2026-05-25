@@ -36,6 +36,8 @@ class Equipment(models.Model):
         related_name="equipment",
     )
     serial_number = models.CharField(max_length=128, blank=True, default="")
+    assigned_space_id = models.UUIDField(null=True, blank=True, db_index=True)
+    rental_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     status = models.CharField(
         max_length=24,
         choices=Status.choices,
@@ -52,6 +54,7 @@ class Equipment(models.Model):
         indexes = [
             models.Index(fields=["equipment_type", "status"], name="inv_eq_type_status"),
             models.Index(fields=["is_active", "status"], name="inv_eq_active_status"),
+            models.Index(fields=["assigned_space_id", "status"], name="inv_eq_space_status"),
         ]
 
     def __str__(self) -> str:
@@ -71,6 +74,7 @@ class EquipmentAssignment(models.Model):
     )
     booking_id = models.UUIDField(db_index=True)
     company_id = models.UUIDField(db_index=True)
+    assigned_space_id = models.UUIDField(null=True, blank=True, db_index=True)
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.ASSIGNED)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -92,18 +92,21 @@ class EquipmentAssignView(APIView):
         payload = EquipmentAssignSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         equipment = Equipment.objects.get(pk=equipment_id)
-        assignment, _ = EquipmentAssignment.objects.update_or_create(
-            equipment=equipment,
-            booking_id=payload.validated_data["booking_id"],
-            defaults={
-                "company_id": payload.validated_data["company_id"],
-                "status": EquipmentAssignment.Status.ASSIGNED,
-            },
-        )
-        if equipment.status != Equipment.Status.IN_USE:
+        if "assigned_space_id" in payload.validated_data:
+            equipment.assigned_space_id = payload.validated_data["assigned_space_id"]
+        if "booking_id" in payload.validated_data:
+            assignment, _ = EquipmentAssignment.objects.update_or_create(
+                equipment=equipment,
+                booking_id=payload.validated_data["booking_id"],
+                defaults={
+                    "company_id": payload.validated_data["company_id"],
+                    "assigned_space_id": payload.validated_data.get("assigned_space_id"),
+                    "status": EquipmentAssignment.Status.ASSIGNED,
+                },
+            )
             equipment.status = Equipment.Status.IN_USE
-            equipment.save(update_fields=["status", "updated_at"])
-        _ = assignment
+            _ = assignment
+        equipment.save(update_fields=["assigned_space_id", "status", "updated_at"])
         return Response(EquipmentSerializer(equipment).data)
 
 

@@ -34,6 +34,35 @@ def _parse_decimal(value: object) -> Decimal:
     return Decimal(str(value))
 
 
+def _sync_space_status(space: Space) -> None:
+    """Derive automatic occupancy status from active contract/booking projections."""
+
+    manual_unavailable = {Space.Status.BLOCKED}
+    if space.status in manual_unavailable:
+        return
+
+    has_active_contract = SpaceContract.objects.filter(
+        space=space,
+        status=SpaceContract.Status.ACTIVE,
+    ).exists()
+    has_reserved_booking = SpaceBookingRecord.objects.filter(
+        space=space,
+        status=SpaceBookingRecord.Status.APPROVED,
+    ).exists()
+
+    target_status = space.status
+    if has_active_contract:
+        target_status = Space.Status.OCCUPIED
+    elif has_reserved_booking:
+        target_status = Space.Status.RESERVED
+    elif space.status in {Space.Status.OCCUPIED, Space.Status.RESERVED}:
+        target_status = Space.Status.AVAILABLE
+
+    if space.status != target_status:
+        space.status = target_status
+        space.save(update_fields=["status", "updated_at"])
+
+
 def occupancy_for_space(space: Space) -> dict[str, int | float]:
     now = timezone.now()
     active = SpaceBookingRecord.objects.filter(
@@ -86,8 +115,9 @@ def apply_contract_event(envelope: EventEnvelope) -> None:
                 contract_id=contract_id,
                 defaults={**defaults, "status": SpaceContract.Status.ACTIVE},
             )
-            space.status = Space.Status.AVAILABLE
-            space.save(update_fields=["status", "updated_at"])
+            space.company_id = company_id
+            space.save(update_fields=["company_id", "updated_at"])
+            _sync_space_status(space)
 
         _run_once(envelope, activate_contract)
         return
@@ -126,8 +156,7 @@ def apply_contract_event(envelope: EventEnvelope) -> None:
                 "updated_at",
             ]
         )
-        space.status = Space.Status.MAINTENANCE
-        space.save(update_fields=["status", "updated_at"])
+        _sync_space_status(space)
 
     _run_once(envelope, close_contract)
 
@@ -137,7 +166,6 @@ def apply_booking_event_dict(envelope: EventEnvelope) -> None:
     payload = envelope["payload"]
     booking_id = UUID(payload["booking_id"])
     space_id = UUID(payload["space_id"])
-    company_id = UUID(payload["company_id"])
 
     try:
         space = Space.objects.get(pk=space_id)
@@ -146,6 +174,7 @@ def apply_booking_event_dict(envelope: EventEnvelope) -> None:
 
     def apply_booking() -> None:
         if event_type == "booking.approved":
+            company_id = UUID(payload["company_id"])
             SpaceBookingRecord.objects.update_or_create(
                 booking_id=booking_id,
                 defaults={
@@ -158,6 +187,7 @@ def apply_booking_event_dict(envelope: EventEnvelope) -> None:
                     "equipment_ids": payload.get("equipment_ids") or [],
                 },
             )
+            _sync_space_status(space)
             return
 
         status = (
@@ -168,11 +198,12 @@ def apply_booking_event_dict(envelope: EventEnvelope) -> None:
             else SpaceBookingRecord.Status.REJECTED
         )
 
-        SpaceBookingRecord.objects.filter(booking_id=booking_id).update(
-            status=status,
-            space=space,
-            company_id=company_id,
-        )
+        updates = {"status": status, "space": space}
+        if payload.get("company_id"):
+            updates["company_id"] = UUID(str(payload["company_id"]))
+
+        SpaceBookingRecord.objects.filter(booking_id=booking_id).update(**updates)
+        _sync_space_status(space)
 
     _run_once(envelope, apply_booking)
 

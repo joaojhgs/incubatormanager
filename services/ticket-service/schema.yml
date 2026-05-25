@@ -2,14 +2,166 @@ openapi: 3.0.3
 info:
   title: ILB Ticket Service API
   version: 0.1.0
-  description: Ticket bounded context API (stub).
+  description: Ticket bounded context API.
 paths:
+  /api/tickets/:
+    get:
+      operationId: api_tickets_list
+      description: List tickets (scoped by role) and create new tickets.
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ticket'
+          description: ''
+    post:
+      operationId: api_tickets_create
+      description: List tickets (scoped by role) and create new tickets.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TicketCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TicketCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketCreate'
+          description: ''
+  /api/tickets/{ticket_id}/:
+    get:
+      operationId: api_tickets_retrieve
+      description: Ticket detail (clients read own, staff can update).
+      parameters:
+      - in: path
+        name: ticket_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+          description: ''
+    put:
+      operationId: api_tickets_update
+      description: Ticket detail (clients read own, staff can update).
+      parameters:
+      - in: path
+        name: ticket_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ticket'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Ticket'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Ticket'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+          description: ''
+    patch:
+      operationId: api_tickets_partial_update
+      description: Ticket detail (clients read own, staff can update).
+      parameters:
+      - in: path
+        name: ticket_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTicket'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTicket'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTicket'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+          description: ''
+  /api/tickets/{ticket_id}/messages/:
+    post:
+      operationId: api_tickets_messages_create
+      description: Append a message to a ticket thread.
+      parameters:
+      - in: path
+        name: ticket_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketMessageCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TicketMessageCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TicketMessageCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketMessage'
+          description: ''
   /api/tickets/health/:
     get:
       operationId: api_tickets_health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -20,13 +172,28 @@ paths:
                   status:
                     type: string
                     example: ok
+          description: ''
+  /api/tickets/my/:
+    get:
+      operationId: api_tickets_my_list
+      description: Tickets owned by the caller's company (client-only).
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ticket'
           description: ''
   /health/:
     get:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-        - health
+      - health
       responses:
         '200':
           content:
@@ -38,4 +205,167 @@ paths:
                     type: string
                     example: ok
           description: ''
-components: {}
+components:
+  schemas:
+    PatchedTicket:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        company_id:
+          type: string
+          format: uuid
+        subject:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        assigned_to:
+          type: string
+          format: uuid
+          nullable: true
+        created_by_user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        created_by_role:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketMessage'
+          readOnly: true
+    StatusEnum:
+      enum:
+      - Open
+      - In progress
+      - Waiting response
+      - Resolved
+      - Closed
+      type: string
+      description: |-
+        * `Open` - Open
+        * `In progress` - In progress
+        * `Waiting response` - Waiting response
+        * `Resolved` - Resolved
+        * `Closed` - Closed
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        company_id:
+          type: string
+          format: uuid
+        subject:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        assigned_to:
+          type: string
+          format: uuid
+          nullable: true
+        created_by_user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        created_by_role:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketMessage'
+          readOnly: true
+      required:
+      - company_id
+      - created_at
+      - created_by_role
+      - created_by_user_id
+      - id
+      - messages
+      - subject
+      - updated_at
+    TicketCreate:
+      type: object
+      description: Create payload supports optional ``company_id`` for client-owned
+        tickets.
+      properties:
+        company_id:
+          type: string
+          format: uuid
+        subject:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        assigned_to:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - status
+      - subject
+    TicketMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        author_user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        author_role:
+          type: string
+          readOnly: true
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author_role
+      - author_user_id
+      - content
+      - created_at
+      - id
+    TicketMessageCreate:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+      - content

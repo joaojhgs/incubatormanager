@@ -98,7 +98,7 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "ILB Finance Service API",
-    "DESCRIPTION": "Finance bounded context API (stub).",
+    "DESCRIPTION": "Finance bounded context API.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

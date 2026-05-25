@@ -185,6 +185,10 @@ def test_contract_and_booking_handlers_are_idempotent() -> None:
         )
     )
     assert BillingContract.objects.count() == 1
+    assert Payment.objects.filter(source=Payment.Source.CONTRACT).count() == 1
+    first_payment = Payment.objects.get(source=Payment.Source.CONTRACT)
+    assert first_payment.amount == BillingContract.objects.get().monthly_fee
+    assert first_payment.period_start == dt.date(2026, 5, 1)
 
     booking_payload = {
         "booking_id": booking_id,
@@ -261,7 +265,8 @@ def test_generate_monthly_billing_is_idempotent() -> None:
 
 
 @pytest.mark.django_db
-def test_mark_overdue_payments_is_idempotent() -> None:
+def test_mark_overdue_payments_is_idempotent(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RABBITMQ_URL", "amqp://rabbit")
     _create_payment(
         company_id=str(uuid.uuid4()),
         amount="50.00",
@@ -275,11 +280,15 @@ def test_mark_overdue_payments_is_idempotent() -> None:
         due_date=dt.date(2026, 4, 1),
     )
 
-    call_command("mark_overdue_payments", as_of="2026-05-02")
-    assert Payment.objects.filter(status=Payment.Status.OVERDUE).count() == 2
+    with patch("core.handlers.event_bus.publish") as publish:
+        call_command("mark_overdue_payments", as_of="2026-05-02")
+        assert Payment.objects.filter(status=Payment.Status.OVERDUE).count() == 2
+        assert publish.call_count == 1
+        assert publish.call_args.args[1] == "payment.overdue"
 
-    call_command("mark_overdue_payments", as_of="2026-05-02")
-    assert Payment.objects.filter(status=Payment.Status.OVERDUE).count() == 2
+        call_command("mark_overdue_payments", as_of="2026-05-02")
+        assert Payment.objects.filter(status=Payment.Status.OVERDUE).count() == 2
+        assert publish.call_count == 1
 
 
 @pytest.mark.django_db

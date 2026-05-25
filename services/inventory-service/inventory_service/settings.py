@@ -100,7 +100,7 @@ RABBITMQ_URL = os.environ.get("RABBITMQ_URL", "")
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "ILB Inventory Service API",
-    "DESCRIPTION": "Inventory bounded context API (stub).",
+    "DESCRIPTION": "Inventory bounded context API.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

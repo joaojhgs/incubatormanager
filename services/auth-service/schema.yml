@@ -1,14 +1,15 @@
 openapi: 3.0.3
 info:
-  title: ''
-  version: 0.0.0
+  title: ILB Auth Service API
+  version: 0.1.0
+  description: Authentication and identity API.
 paths:
   /api/auth/health/:
     get:
       operationId: api_auth_health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-        - api
+      - api
       responses:
         '200':
           content:
@@ -27,7 +28,7 @@ paths:
         pair.
       summary: Login
       tags:
-        - api
+      - api
       requestBody:
         content:
           application/json:
@@ -69,49 +70,62 @@ paths:
                     example: Request was throttled. Expected available in 42 seconds.
           description: More than five login attempts per minute from this IP address.
   /api/auth/logout/:
+    get:
+      operationId: api_auth_logout_retrieve
+      description: Same-site browser fallback that clears the ilb.refresh_token httpOnly
+        cookie and redirects to the optional safe `next` path. It does not blocklist
+        a refresh token; use POST for revocation.
+      summary: Clear refresh cookie
+      tags:
+      - api
+      responses:
+        '302':
+          description: Refresh cookie cleared; redirect returned.
     post:
       operationId: api_auth_logout_create
-      description: Revoke the refresh; access may still be valid until its own expiry.
+      description: Revoke the refresh from the JSON body or ilb.refresh_token cookie.
+        The refresh cookie is cleared on success and invalid-token responses.
       summary: Logout
       tags:
-        - api
+      - api
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LogoutRequest'
+              $ref: '#/components/schemas/RefreshCookieRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LogoutRequest'
+              $ref: '#/components/schemas/RefreshCookieRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/LogoutRequest'
-        required: true
+              $ref: '#/components/schemas/RefreshCookieRequest'
       responses:
         '204':
           description: Blocklisted; further refresh attempts for this JTI fail.
         '400':
-          description: Validation error, for example a missing `refresh` field.
+          description: Validation error, for example a missing refresh body/cookie.
         '401':
           description: Malformed, expired, or otherwise invalid refresh token.
   /api/auth/refresh/:
     post:
       operationId: api_auth_refresh_create
-      description: Exchange a valid refresh for new tokens; the old refresh cannot
-        be reused after.
+      description: Exchange a valid refresh for new tokens. The refresh may be sent
+        in the JSON body or via the ilb.refresh_token httpOnly cookie; invalid refresh
+        attempts clear that cookie.
       summary: Refresh
       tags:
-        - api
+      - api
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - refresh
-              properties:
-                refresh:
-                  type: string
+              $ref: '#/components/schemas/RefreshCookieRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RefreshCookieRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefreshCookieRequest'
       responses:
         '200':
           content:
@@ -119,6 +133,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenPairResponse'
           description: ''
+        '400':
+          description: Missing refresh body/cookie.
+        '401':
+          description: Invalid, expired, blocklisted, or inactive-user refresh.
   /api/auth/schema/:
     get:
       operationId: api_auth_schema_retrieve
@@ -128,122 +146,122 @@ paths:
         - YAML: application/vnd.oai.openapi
         - JSON: application/vnd.oai.openapi+json
       parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - json
-              - yaml
-        - in: query
-          name: lang
-          schema:
-            type: string
-            enum:
-              - af
-              - ar
-              - ar-dz
-              - ast
-              - az
-              - be
-              - bg
-              - bn
-              - br
-              - bs
-              - ca
-              - ckb
-              - cs
-              - cy
-              - da
-              - de
-              - dsb
-              - el
-              - en
-              - en-au
-              - en-gb
-              - eo
-              - es
-              - es-ar
-              - es-co
-              - es-mx
-              - es-ni
-              - es-ve
-              - et
-              - eu
-              - fa
-              - fi
-              - fr
-              - fy
-              - ga
-              - gd
-              - gl
-              - he
-              - hi
-              - hr
-              - hsb
-              - hu
-              - hy
-              - ia
-              - id
-              - ig
-              - io
-              - is
-              - it
-              - ja
-              - ka
-              - kab
-              - kk
-              - km
-              - kn
-              - ko
-              - ky
-              - lb
-              - lt
-              - lv
-              - mk
-              - ml
-              - mn
-              - mr
-              - ms
-              - my
-              - nb
-              - ne
-              - nl
-              - nn
-              - os
-              - pa
-              - pl
-              - pt
-              - pt-br
-              - ro
-              - ru
-              - sk
-              - sl
-              - sq
-              - sr
-              - sr-latn
-              - sv
-              - sw
-              - ta
-              - te
-              - tg
-              - th
-              - tk
-              - tr
-              - tt
-              - udm
-              - ug
-              - uk
-              - ur
-              - uz
-              - vi
-              - zh-hans
-              - zh-hant
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
       tags:
-        - api
+      - api
       security:
-        - jwtAuth: []
-        - {}
+      - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -270,10 +288,10 @@ paths:
       description: Interactive OpenAPI documentation for the auth service.
       summary: Swagger UI
       tags:
-        - api
+      - api
       security:
-        - jwtAuth: []
-        - {}
+      - jwtAuth: []
+      - {}
       responses:
         '200':
           description: Swagger UI page (HTML).
@@ -284,7 +302,7 @@ paths:
         header is Director. Staff and Client receive 403.
       summary: List users (Director only)
       tags:
-        - users
+      - users
       responses:
         '200':
           content:
@@ -309,7 +327,7 @@ paths:
       description: Creates a new user account. Password is write-only and never returned.
       summary: Create user (Director only)
       tags:
-        - users
+      - users
       requestBody:
         content:
           application/json:
@@ -339,14 +357,14 @@ paths:
       description: Retrieve, update, or soft-delete a single user — Director only.
       summary: Retrieve user (Director only)
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
       tags:
-        - users
+      - users
       responses:
         '200':
           content:
@@ -363,14 +381,14 @@ paths:
       description: Retrieve, update, or soft-delete a single user — Director only.
       summary: Partially update user (Director only)
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
       tags:
-        - users
+      - users
       requestBody:
         content:
           application/json:
@@ -400,14 +418,14 @@ paths:
       description: Sets ``is_active`` to false; does not remove the row.
       summary: Soft-delete user (Director only)
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
       tags:
-        - users
+      - users
       responses:
         '204':
           description: User deactivated.
@@ -422,9 +440,9 @@ paths:
         are read-only.
       summary: Get own profile
       tags:
-        - api
+      - api
       security:
-        - jwtAuth: []
+      - jwtAuth: []
       responses:
         '200':
           content:
@@ -438,7 +456,7 @@ paths:
         email, and active status are immutable.
       summary: Update own profile
       tags:
-        - api
+      - api
       requestBody:
         content:
           application/json:
@@ -451,7 +469,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedUserProfileUpdate'
       security:
-        - jwtAuth: []
+      - jwtAuth: []
       responses:
         '200':
           content:
@@ -467,7 +485,7 @@ paths:
         gateway must forward the `Authorization` header to this subrequest.
       summary: Verify (gateway auth_request)
       tags:
-        - gateway
+      - gateway
       responses:
         '200':
           description: Access token valid; identity in response headers.
@@ -482,16 +500,16 @@ paths:
                   code:
                     type: string
                     enum:
-                      - token_not_valid
-                      - user_not_found
-                      - user_inactive
+                    - token_not_valid
+                    - user_not_found
+                    - user_inactive
           description: ''
   /health/:
     get:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-        - health
+      - health
       responses:
         '200':
           content:
@@ -516,17 +534,8 @@ components:
         password:
           type: string
       required:
-        - email
-        - password
-    LogoutRequest:
-      type: object
-      description: Body for :meth:`core.views.LogoutView.post` — the refresh to revoke.
-      properties:
-        refresh:
-          type: string
-          writeOnly: true
-      required:
-        - refresh
+      - email
+      - password
     PatchedUserProfileUpdate:
       type: object
       description: |-
@@ -571,15 +580,20 @@ components:
         password:
           type: string
           writeOnly: true
+          description: New password — optional; omit to leave unchanged.
           minLength: 8
-          description: |-
-            Optional new password. When omitted, the credential is unchanged.
-            Validated against Django auth password validators.
+    RefreshCookieRequest:
+      type: object
+      description: Optional refresh body; the httpOnly refresh cookie is used when
+        omitted.
+      properties:
+        refresh:
+          type: string
     RoleEnum:
       enum:
-        - Director
-        - Staff
-        - Client
+      - Director
+      - Staff
+      - Client
       type: string
       description: |-
         * `Director` - Director
@@ -594,8 +608,8 @@ components:
         refresh:
           type: string
       required:
-        - access
-        - refresh
+      - access
+      - refresh
     UserCreate:
       type: object
       description: Payload for creating a user (Director only).
@@ -620,11 +634,11 @@ components:
           format: uuid
           nullable: true
       required:
-        - email
-        - first_name
-        - last_name
-        - password
-        - role
+      - email
+      - first_name
+      - last_name
+      - password
+      - role
     UserProfile:
       type: object
       description: Read-only representation of the authenticated user's profile.
@@ -646,7 +660,7 @@ components:
           readOnly: true
         role:
           allOf:
-            - $ref: '#/components/schemas/RoleEnum'
+          - $ref: '#/components/schemas/RoleEnum'
           readOnly: true
         company_id:
           type: string
@@ -665,15 +679,15 @@ components:
           format: date-time
           readOnly: true
       required:
-        - company_id
-        - created_at
-        - email
-        - first_name
-        - id
-        - is_active
-        - last_name
-        - role
-        - updated_at
+      - company_id
+      - created_at
+      - email
+      - first_name
+      - id
+      - is_active
+      - last_name
+      - role
+      - updated_at
     UserRead:
       type: object
       description: User row returned by Director-scoped user APIs.
@@ -697,13 +711,13 @@ components:
         is_active:
           type: boolean
       required:
-        - company_id
-        - email
-        - first_name
-        - id
-        - is_active
-        - last_name
-        - role
+      - company_id
+      - email
+      - first_name
+      - id
+      - is_active
+      - last_name
+      - role
   securitySchemes:
     jwtAuth:
       type: http

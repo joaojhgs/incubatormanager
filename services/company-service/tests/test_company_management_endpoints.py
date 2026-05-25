@@ -144,7 +144,7 @@ def test_company_patch_staff_updates_fields(
 
 
 @pytest.mark.django_db
-def test_company_delete_staff_soft_deletes(
+def test_company_delete_staff_soft_deletes_and_publishes_archived_event(
     db,
     cae_seed: CAE,
     stage_startup: MaturityStage,
@@ -156,10 +156,19 @@ def test_company_delete_staff_soft_deletes(
         cae=cae_seed,
         maturity_stage=stage_startup,
     )
-    response = _api_client("Staff").delete(f"/api/companies/{company.id}/")
-    assert response.status_code == 204
-    company.refresh_from_db()
-    assert company.is_active is False
+    with (
+        patch("core.views.transaction.on_commit") as on_commit,
+        patch("core.views.event_bus.publish") as publish,
+        patch.dict("os.environ", {"RABBITMQ_URL": "amqp://rabbit"}),
+    ):
+        response = _api_client("Staff").delete(f"/api/companies/{company.id}/")
+        assert response.status_code == 204
+        company.refresh_from_db()
+        assert company.is_active is False
+        on_commit.call_args.args[0]()
+        assert publish.call_args.args[1] == "company.archived"
+        assert publish.call_args.args[2]["company_id"] == str(company.id)
+        assert publish.call_args.args[2]["is_active"] is False
 
 
 @pytest.mark.django_db
@@ -293,12 +302,18 @@ def test_company_stats_scope_for_staff_and_client(
 
     staff_response = _api_client("Staff").get("/api/companies/stats/")
     assert staff_response.status_code == 200
-    assert staff_response.json()["total"] == 2
+    staff_payload = staff_response.json()
+    assert staff_payload["total"] == 2
+    assert staff_payload["active"] == 1
+    assert staff_payload["inactive"] == 1
+    assert staff_payload["by_maturity"][stage_startup.name] == 2
+    assert staff_payload["by_cae"][cae_seed.code] == 2
 
     client_response = _api_client("Client", company_id=str(ours.id)).get("/api/companies/stats/")
     assert client_response.status_code == 200
-    assert client_response.json() == {
-        "total": 1,
-        "active": 1,
-        "inactive": 0,
-    }
+    client_payload = client_response.json()
+    assert client_payload["total"] == 1
+    assert client_payload["active"] == 1
+    assert client_payload["inactive"] == 0
+    assert client_payload["by_maturity"][stage_startup.name] == 1
+    assert client_payload["by_cae"][cae_seed.code] == 1

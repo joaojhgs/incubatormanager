@@ -27,6 +27,7 @@ class Ticket(models.Model):
         default=Status.OPEN,
         db_index=True,
     )
+    assigned_to = models.UUIDField(null=True, blank=True, db_index=True)
     created_by_user_id = models.UUIDField()
     created_by_role = models.CharField(max_length=24)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -36,6 +37,7 @@ class Ticket(models.Model):
         ordering = ("-updated_at", "-created_at", "subject")
         indexes = [
             models.Index(fields=["company_id", "status"], name="core_ticket_company_status_idx"),
+            models.Index(fields=["assigned_to", "status"], name="ticket_assignee_status_idx"),
         ]
 
     def __str__(self) -> str:

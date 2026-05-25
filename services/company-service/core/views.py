@@ -55,12 +55,8 @@ def _resolve_company_for_user(user: object, company_id: str | UUID) -> str | Non
     return None
 
 
-def _publish_company_created(company: Company) -> None:
-    rabbitmq_url = os.environ.get("RABBITMQ_URL", "")
-    if not rabbitmq_url:
-        return
-
-    payload = {
+def _company_payload(company: Company) -> dict[str, str]:
+    return {
         "company_id": str(company.id),
         "name": company.name,
         "cae_id": str(company.cae_id),
@@ -68,7 +64,24 @@ def _publish_company_created(company: Company) -> None:
         "maturity_stage_id": str(company.maturity_stage_id),
         "maturity_stage_name": company.maturity_stage.name,
     }
+
+
+def _publish_company_created(company: Company) -> None:
+    rabbitmq_url = os.environ.get("RABBITMQ_URL", "")
+    if not rabbitmq_url:
+        return
+
+    payload = _company_payload(company)
     transaction.on_commit(lambda: event_bus.publish(rabbitmq_url, "company.created", payload))
+
+
+def _publish_company_archived(company: Company) -> None:
+    rabbitmq_url = os.environ.get("RABBITMQ_URL", "")
+    if not rabbitmq_url:
+        return
+
+    payload = {**_company_payload(company), "is_active": False}
+    transaction.on_commit(lambda: event_bus.publish(rabbitmq_url, "company.archived", payload))
 
 
 def _publish_employee_changed(employee: Employee, *, action: str) -> None:
@@ -151,6 +164,7 @@ class CompanyDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):  # type: ignore[override]
         instance.is_active = False
         instance.save(update_fields=("is_active", "updated_at"))
+        _publish_company_archived(instance)
 
 
 @extend_schema(description="Patch the maturity stage for an active company by uuid.")
@@ -271,11 +285,22 @@ class CompanyStatsView(APIView):
         else:
             company_qs = Company.objects.none()
 
+        by_maturity = {
+            row["maturity_stage__name"]: row["total"]
+            for row in company_qs.values("maturity_stage__name").annotate(total=Count("id"))
+        }
+        by_cae = {
+            row["cae__code"]: row["total"]
+            for row in company_qs.values("cae__code").annotate(total=Count("id"))
+        }
+
         return Response(
             {
                 "total": company_qs.count(),
                 "active": company_qs.filter(is_active=True).count(),
                 "inactive": company_qs.filter(is_active=False).count(),
+                "by_maturity": by_maturity,
+                "by_cae": by_cae,
             }
         )
 

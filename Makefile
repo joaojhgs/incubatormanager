@@ -2,10 +2,13 @@ SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
 
-COMPOSE := docker compose --project-directory . -f infra/docker-compose.yml
+COMPOSE_ENV_FILE := $(if $(wildcard .env),.env,.env.example)
+COMPOSE := docker compose --env-file $(COMPOSE_ENV_FILE) --project-directory . -f infra/docker-compose.yml
 COMPOSE_DEV := $(COMPOSE) -f infra/docker-compose.dev.yml
+BACKEND_SERVICES := auth-service company-service contract-service finance-service space-service booking-service inventory-service ticket-service dashboard-service document-service
+CRON_FILES := infra/cron/booking.crontab infra/cron/contract.crontab infra/cron/finance.crontab
 
-.PHONY: help up up-dev down logs ps build rebuild seed test test-libs lint format demo tag env clean
+.PHONY: help up up-dev down logs ps build rebuild seed test test-backend test-libs lint format local-gate demo tag env clean
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} \
@@ -32,11 +35,18 @@ build: ## Build all service images
 rebuild: ## Force a clean rebuild of every service
 	$(COMPOSE) build --no-cache
 
-seed: ## Load 10-of-everything fixtures into each service DB
+seed: ## Load deterministic local demo users and smoke fixtures
+	$(COMPOSE) exec auth-service python manage.py seed_dev_users
 	$(COMPOSE) exec auth-service python /app/infra/seed/seed.py
 
 test: ## Run pytest in the auth-service container (requires `make up` or images built)
 	$(COMPOSE) run --rm auth-service pytest
+
+test-backend: ## Run pytest in every backend service container
+	@for service in $(BACKEND_SERVICES); do \
+		echo "==> pytest $$service"; \
+		$(COMPOSE) run --rm $$service pytest; \
+	done
 
 test-libs: ## Run shared Python library unit tests
 	python3 -m pip install -q -e "libs/py-common[dev]" \
@@ -48,13 +58,26 @@ lint: ## Run ruff, eslint, and prettier across the monorepo
 	npm run lint
 	npm run format:check
 
+local-gate: ## Validate compose, scheduler crontabs, shared libs, and backend tests
+	$(COMPOSE) config --quiet
+	python3 -m py_compile infra/scripts/cron-runner.py
+	@for file in $(CRON_FILES); do \
+		echo "==> validating $$file"; \
+		python3 infra/scripts/cron-runner.py --dry-run $$file >/dev/null; \
+	done
+	python3 -m pytest infra/tests
+	$(MAKE) test-libs
+	$(MAKE) test-backend
+
 format: ## Apply ruff and prettier formatters
 	ruff format .
 	npm run format
 
 demo: ## Reset DBs, seed, and run the stack in the foreground
 	$(COMPOSE) down -v
-	$(COMPOSE) up --build
+	$(COMPOSE) up -d --build --wait
+	$(MAKE) seed
+	$(COMPOSE) logs -f
 
 tag: ## Tag a release commit and push tags to origin
 	@git tag -a "v$$(date +%Y.%m.%d)" -m "release $$(date +%Y-%m-%d)"
