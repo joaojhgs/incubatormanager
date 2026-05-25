@@ -5,6 +5,7 @@ import {
   Card,
   Col,
   Descriptions,
+  Popconfirm,
   Result,
   Row,
   Select,
@@ -15,7 +16,7 @@ import {
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { formatCurrency, formatDate, statusTag } from "@/components/operations/format";
 import {
@@ -98,6 +99,15 @@ export default function FinancePage() {
     group_by: "month",
   });
 
+  useEffect(() => {
+    const status = new URLSearchParams(window.location.search).get(
+      "status",
+    ) as PaymentStatus | null;
+    if (status && statusOptions.some((option) => option.value === status)) {
+      setPaymentFilters((current) => ({ ...current, status }));
+    }
+  }, []);
+
   const dashboard = useFinanceDashboard();
   const payments = usePayments(paymentFilters);
   const report = useFinanceReport(reportFilters);
@@ -127,22 +137,28 @@ export default function FinancePage() {
       key: "actions",
       fixed: "right",
       render: (_: unknown, row) => (
-        <Button
-          size="small"
-          type="primary"
-          disabled={row.status === "paid"}
-          loading={
-            paymentActions.update.isPending && paymentActions.update.variables?.id === row.id
-          }
-          onClick={() =>
+        <Popconfirm
+          title="Marcar pagamento como pago?"
+          okText="Marcar pago"
+          cancelText="Cancelar"
+          onConfirm={() =>
             paymentActions.update.mutate({
               id: row.id,
               payload: { status: "paid", paid_at: new Date().toISOString() },
             })
           }
         >
-          {tStaff("financeMarkPaid")}
-        </Button>
+          <Button
+            size="small"
+            type="primary"
+            disabled={row.status === "paid"}
+            loading={
+              paymentActions.update.isPending && paymentActions.update.variables?.id === row.id
+            }
+          >
+            {tStaff("financeMarkPaid")}
+          </Button>
+        </Popconfirm>
       ),
     },
   ];

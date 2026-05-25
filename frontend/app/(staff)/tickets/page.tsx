@@ -23,6 +23,7 @@ import {
   useTicketDetail,
   useTickets,
   useUpdateTicket,
+  useUsersList,
 } from "@/lib/hooks";
 import { tStaff } from "@/lib/i18n/staffNav";
 import type { Ticket } from "@/lib/hooks/useTickets";
@@ -63,6 +64,7 @@ function rowKey(row: Ticket): string {
 
 function TicketDrawer({ ticketId, onClose }: { ticketId: string | null; onClose: () => void }) {
   const ticket = useTicketDetail(ticketId ?? "");
+  const users = useUsersList(Boolean(ticketId));
   const updateTicket = useUpdateTicket();
   const addMessage = useAddTicketMessageAction();
   const [statusForm] = Form.useForm<{ status: string; assigned_to?: string }>();
@@ -78,6 +80,16 @@ function TicketDrawer({ ticketId, onClose }: { ticketId: string | null; onClose:
   }, [statusForm, ticket.data]);
 
   const loading = ticket.isLoading || updateTicket.isPending || addMessage.isPending;
+  const assigneeOptions = useMemo(
+    () =>
+      (users.data ?? [])
+        .filter((user) => user.is_active && ["Director", "Staff"].includes(user.role))
+        .map((user) => ({
+          label: `${user.first_name} ${user.last_name} · ${user.email}`,
+          value: user.id,
+        })),
+    [users.data],
+  );
 
   return (
     <Drawer open={Boolean(ticketId)} onClose={onClose} title="Detalhe do pedido" width={720}>
@@ -114,7 +126,22 @@ function TicketDrawer({ ticketId, onClose }: { ticketId: string | null; onClose:
                   <Select options={ticketStatusOptions} style={{ width: 220 }} />
                 </Form.Item>
                 <Form.Item name="assigned_to" label="Atribuir a">
-                  <Input placeholder="UUID do colaborador" style={{ width: 260 }} />
+                  <Select
+                    aria-label="Atribuir colaborador"
+                    allowClear
+                    showSearch
+                    optionFilterProp="label"
+                    options={assigneeOptions}
+                    placeholder={
+                      users.isError
+                        ? "Lista de colaboradores indisponível"
+                        : "Selecionar colaborador"
+                    }
+                    notFoundContent={
+                      users.isError ? "Sem permissão para listar utilizadores" : "Sem resultados"
+                    }
+                    style={{ width: 320 }}
+                  />
                 </Form.Item>
                 <Form.Item>
                   <Button type="primary" htmlType="submit" loading={loading}>

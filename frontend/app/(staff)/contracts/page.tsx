@@ -6,9 +6,11 @@ import {
   Button,
   Card,
   Col,
+  DatePicker,
   Descriptions,
   Form,
   Input,
+  InputNumber,
   Modal,
   Popconfirm,
   Result,
@@ -21,7 +23,8 @@ import {
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useMemo, useState } from "react";
+import dayjs, { type Dayjs } from "dayjs";
+import { useEffect, useMemo, useState } from "react";
 
 import { DocumentManager } from "@/components/documents";
 import { formatCurrency, formatDate, statusTag } from "@/components/operations/format";
@@ -32,10 +35,10 @@ import { tStaff } from "@/lib/i18n/staffNav";
 type ContractFormValues = {
   company_id: string;
   space_id: string;
-  area_sqm: string;
-  rate_per_sqm: string;
-  start_date: string;
-  end_date: string;
+  area_sqm: number;
+  rate_per_sqm: number;
+  start_date: Dayjs;
+  end_date: Dayjs;
   status?: string;
 };
 
@@ -58,6 +61,11 @@ export default function ContractsPage() {
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
+  useEffect(() => {
+    const status = new URLSearchParams(window.location.search).get("status") ?? undefined;
+    if (status) setStatusFilter(status);
+  }, []);
+
   const openCreate = () => {
     setEditingContract(null);
     form.resetFields();
@@ -69,10 +77,10 @@ export default function ContractsPage() {
     form.setFieldsValue({
       company_id: contract.company_id,
       space_id: contract.space_id,
-      area_sqm: contract.area_sqm,
-      rate_per_sqm: contract.rate_per_sqm,
-      start_date: contract.start_date,
-      end_date: contract.end_date,
+      area_sqm: Number(contract.area_sqm),
+      rate_per_sqm: Number(contract.rate_per_sqm),
+      start_date: dayjs(contract.start_date),
+      end_date: dayjs(contract.end_date),
       status: contract.status,
     });
     setModalOpen(true);
@@ -88,10 +96,10 @@ export default function ContractsPage() {
     const payload = {
       company_id: values.company_id,
       space_id: values.space_id,
-      area_sqm: values.area_sqm,
-      rate_per_sqm: values.rate_per_sqm,
-      start_date: values.start_date,
-      end_date: values.end_date,
+      area_sqm: values.area_sqm.toFixed(2),
+      rate_per_sqm: values.rate_per_sqm.toFixed(2),
+      start_date: values.start_date.format("YYYY-MM-DD"),
+      end_date: values.end_date.format("YYYY-MM-DD"),
       ...(values.status ? { status: values.status } : {}),
     };
     if (editingContract) {
@@ -124,7 +132,7 @@ export default function ContractsPage() {
     return contracts.filter((contract) => {
       const companyName = companyNames.get(contract.company_id) ?? contract.company_id;
       const spaceName = spaceNames.get(contract.space_id) ?? contract.space_id;
-      const matchesStatus = !statusFilter || contract.status === statusFilter;
+      const matchesStatus = !statusFilter || normalize(contract.status) === normalize(statusFilter);
       const matchesSearch =
         !term ||
         normalize(companyName).includes(term) ||
@@ -180,14 +188,20 @@ export default function ContractsPage() {
           <Button size="small" onClick={() => openEdit(contract)}>
             Editar
           </Button>
-          <Button
-            size="small"
-            disabled={contract.status === "active"}
-            loading={actions.activate.isPending}
-            onClick={() => actions.activate.mutate(contract.id)}
+          <Popconfirm
+            title="Ativar contrato?"
+            okText="Ativar"
+            cancelText="Cancelar"
+            onConfirm={() => actions.activate.mutate(contract.id)}
           >
-            Ativar
-          </Button>
+            <Button
+              size="small"
+              disabled={contract.status === "active"}
+              loading={actions.activate.isPending}
+            >
+              Ativar
+            </Button>
+          </Popconfirm>
           <Popconfirm
             title="Terminar contrato?"
             okText="Terminar"
@@ -339,20 +353,36 @@ export default function ContractsPage() {
             />
           </Form.Item>
           <Form.Item name="area_sqm" label={tStaff("contractsArea")} rules={[{ required: true }]}>
-            <Input placeholder="25.00" />
+            <InputNumber min={0.01} precision={2} addonAfter="m²" style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item
             name="rate_per_sqm"
             label={tStaff("contractsRatePerSqm")}
             rules={[{ required: true }]}
           >
-            <Input placeholder="12.50" />
+            <InputNumber min={0} precision={2} addonBefore="€" style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item name="start_date" label={tStaff("columnStart")} rules={[{ required: true }]}>
-            <Input placeholder="2026-06-01" />
+            <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item name="end_date" label={tStaff("columnEnd")} rules={[{ required: true }]}>
-            <Input placeholder="2027-05-31" />
+          <Form.Item
+            name="end_date"
+            label={tStaff("columnEnd")}
+            dependencies={["start_date"]}
+            rules={[
+              { required: true },
+              ({ getFieldValue }) => ({
+                validator(_, value: Dayjs | undefined) {
+                  const start = getFieldValue("start_date") as Dayjs | undefined;
+                  if (!value || !start || value.isAfter(start, "day")) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error("A data de fim deve ser posterior ao início."));
+                },
+              }),
+            ]}
+          >
+            <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
           </Form.Item>
           {editingContract ? (
             <Form.Item name="status" label={tStaff("columnStatus")}>

@@ -6,6 +6,7 @@ import {
   Card,
   Descriptions,
   InputNumber,
+  Popconfirm,
   Result,
   Select,
   Space,
@@ -14,7 +15,7 @@ import {
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { formatCurrency, formatDateTime, statusTag } from "@/components/operations/format";
 import {
@@ -48,6 +49,12 @@ export default function BookingsPage() {
   const [selectedEquipmentByBooking, setSelectedEquipmentByBooking] = useState<
     Record<string, string[]>
   >({});
+  const [statusFilter, setStatusFilter] = useState<string | undefined>();
+
+  useEffect(() => {
+    const status = new URLSearchParams(window.location.search).get("status") ?? undefined;
+    if (status) setStatusFilter(status);
+  }, []);
 
   const spaceNames = useMemo(() => byId(spaces.data), [spaces.data]);
   const equipmentNames = useMemo(() => byId(equipment.data), [equipment.data]);
@@ -180,10 +187,11 @@ export default function BookingsPage() {
       fixed: "right",
       render: (_: unknown, row) => (
         <Space>
-          <Button
-            size="small"
-            type="primary"
-            onClick={() =>
+          <Popconfirm
+            title="Aprovar reserva?"
+            okText="Aprovar"
+            cancelText="Cancelar"
+            onConfirm={() =>
               actions.approve.mutate({
                 id: row.id,
                 payload: {
@@ -193,28 +201,45 @@ export default function BookingsPage() {
                 },
               })
             }
-            disabled={row.status !== "Pending"}
-            loading={actions.approve.isPending}
           >
-            {tStaff("bookingApprove")}
-          </Button>
-          <Button
-            size="small"
-            onClick={() => actions.reject.mutate(row.id)}
-            disabled={row.status !== "Pending"}
-            loading={actions.reject.isPending}
+            <Button
+              size="small"
+              type="primary"
+              disabled={row.status !== "Pending"}
+              loading={actions.approve.isPending}
+            >
+              {tStaff("bookingApprove")}
+            </Button>
+          </Popconfirm>
+          <Popconfirm
+            title="Rejeitar reserva?"
+            okText="Rejeitar"
+            cancelText="Cancelar"
+            onConfirm={() => actions.reject.mutate(row.id)}
           >
-            {tStaff("bookingReject")}
-          </Button>
-          <Button
-            size="small"
-            danger
-            onClick={() => actions.cancel.mutate(row.id)}
-            disabled={!["Pending", "Approved"].includes(row.status)}
-            loading={actions.cancel.isPending}
+            <Button
+              size="small"
+              disabled={row.status !== "Pending"}
+              loading={actions.reject.isPending}
+            >
+              {tStaff("bookingReject")}
+            </Button>
+          </Popconfirm>
+          <Popconfirm
+            title="Cancelar reserva?"
+            okText="Cancelar reserva"
+            cancelText="Voltar"
+            onConfirm={() => actions.cancel.mutate(row.id)}
           >
-            {tStaff("bookingCancel")}
-          </Button>
+            <Button
+              size="small"
+              danger
+              disabled={!["Pending", "Approved"].includes(row.status)}
+              loading={actions.cancel.isPending}
+            >
+              {tStaff("bookingCancel")}
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -251,6 +276,9 @@ export default function BookingsPage() {
 
   const pendingCount = data?.filter((booking) => booking.status === "Pending").length ?? 0;
   const approvedCount = data?.filter((booking) => booking.status === "Approved").length ?? 0;
+  const bookingsData = (data ?? []).filter(
+    (booking) => !statusFilter || booking.status.toLowerCase() === statusFilter.toLowerCase(),
+  );
   const calendarEvents = [...(calendar.data ?? [])]
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
     .slice(0, 6);
@@ -263,6 +291,19 @@ export default function BookingsPage() {
         message={tStaff("bookingOpsSummary")}
         description={`${pendingCount} ${tStaff("bookingPendingCount")}; ${approvedCount} ${tStaff("bookingApprovedCount")}.`}
       />
+      <Card title="Filtros">
+        <Select
+          allowClear
+          placeholder="Filtrar por estado"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={["Pending", "Approved", "Rejected", "Cancelled", "Completed"].map((status) => ({
+            label: status,
+            value: status,
+          }))}
+          style={{ width: 240 }}
+        />
+      </Card>
       <Card title={tStaff("bookingCalendarTitle")}>
         <Table<BookingCalendarEvent>
           rowKey="id"
@@ -277,7 +318,7 @@ export default function BookingsPage() {
         <Table<Booking>
           rowKey="id"
           columns={columns}
-          dataSource={data ?? []}
+          dataSource={bookingsData}
           locale={{ emptyText: tStaff("emptyData") }}
           scroll={{ x: 1200 }}
           expandable={{

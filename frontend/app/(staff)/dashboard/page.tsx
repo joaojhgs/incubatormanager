@@ -30,19 +30,25 @@ import type { Booking } from "@/lib/api/bookings";
 import { tStaff } from "@/lib/i18n/staffNav";
 
 export default function StaffDashboardPage() {
-  const companies = useCompanies({ page_size: 1 });
+  const companies = useCompanies({ page_size: 200, is_active: true });
   const contracts = useContracts();
   const bookings = useBookings();
   const tickets = useTickets();
   const finance = useFinanceDashboard();
 
   const queries = [companies, contracts, bookings, tickets, finance];
+  const companyNames = useMemo(
+    () => new Map((companies.data?.results ?? []).map((company) => [company.id, company.name])),
+    [companies.data],
+  );
   const recentBookingColumns: ColumnsType<Booking> = [
     {
       title: tStaff("columnCompany"),
       dataIndex: "company_id",
       key: "company_id",
       ellipsis: true,
+      render: (companyId: string | null) =>
+        companyId ? (companyNames.get(companyId) ?? companyId) : tStaff("bookingCompanyMissing"),
     },
     { title: tStaff("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
     {
