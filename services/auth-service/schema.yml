@@ -1,7 +1,8 @@
 openapi: 3.0.3
 info:
-  title: ''
-  version: 0.0.0
+  title: ILB Auth Service API
+  version: 0.1.0
+  description: Authentication and identity API.
 paths:
   /api/auth/health/:
     get:
@@ -69,9 +70,21 @@ paths:
                     example: Request was throttled. Expected available in 42 seconds.
           description: More than five login attempts per minute from this IP address.
   /api/auth/logout/:
+    get:
+      operationId: api_auth_logout_retrieve
+      description: Same-site browser fallback that clears the ilb.refresh_token httpOnly
+        cookie and redirects to the optional safe `next` path. It does not blocklist
+        a refresh token; use POST for revocation.
+      summary: Clear refresh cookie
+      tags:
+        - api
+      responses:
+        '302':
+          description: Refresh cookie cleared; redirect returned.
     post:
       operationId: api_auth_logout_create
-      description: Revoke the refresh; access may still be valid until its own expiry.
+      description: Revoke the refresh from the JSON body or ilb.refresh_token cookie.
+        The refresh cookie is cleared on success and invalid-token responses.
       summary: Logout
       tags:
         - api
@@ -79,26 +92,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LogoutRequest'
+              $ref: '#/components/schemas/RefreshCookieRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LogoutRequest'
+              $ref: '#/components/schemas/RefreshCookieRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/LogoutRequest'
-        required: true
+              $ref: '#/components/schemas/RefreshCookieRequest'
       responses:
         '204':
           description: Blocklisted; further refresh attempts for this JTI fail.
         '400':
-          description: Validation error, for example a missing `refresh` field.
+          description: Validation error, for example a missing refresh body/cookie.
         '401':
           description: Malformed, expired, or otherwise invalid refresh token.
   /api/auth/refresh/:
     post:
       operationId: api_auth_refresh_create
-      description: Exchange a valid refresh for new tokens; the old refresh cannot
-        be reused after.
+      description: Exchange a valid refresh for new tokens. The refresh may be sent
+        in the JSON body or via the ilb.refresh_token httpOnly cookie; invalid refresh
+        attempts clear that cookie.
       summary: Refresh
       tags:
         - api
@@ -106,12 +119,13 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - refresh
-              properties:
-                refresh:
-                  type: string
+              $ref: '#/components/schemas/RefreshCookieRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RefreshCookieRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefreshCookieRequest'
       responses:
         '200':
           content:
@@ -119,6 +133,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenPairResponse'
           description: ''
+        '400':
+          description: Missing refresh body/cookie.
+        '401':
+          description: Invalid, expired, blocklisted, or inactive-user refresh.
   /api/auth/schema/:
     get:
       operationId: api_auth_schema_retrieve
@@ -518,15 +536,6 @@ components:
       required:
         - email
         - password
-    LogoutRequest:
-      type: object
-      description: Body for :meth:`core.views.LogoutView.post` — the refresh to revoke.
-      properties:
-        refresh:
-          type: string
-          writeOnly: true
-      required:
-        - refresh
     PatchedUserProfileUpdate:
       type: object
       description: |-
@@ -571,10 +580,15 @@ components:
         password:
           type: string
           writeOnly: true
+          description: New password — optional; omit to leave unchanged.
           minLength: 8
-          description: |-
-            Optional new password. When omitted, the credential is unchanged.
-            Validated against Django auth password validators.
+    RefreshCookieRequest:
+      type: object
+      description: Optional refresh body; the httpOnly refresh cookie is used when
+        omitted.
+      properties:
+        refresh:
+          type: string
     RoleEnum:
       enum:
         - Director

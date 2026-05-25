@@ -30,6 +30,22 @@ def test_document_create_polymorphic_company() -> None:
 
 
 @pytest.mark.django_db
+def test_document_create_polymorphic_booking() -> None:
+    booking_id = uuid.uuid4()
+    doc = Document.objects.create(
+        entity_type=Document.EntityType.BOOKING,
+        entity_id=booking_id,
+        file_name="booking-attachment.pdf",
+        file_path="bucket/bookings/abc/booking-attachment.pdf",
+        file_size=1024,
+        mime_type="application/pdf",
+    )
+    assert doc.pk is not None
+    assert doc.entity_type == Document.EntityType.BOOKING
+    assert doc.entity_id == booking_id
+
+
+@pytest.mark.django_db
 def test_document_list_by_entity_indexed() -> None:
     eid = uuid.uuid4()
     Document.objects.create(

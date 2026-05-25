@@ -3,6 +3,18 @@ import { SignJWT } from "jose";
 
 const secret = new TextEncoder().encode("e2e-playwright-secret");
 
+async function gotoAfterSessionCookie(
+  page: import("@playwright/test").Page,
+  path: string,
+): Promise<void> {
+  try {
+    await page.goto(path);
+  } catch (error) {
+    if (!String(error).includes("ERR_ABORTED")) throw error;
+    await page.goto(path);
+  }
+}
+
 async function mintPair(
   role: "staff" | "client" | "director",
 ): Promise<{ access: string; refresh: string }> {
@@ -115,7 +127,7 @@ test.describe("create user page", () => {
       },
     ]);
 
-    await page.goto("/users/new");
+    await gotoAfterSessionCookie(page, "/users/new");
     await expect(page).toHaveURL(/\/users\/new/);
 
     await expect(page.locator('input[autocomplete="given-name"]')).toBeVisible({ timeout: 15_000 });

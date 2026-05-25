@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: ILB Finance Service API
   version: 0.1.0
-  description: Finance bounded context API (stub).
+  description: Finance bounded context API.
 paths:
   /api/finance/health/:
     get:

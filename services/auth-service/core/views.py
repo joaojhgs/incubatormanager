@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import os
 import uuid
 
+from django.http import HttpResponseRedirect
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import serializers, status
+from rest_framework import exceptions, serializers, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,12 +30,66 @@ from core.serializers import (
 from core.throttling import LoginIPRateThrottle
 from core.token_blacklist import blocklist_refresh_jti
 
+REFRESH_COOKIE_NAME = os.getenv("AUTH_REFRESH_COOKIE_NAME", "ilb.refresh_token")
+
+
+def _refresh_cookie_kwargs(request: Request) -> dict[str, object]:
+    return {
+        "httponly": True,
+        "samesite": "Lax",
+        "path": "/",
+        "secure": request.is_secure(),
+        "max_age": int(api_settings.REFRESH_TOKEN_LIFETIME.total_seconds()),
+    }
+
+
+def _set_refresh_cookie(response: Response, request: Request, refresh: str) -> None:
+    response.set_cookie(REFRESH_COOKIE_NAME, refresh, **_refresh_cookie_kwargs(request))
+
+
+def _delete_refresh_cookie(response: Response, request: Request) -> None:
+    response.delete_cookie(REFRESH_COOKIE_NAME, path="/", samesite="Lax")
+
+
+def _refresh_from_body_or_cookie(request: Request) -> str | None:
+    refresh: object = None
+    if isinstance(request.data, dict) and "refresh" in request.data:
+        refresh = request.data.get("refresh")
+        return refresh if isinstance(refresh, str) else None
+    cookie = request.COOKIES.get(REFRESH_COOKIE_NAME)
+    return cookie if cookie else None
+
+
+def _invalid_refresh_response(request: Request, *, status_code: int) -> Response:
+    response = Response(
+        {
+            "detail": "Token is invalid or expired",
+            "code": "token_not_valid",
+        },
+        status=status_code,
+    )
+    _delete_refresh_cookie(response, request)
+    return response
+
+
+def _safe_logout_redirect_target(request: Request) -> str:
+    target = request.query_params.get("next") or "/login"
+    if not target.startswith("/") or target.startswith("//"):
+        return "/login"
+    return target
+
 
 class TokenPairResponseSerializer(serializers.Serializer):
     """JWT access and refresh strings returned on successful login."""
 
     access = serializers.CharField()
     refresh = serializers.CharField()
+
+
+class RefreshCookieRequestSerializer(serializers.Serializer):
+    """Optional refresh body; the httpOnly refresh cookie is used when omitted."""
+
+    refresh = serializers.CharField(required=False, allow_blank=False)
 
 
 class LoginRequestSerializer(serializers.Serializer):
@@ -85,7 +141,11 @@ class LoginView(TokenObtainPairView):
         },
     )
     def post(self, request: Request, *args: object, **kwargs: object) -> Response:
-        return super().post(request, *args, **kwargs)
+        response = super().post(request, *args, **kwargs)
+        refresh = response.data.get("refresh") if isinstance(response.data, dict) else None
+        if isinstance(refresh, str) and refresh:
+            _set_refresh_cookie(response, request, refresh)
+        return response
 
 
 class RefreshView(TokenRefreshView):
@@ -98,19 +158,35 @@ class RefreshView(TokenRefreshView):
     @extend_schema(
         summary="Refresh",
         description=(
-            "Exchange a valid refresh for new tokens; the old refresh cannot be reused after."
+            "Exchange a valid refresh for new tokens. The refresh may be sent in the "
+            "JSON body or via the ilb.refresh_token httpOnly cookie; invalid refresh "
+            "attempts clear that cookie."
         ),
-        request={
-            "application/json": {
-                "type": "object",
-                "required": ["refresh"],
-                "properties": {"refresh": {"type": "string"}},
-            }
+        request=RefreshCookieRequestSerializer,
+        responses={
+            200: TokenPairResponseSerializer,
+            400: OpenApiResponse(description="Missing refresh body/cookie."),
+            401: OpenApiResponse(
+                description="Invalid, expired, blocklisted, or inactive-user refresh."
+            ),
         },
-        responses={200: TokenPairResponseSerializer},
     )
     def post(self, request: Request, *args: object, **kwargs: object) -> Response:
-        return super().post(request, *args, **kwargs)
+        refresh = _refresh_from_body_or_cookie(request)
+        serializer = self.get_serializer(data={"refresh": refresh})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError:
+            return _invalid_refresh_response(request, status_code=status.HTTP_401_UNAUTHORIZED)
+        except exceptions.AuthenticationFailed:
+            return _invalid_refresh_response(request, status_code=status.HTTP_401_UNAUTHORIZED)
+        except serializers.ValidationError:
+            return _invalid_refresh_response(request, status_code=status.HTTP_400_BAD_REQUEST)
+        response = Response(serializer.validated_data, status=status.HTTP_200_OK)
+        rotated = serializer.validated_data.get("refresh")
+        if isinstance(rotated, str) and rotated:
+            _set_refresh_cookie(response, request, rotated)
+        return response
 
 
 class LogoutView(APIView):
@@ -122,15 +198,33 @@ class LogoutView(APIView):
     permission_classes = ()
 
     @extend_schema(
+        summary="Clear refresh cookie",
+        description=(
+            "Same-site browser fallback that clears the ilb.refresh_token httpOnly "
+            "cookie and redirects to the optional safe `next` path. It does not "
+            "blocklist a refresh token; use POST for revocation."
+        ),
+        request=None,
+        responses={302: OpenApiResponse(description="Refresh cookie cleared; redirect returned.")},
+    )
+    def get(self, request: Request) -> HttpResponseRedirect:
+        response = HttpResponseRedirect(_safe_logout_redirect_target(request))
+        response.delete_cookie(REFRESH_COOKIE_NAME, path="/", samesite="Lax")
+        return response
+
+    @extend_schema(
         summary="Logout",
-        description=("Revoke the refresh; access may still be valid until its own expiry."),
-        request=LogoutRequestSerializer,
+        description=(
+            "Revoke the refresh from the JSON body or ilb.refresh_token cookie. "
+            "The refresh cookie is cleared on success and invalid-token responses."
+        ),
+        request=RefreshCookieRequestSerializer,
         responses={
             204: OpenApiResponse(
                 description="Blocklisted; further refresh attempts for this JTI fail."
             ),
             400: OpenApiResponse(
-                description="Validation error, for example a missing `refresh` field."
+                description="Validation error, for example a missing refresh body/cookie."
             ),
             401: OpenApiResponse(
                 description="Malformed, expired, or otherwise invalid refresh token."
@@ -138,31 +232,27 @@ class LogoutView(APIView):
         },
     )
     def post(self, request: Request) -> Response:
-        serializer = LogoutRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        refresh = _refresh_from_body_or_cookie(request)
+        serializer = LogoutRequestSerializer(data={"refresh": refresh})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except serializers.ValidationError:
+            response = Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            _delete_refresh_cookie(response, request)
+            return response
         try:
             token = RefreshToken(serializer.validated_data["refresh"])
         except TokenError:
             # Return 401 explicitly: DRF maps AuthenticationFailed to 403 when no
             # ``WWW-Authenticate`` header exists (empty ``authentication_classes``).
-            return Response(
-                {
-                    "detail": "Token is invalid or expired",
-                    "code": "token_not_valid",
-                },
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            return _invalid_refresh_response(request, status_code=status.HTTP_401_UNAUTHORIZED)
         jti_claim = api_settings.JTI_CLAIM
         if not jti_claim or jti_claim not in token:
-            return Response(
-                {
-                    "detail": "Token has no id",
-                    "code": "token_not_valid",
-                },
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            return _invalid_refresh_response(request, status_code=status.HTTP_401_UNAUTHORIZED)
         blocklist_refresh_jti(str(token[jti_claim]), int(token["exp"]))
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        _delete_refresh_cookie(response, request)
+        return response
 
 
 class HealthView(APIView):

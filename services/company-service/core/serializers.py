@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from core.models import CAE, MaturityStage
+from core.models import CAE, Company, Employee, MaturityStage
 from core.services import create_maturity_stage, update_maturity_stage
 
 
@@ -12,6 +12,20 @@ class CAESerializer(serializers.ModelSerializer):
     class Meta:
         model = CAE
         fields = ["id", "code", "description"]
+        read_only_fields = ["id"]
+
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = ["id", "name", "type", "start_date", "end_date", "is_active"]
+        read_only_fields = ["id"]
+
+
+class EmployeeWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = ["id", "name", "type", "start_date", "end_date", "is_active"]
         read_only_fields = ["id"]
 
 
@@ -26,3 +40,65 @@ class MaturityStageSerializer(serializers.ModelSerializer):
 
     def update(self, instance: MaturityStage, validated_data: dict) -> MaturityStage:
         return update_maturity_stage(instance, **validated_data)
+
+
+class CompanyWriteSerializer(serializers.ModelSerializer):
+    """Writable company payload for create/update operations."""
+
+    class Meta:
+        model = Company
+        fields = [
+            "id",
+            "name",
+            "tax_id",
+            "address",
+            "phone",
+            "email",
+            "legal_representative",
+            "description",
+            "is_active",
+            "cae",
+            "maturity_stage",
+        ]
+        read_only_fields = ["id"]
+
+
+class CompanyMaturityStageUpdateSerializer(serializers.Serializer):
+    """Payload for PATCH /api/companies/{id}/maturity-stage/."""
+
+    maturity_stage = serializers.UUIDField()
+
+
+class CompanyListSerializer(serializers.ModelSerializer):
+    """Company row for GET /companies; nested FKs via select_related."""
+
+    cae = CAESerializer(read_only=True)
+    maturity_stage = MaturityStageSerializer(read_only=True)
+
+    class Meta:
+        model = Company
+        fields = [
+            "id",
+            "name",
+            "tax_id",
+            "address",
+            "phone",
+            "email",
+            "legal_representative",
+            "description",
+            "is_active",
+            "created_at",
+            "updated_at",
+            "cae",
+            "maturity_stage",
+        ]
+        read_only_fields = fields
+
+
+class CompanyDetailSerializer(CompanyListSerializer):
+    """Full company projection with nested CAE, maturity stage, and active employees."""
+
+    employees = EmployeeSerializer(many=True, read_only=True)
+
+    class Meta(CompanyListSerializer.Meta):
+        fields = [*CompanyListSerializer.Meta.fields, "employees"]

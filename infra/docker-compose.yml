@@ -17,6 +17,19 @@ x-django-env: &django-env
   JWT_ACCESS_TTL_SECONDS: '900'
   JWT_REFRESH_TTL_SECONDS: '604800'
 
+x-service-build: &service-build
+  context: ${COMPOSE_REPO_ROOT:-${PWD}}
+
+x-consumer-deps: &consumer-deps
+  postgres:
+    condition: service_healthy
+  rabbitmq:
+    condition: service_healthy
+
+x-scheduler-volumes: &scheduler-volumes
+  - ${COMPOSE_REPO_ROOT:-${PWD}}/infra/cron:/app/infra/cron:ro
+  - ${COMPOSE_REPO_ROOT:-${PWD}}/infra/scripts:/app/infra/scripts:ro
+
 services:
   postgres:
     image: postgres:16.6-alpine
@@ -36,7 +49,7 @@ services:
       DOCUMENT_DB_PASSWORD: ${DOCUMENT_DB_PASSWORD}
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./infra/docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
+      - ${COMPOSE_REPO_ROOT:-${PWD}}/infra/docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres -d postgres']
       interval: 5s
@@ -61,7 +74,8 @@ services:
       TZ: Europe/Lisbon
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-      - ./infra/docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ${COMPOSE_REPO_ROOT:-${PWD}}/infra/docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ${COMPOSE_REPO_ROOT:-${PWD}}/infra/docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/10-definitions.conf:ro
     healthcheck:
       test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
       interval: 10s
@@ -86,12 +100,12 @@ services:
       start_period: 20s
 
   minio-init:
-    image: minio/mc:RELEASE.2024-11-21T17-17-25Z
+    image: minio/mc:RELEASE.2024-11-21T17-21-54Z-cpuv1
     depends_on:
       minio:
         condition: service_healthy
     volumes:
-      - ./infra/scripts/minio-init.sh:/scripts/minio-init.sh:ro
+      - ${COMPOSE_REPO_ROOT:-${PWD}}/infra/scripts/minio-init.sh:/scripts/minio-init.sh:ro
     entrypoint: ['/bin/sh', '/scripts/minio-init.sh']
     environment:
       MINIO_ENDPOINT: minio:9000
@@ -103,13 +117,26 @@ services:
 
   auth-service:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: services/auth-service/Dockerfile
     environment:
       <<: *django-env
       DATABASE_URL: postgresql://auth_svc:${AUTH_DB_PASSWORD}@postgres:5432/auth_db
+      COMPANY_DB_PASSWORD: ${COMPANY_DB_PASSWORD}
+      CONTRACT_DB_PASSWORD: ${CONTRACT_DB_PASSWORD}
+      FINANCE_DB_PASSWORD: ${FINANCE_DB_PASSWORD}
+      SPACE_DB_PASSWORD: ${SPACE_DB_PASSWORD}
+      BOOKING_DB_PASSWORD: ${BOOKING_DB_PASSWORD}
+      INVENTORY_DB_PASSWORD: ${INVENTORY_DB_PASSWORD}
+      TICKET_DB_PASSWORD: ${TICKET_DB_PASSWORD}
+      DASHBOARD_DB_PASSWORD: ${DASHBOARD_DB_PASSWORD}
+      DOCUMENT_DB_PASSWORD: ${DOCUMENT_DB_PASSWORD}
+      AUTH_DEV_SEED_PASSWORD: ${AUTH_DEV_SEED_PASSWORD}
+      AUTH_DEV_SEED_DIRECTOR_PASSWORD: ${AUTH_DEV_SEED_DIRECTOR_PASSWORD:-}
+      AUTH_DEV_SEED_STAFF_PASSWORD: ${AUTH_DEV_SEED_STAFF_PASSWORD:-}
+      AUTH_DEV_SEED_CLIENT_PASSWORD: ${AUTH_DEV_SEED_CLIENT_PASSWORD:-}
     volumes:
-      - ./infra/seed:/app/infra/seed:ro
+      - ${COMPOSE_REPO_ROOT:-${PWD}}/infra/seed:/app/infra/seed:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -128,7 +155,7 @@ services:
 
   company-service:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: services/company-service/Dockerfile
     environment:
       <<: *django-env
@@ -151,7 +178,7 @@ services:
 
   contract-service:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: services/contract-service/Dockerfile
     environment:
       <<: *django-env
@@ -172,9 +199,21 @@ services:
       retries: 6
       start_period: 60s
 
+  contract-scheduler:
+    build:
+      <<: *service-build
+      dockerfile: services/contract-service/Dockerfile
+    environment:
+      <<: *django-env
+      DATABASE_URL: postgresql://contract_svc:${CONTRACT_DB_PASSWORD}@postgres:5432/contract_db
+    volumes: *scheduler-volumes
+    command: ['python', '/app/infra/scripts/cron-runner.py', '/app/infra/cron/contract.crontab']
+    depends_on: *consumer-deps
+    restart: unless-stopped
+
   finance-service:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: services/finance-service/Dockerfile
     environment:
       <<: *django-env
@@ -195,9 +234,34 @@ services:
       retries: 6
       start_period: 60s
 
+  finance-consumer:
+    build:
+      <<: *service-build
+      dockerfile: services/finance-service/Dockerfile
+    environment:
+      <<: *django-env
+      DATABASE_URL: postgresql://finance_svc:${FINANCE_DB_PASSWORD}@postgres:5432/finance_db
+    command: ['python', 'manage.py', 'consume_finance_events']
+    depends_on: *consumer-deps
+    restart: unless-stopped
+
+  finance-scheduler:
+    build:
+      <<: *service-build
+      dockerfile: services/finance-service/Dockerfile
+    environment:
+      <<: *django-env
+      DATABASE_URL: postgresql://finance_svc:${FINANCE_DB_PASSWORD}@postgres:5432/finance_db
+    volumes: *scheduler-volumes
+    command: ['python', '/app/infra/scripts/cron-runner.py', '/app/infra/cron/finance.crontab']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   space-service:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: services/space-service/Dockerfile
     environment:
       <<: *django-env
@@ -218,9 +282,20 @@ services:
       retries: 6
       start_period: 60s
 
+  space-consumer:
+    build:
+      <<: *service-build
+      dockerfile: services/space-service/Dockerfile
+    environment:
+      <<: *django-env
+      DATABASE_URL: postgresql://space_svc:${SPACE_DB_PASSWORD}@postgres:5432/space_db
+    command: ['python', 'manage.py', 'consume_space_events']
+    depends_on: *consumer-deps
+    restart: unless-stopped
+
   booking-service:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: services/booking-service/Dockerfile
     environment:
       <<: *django-env
@@ -241,9 +316,21 @@ services:
       retries: 6
       start_period: 60s
 
+  booking-scheduler:
+    build:
+      <<: *service-build
+      dockerfile: services/booking-service/Dockerfile
+    environment:
+      <<: *django-env
+      DATABASE_URL: postgresql://booking_svc:${BOOKING_DB_PASSWORD}@postgres:5432/booking_db
+    volumes: *scheduler-volumes
+    command: ['python', '/app/infra/scripts/cron-runner.py', '/app/infra/cron/booking.crontab']
+    depends_on: *consumer-deps
+    restart: unless-stopped
+
   inventory-service:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: services/inventory-service/Dockerfile
     environment:
       <<: *django-env
@@ -264,9 +351,20 @@ services:
       retries: 6
       start_period: 60s
 
+  inventory-consumer:
+    build:
+      <<: *service-build
+      dockerfile: services/inventory-service/Dockerfile
+    environment:
+      <<: *django-env
+      DATABASE_URL: postgresql://inventory_svc:${INVENTORY_DB_PASSWORD}@postgres:5432/inventory_db
+    command: ['python', 'manage.py', 'consume_inventory_events']
+    depends_on: *consumer-deps
+    restart: unless-stopped
+
   ticket-service:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: services/ticket-service/Dockerfile
     environment:
       <<: *django-env
@@ -289,7 +387,7 @@ services:
 
   dashboard-service:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: services/dashboard-service/Dockerfile
     environment:
       <<: *django-env
@@ -310,9 +408,20 @@ services:
       retries: 6
       start_period: 60s
 
+  dashboard-consumer:
+    build:
+      <<: *service-build
+      dockerfile: services/dashboard-service/Dockerfile
+    environment:
+      <<: *django-env
+      DATABASE_URL: postgresql://dashboard_svc:${DASHBOARD_DB_PASSWORD}@postgres:5432/dashboard_db
+    command: ['python', 'manage.py', 'consume_dashboard_events']
+    depends_on: *consumer-deps
+    restart: unless-stopped
+
   document-service:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: services/document-service/Dockerfile
     environment:
       <<: *django-env
@@ -337,7 +446,7 @@ services:
 
   frontend:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: frontend/Dockerfile
     environment:
       TZ: Europe/Lisbon
@@ -352,7 +461,7 @@ services:
 
   gateway:
     build:
-      context: ..
+      <<: *service-build
       dockerfile: gateway/Dockerfile
     depends_on:
       auth-service:

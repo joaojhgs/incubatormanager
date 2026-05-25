@@ -6,7 +6,11 @@
       "tags": "administrator"
     }
   ],
-  "vhosts": [{ "name": "/" }],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
   "permissions": [
     {
       "user": "guest",
@@ -25,8 +29,361 @@
       "auto_delete": false,
       "internal": false,
       "arguments": {}
+    },
+    {
+      "name": "incubator.events.dead-letter",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
     }
   ],
-  "queues": [],
-  "bindings": []
+  "queues": [
+    {
+      "name": "finance.contract-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "space.domain-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "inventory.booking-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "dashboard.domain-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "finance.contract-events.dead-letter",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "space.domain-events.dead-letter",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "inventory.booking-events.dead-letter",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "dashboard.domain-events.dead-letter",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "finance.contract-events",
+      "destination_type": "queue",
+      "routing_key": "contract.activated",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "finance.contract-events",
+      "destination_type": "queue",
+      "routing_key": "contract.expired",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "finance.contract-events",
+      "destination_type": "queue",
+      "routing_key": "contract.terminated",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "finance.contract-events",
+      "destination_type": "queue",
+      "routing_key": "booking.approved",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "space.domain-events",
+      "destination_type": "queue",
+      "routing_key": "contract.activated",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "space.domain-events",
+      "destination_type": "queue",
+      "routing_key": "contract.terminated",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "space.domain-events",
+      "destination_type": "queue",
+      "routing_key": "contract.expired",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "space.domain-events",
+      "destination_type": "queue",
+      "routing_key": "booking.approved",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "space.domain-events",
+      "destination_type": "queue",
+      "routing_key": "booking.rejected",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "space.domain-events",
+      "destination_type": "queue",
+      "routing_key": "booking.cancelled",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "space.domain-events",
+      "destination_type": "queue",
+      "routing_key": "booking.completed",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "inventory.booking-events",
+      "destination_type": "queue",
+      "routing_key": "booking.approved",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "inventory.booking-events",
+      "destination_type": "queue",
+      "routing_key": "booking.rejected",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "inventory.booking-events",
+      "destination_type": "queue",
+      "routing_key": "booking.cancelled",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "inventory.booking-events",
+      "destination_type": "queue",
+      "routing_key": "booking.completed",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "dashboard.domain-events",
+      "destination_type": "queue",
+      "routing_key": "company.created",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "dashboard.domain-events",
+      "destination_type": "queue",
+      "routing_key": "company.archived",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "dashboard.domain-events",
+      "destination_type": "queue",
+      "routing_key": "employee.changed",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "dashboard.domain-events",
+      "destination_type": "queue",
+      "routing_key": "contract.activated",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "dashboard.domain-events",
+      "destination_type": "queue",
+      "routing_key": "contract.expired",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "dashboard.domain-events",
+      "destination_type": "queue",
+      "routing_key": "contract.terminated",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "dashboard.domain-events",
+      "destination_type": "queue",
+      "routing_key": "booking.approved",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "dashboard.domain-events",
+      "destination_type": "queue",
+      "routing_key": "booking.rejected",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "dashboard.domain-events",
+      "destination_type": "queue",
+      "routing_key": "booking.cancelled",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "dashboard.domain-events",
+      "destination_type": "queue",
+      "routing_key": "booking.completed",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events",
+      "vhost": "/",
+      "destination": "dashboard.domain-events",
+      "destination_type": "queue",
+      "routing_key": "payment.recorded",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events.dead-letter",
+      "vhost": "/",
+      "destination": "finance.contract-events.dead-letter",
+      "destination_type": "queue",
+      "routing_key": "finance.contract-events.dead-letter",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events.dead-letter",
+      "vhost": "/",
+      "destination": "space.domain-events.dead-letter",
+      "destination_type": "queue",
+      "routing_key": "space.domain-events.dead-letter",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events.dead-letter",
+      "vhost": "/",
+      "destination": "inventory.booking-events.dead-letter",
+      "destination_type": "queue",
+      "routing_key": "inventory.booking-events.dead-letter",
+      "arguments": {}
+    },
+    {
+      "source": "incubator.events.dead-letter",
+      "vhost": "/",
+      "destination": "dashboard.domain-events.dead-letter",
+      "destination_type": "queue",
+      "routing_key": "dashboard.domain-events.dead-letter",
+      "arguments": {}
+    }
+  ],
+  "policies": [
+    {
+      "name": "finance.contract-events.dead-letter-policy",
+      "vhost": "/",
+      "pattern": "^finance.contract-events$",
+      "apply-to": "queues",
+      "definition": {
+        "dead-letter-exchange": "incubator.events.dead-letter",
+        "dead-letter-routing-key": "finance.contract-events.dead-letter"
+      },
+      "priority": 10
+    },
+    {
+      "name": "space.domain-events.dead-letter-policy",
+      "vhost": "/",
+      "pattern": "^space.domain-events$",
+      "apply-to": "queues",
+      "definition": {
+        "dead-letter-exchange": "incubator.events.dead-letter",
+        "dead-letter-routing-key": "space.domain-events.dead-letter"
+      },
+      "priority": 10
+    },
+    {
+      "name": "inventory.booking-events.dead-letter-policy",
+      "vhost": "/",
+      "pattern": "^inventory.booking-events$",
+      "apply-to": "queues",
+      "definition": {
+        "dead-letter-exchange": "incubator.events.dead-letter",
+        "dead-letter-routing-key": "inventory.booking-events.dead-letter"
+      },
+      "priority": 10
+    },
+    {
+      "name": "dashboard.domain-events.dead-letter-policy",
+      "vhost": "/",
+      "pattern": "^dashboard.domain-events$",
+      "apply-to": "queues",
+      "definition": {
+        "dead-letter-exchange": "incubator.events.dead-letter",
+        "dead-letter-routing-key": "dashboard.domain-events.dead-letter"
+      },
+      "priority": 10
+    }
+  ]
 }

@@ -11,3 +11,11 @@ build
 coverage
 __pycache__
 *.egg-info
+.omx
+**/.venv
+**/venv
+frontend/test-results
+frontend/playwright-report
+test-results
+playwright-report
+**/.venv*/

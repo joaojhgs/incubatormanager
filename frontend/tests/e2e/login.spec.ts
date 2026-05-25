@@ -34,6 +34,10 @@ test.describe("login page", () => {
     });
 
     await page.goto("/login");
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
     await page.getByLabel("Email").fill("staff@test.local");
     await page.getByLabel("Palavra-passe").fill("Password123!");
     await page.getByRole("button", { name: "Entrar" }).click();
@@ -70,6 +74,10 @@ test.describe("login page", () => {
     });
 
     await page.goto("/login");
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
     await page.getByLabel("Email").fill("client@test.local");
     await page.getByLabel("Palavra-passe").fill("Password123!");
     await page.getByRole("button", { name: "Entrar" }).click();

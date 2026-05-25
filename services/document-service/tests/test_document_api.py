@@ -47,9 +47,61 @@ def test_upload_staff_creates_metadata_and_calls_storage() -> None:
     assert resp.status_code == 201
     assert resp.data["file_name"] == "memo.pdf"
     assert resp.data["mime_type"] == "application/pdf"
+    assert resp.data["download_url"].endswith(f"/api/documents/{resp.data['id']}/download/")
     up.assert_called_once()
     doc = Document.objects.get(id=resp.data["id"])
     assert doc.uploaded_by == user_id
+
+
+@pytest.mark.django_db
+def test_upload_client_own_company_creates_metadata_and_can_list() -> None:
+    company_id = uuid.uuid4()
+    key = f"Company/{company_id}/client-note.pdf"
+    with patch("core.services.storage.safe_upload", return_value=key):
+        client = APIClient()
+        pdf = SimpleUploadedFile("client-note.pdf", b"%PDF", content_type="application/pdf")
+        upload = client.post(
+            "/api/documents/upload/",
+            {"file": pdf, "entity_type": "Company", "entity_id": str(company_id)},
+            format="multipart",
+            **_auth_headers(role="Client", company_id=str(company_id)),
+        )
+    assert upload.status_code == 201
+    assert upload.data["entity_type"] == Document.EntityType.COMPANY
+
+    listed = APIClient().get(
+        f"/api/documents/?entity_type=Company&entity_id={company_id}",
+        **_auth_headers(role="Client", company_id=str(company_id)),
+    )
+
+    assert listed.status_code == 200
+    assert [row["id"] for row in listed.data] == [upload.data["id"]]
+    assert listed.data[0]["download_url"].endswith(f"/api/documents/{upload.data['id']}/download/")
+
+
+@pytest.mark.django_db
+def test_upload_staff_booking_document_can_list() -> None:
+    booking_id = uuid.uuid4()
+    key = f"Booking/{booking_id}/agenda.pdf"
+    with patch("core.services.storage.safe_upload", return_value=key):
+        client = APIClient()
+        pdf = SimpleUploadedFile("agenda.pdf", b"%PDF", content_type="application/pdf")
+        upload = client.post(
+            "/api/documents/upload/",
+            {"file": pdf, "entity_type": "Booking", "entity_id": str(booking_id)},
+            format="multipart",
+            **_auth_headers(),
+        )
+    assert upload.status_code == 201
+    assert upload.data["entity_type"] == Document.EntityType.BOOKING
+
+    listed = APIClient().get(
+        f"/api/documents/?entity_type=Booking&entity_id={booking_id}",
+        **_auth_headers(),
+    )
+
+    assert listed.status_code == 200
+    assert [row["file_name"] for row in listed.data] == ["agenda.pdf"]
 
 
 @pytest.mark.django_db
@@ -107,6 +159,21 @@ def test_upload_client_contract_entity_forbidden() -> None:
     resp = client.post(
         "/api/documents/upload/",
         {"file": pdf, "entity_type": "Contract", "entity_id": str(contract_id)},
+        format="multipart",
+        **_auth_headers(role="Client", company_id=str(company_id)),
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_upload_client_booking_entity_forbidden() -> None:
+    company_id = uuid.uuid4()
+    booking_id = uuid.uuid4()
+    client = APIClient()
+    pdf = SimpleUploadedFile("a.pdf", b"%PDF", content_type="application/pdf")
+    resp = client.post(
+        "/api/documents/upload/",
+        {"file": pdf, "entity_type": "Booking", "entity_id": str(booking_id)},
         format="multipart",
         **_auth_headers(role="Client", company_id=str(company_id)),
     )
@@ -369,3 +436,54 @@ def test_download_soft_deleted_returns_404() -> None:
     client = APIClient()
     resp = client.get(f"/api/documents/{doc.id}/download/", **_auth_headers())
     assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_download_unknown_id_returns_404() -> None:
+    client = APIClient()
+    resp = client.get(f"/api/documents/{uuid.uuid4()}/download/", **_auth_headers())
+    assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_presigned_url_returns_metadata_for_staff() -> None:
+    company_id = uuid.uuid4()
+    doc = Document.objects.create(
+        entity_type=Document.EntityType.COMPANY,
+        entity_id=company_id,
+        file_name="signed.pdf",
+        file_path="Company/x/signed.pdf",
+        file_size=1,
+        mime_type="application/pdf",
+    )
+    with patch(
+        "core.document_views.storage.safe_presigned_url",
+        return_value="https://minio.local/signed",
+    ) as presign:
+        client = APIClient()
+        resp = client.get(f"/api/documents/{doc.id}/presigned/", **_auth_headers())
+
+    assert resp.status_code == 200
+    assert resp.data["id"] == str(doc.id)
+    assert resp.data["presigned_url"] == "https://minio.local/signed"
+    assert resp.data["download_url"].endswith(f"/api/documents/{doc.id}/download/")
+    presign.assert_called_once_with("Company/x/signed.pdf")
+
+
+@pytest.mark.django_db
+def test_presigned_url_client_forbidden_for_contract_document() -> None:
+    contract_id = uuid.uuid4()
+    doc = Document.objects.create(
+        entity_type=Document.EntityType.CONTRACT,
+        entity_id=contract_id,
+        file_name="contract.pdf",
+        file_path="Contract/x/c.pdf",
+        file_size=1,
+        mime_type="application/pdf",
+    )
+    client = APIClient()
+    resp = client.get(
+        f"/api/documents/{doc.id}/presigned/",
+        **_auth_headers(role="Client", company_id=str(uuid.uuid4())),
+    )
+    assert resp.status_code == 403

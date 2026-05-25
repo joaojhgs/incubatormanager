@@ -13,6 +13,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from pika.spec import Basic, BasicProperties
 
 EXCHANGE_DEFAULT = "incubator.events"
+DEAD_LETTER_EXCHANGE_DEFAULT = "incubator.events.dead-letter"
 
 
 def ensure_event_exchange(
@@ -28,6 +29,24 @@ def ensure_event_exchange(
     ``exchange.declare`` for an existing exchange of the same type and flags.
     """
     channel.exchange_declare(exchange=exchange, exchange_type="topic", durable=True)
+
+
+def ensure_dead_letter_queue(
+    channel: BlockingChannel,
+    queue: str,
+    *,
+    exchange: str = DEAD_LETTER_EXCHANGE_DEFAULT,
+) -> str:
+    """Declare the durable dead-letter path for a durable consumer queue."""
+    dead_letter_queue = f"{queue}.dead-letter"
+    channel.exchange_declare(exchange=exchange, exchange_type="direct", durable=True)
+    channel.queue_declare(queue=dead_letter_queue, durable=True, exclusive=False, auto_delete=False)
+    channel.queue_bind(
+        exchange=exchange,
+        queue=dead_letter_queue,
+        routing_key=dead_letter_queue,
+    )
+    return dead_letter_queue
 
 
 class EventEnvelope(TypedDict):
@@ -121,7 +140,10 @@ def subscribe(
     Block and consume messages from *routing_keys* on a topic exchange.
 
     The handler runs synchronously; acknowledge only after it returns without
-    raising. On handler failure the message is nacked without requeue.
+    raising. Durable named queues receive a durable dead-letter queue, so
+    handler failures are nacked without requeue. Durable queues should be
+    covered by broker DLX policies (see runtime RabbitMQ definitions), which
+    keeps DLQ rollout compatible with existing durable queue declarations.
     """
     if not routing_keys:
         msg = "routing_keys must not be empty"
@@ -135,11 +157,14 @@ def subscribe(
         channel.basic_qos(prefetch_count=prefetch_count)
 
         if queue:
+            if durable_queue:
+                ensure_dead_letter_queue(channel, queue)
             channel.queue_declare(
                 queue=queue,
                 durable=durable_queue,
                 exclusive=False,
                 auto_delete=False,
+                arguments=None,
             )
             qname = queue
         else:

@@ -1,0 +1,3 @@
+# Contract scheduler sidecar jobs (Europe/Lisbon via container TZ).
+# Expire active contracts after their end date.
+0 4 * * * python manage.py expire_contracts

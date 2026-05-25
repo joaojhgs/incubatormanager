@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM minio/mc:RELEASE.2024-11-21T17-17-25Z AS mc
+FROM minio/mc:RELEASE.2024-11-21T17-21-54Z-cpuv1 AS mc
 
 FROM python:3.12-slim-bookworm AS builder
 

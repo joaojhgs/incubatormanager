@@ -2,12 +2,343 @@ openapi: 3.0.3
 info:
   title: ILB Space Service API
   version: 0.1.0
-  description: Space bounded context API (stub).
+  description: Space bounded context API.
 paths:
+  /api/space-types/:
+    get:
+      operationId: api_space_types_list
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpaceType'
+          description: ''
+    post:
+      operationId: api_space_types_create
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceType'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SpaceType'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SpaceType'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceType'
+          description: ''
+  /api/space-types/{type_id}/:
+    get:
+      operationId: api_space_types_retrieve
+      parameters:
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceType'
+          description: ''
+    put:
+      operationId: api_space_types_update
+      parameters:
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceType'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SpaceType'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SpaceType'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceType'
+          description: ''
+    patch:
+      operationId: api_space_types_partial_update
+      parameters:
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSpaceType'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSpaceType'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSpaceType'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceType'
+          description: ''
+    delete:
+      operationId: api_space_types_destroy
+      parameters:
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        '204':
+          description: No response body
+  /api/spaces/:
+    get:
+      operationId: api_spaces_list
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Space'
+          description: ''
+    post:
+      operationId: api_spaces_create
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Space'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Space'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Space'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+          description: ''
+  /api/spaces/{space_id}/:
+    get:
+      operationId: api_spaces_retrieve
+      parameters:
+        - in: path
+          name: space_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+          description: ''
+    put:
+      operationId: api_spaces_update
+      parameters:
+        - in: path
+          name: space_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Space'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Space'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Space'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+          description: ''
+    patch:
+      operationId: api_spaces_partial_update
+      parameters:
+        - in: path
+          name: space_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSpace'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSpace'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSpace'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+          description: ''
+    delete:
+      operationId: api_spaces_destroy
+      parameters:
+        - in: path
+          name: space_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        '204':
+          description: No response body
+  /api/spaces/bookings/{event_type}/:
+    post:
+      operationId: api_spaces_bookings_create
+      parameters:
+        - in: path
+          name: event_type
+          schema:
+            type: string
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingEvent'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingEvent'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingEvent'
+        required: true
+      responses:
+        '200':
+          description: No response body
+  /api/spaces/bookings/records/:
+    get:
+      operationId: api_spaces_bookings_records_retrieve
+      tags:
+        - api
+      responses:
+        '200':
+          description: No response body
+  /api/spaces/contracts/:
+    get:
+      operationId: api_spaces_contracts_list
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpaceContract'
+          description: ''
+  /api/spaces/contracts/{event_type}/:
+    post:
+      operationId: api_spaces_contracts_create
+      parameters:
+        - in: path
+          name: event_type
+          schema:
+            type: string
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractEvent'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ContractEvent'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ContractEvent'
+        required: true
+      responses:
+        '200':
+          description: No response body
   /api/spaces/health/:
     get:
       operationId: api_spaces_health_retrieve
-      description: Liveness/readiness-style health payload.
       tags:
         - api
       responses:
@@ -21,10 +352,23 @@ paths:
                     type: string
                     example: ok
           description: ''
+  /api/spaces/occupancy-map/:
+    get:
+      operationId: api_spaces_occupancy_map_list
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpaceOccupancy'
+          description: ''
   /health/:
     get:
       operationId: health_retrieve
-      description: Liveness/readiness-style health payload.
       tags:
         - health
       responses:
@@ -38,4 +382,299 @@ paths:
                     type: string
                     example: ok
           description: ''
-components: {}
+components:
+  schemas:
+    BookingEvent:
+      type: object
+      properties:
+        booking_id:
+          type: string
+          format: uuid
+        company_id:
+          type: string
+          format: uuid
+          nullable: true
+        space_id:
+          type: string
+          format: uuid
+        start_time:
+          type: string
+          format: date-time
+          nullable: true
+        end_time:
+          type: string
+          format: date-time
+          nullable: true
+        quoted_price:
+          type: string
+          nullable: true
+        equipment_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+        - booking_id
+        - space_id
+    ContractEvent:
+      type: object
+      properties:
+        contract_id:
+          type: string
+          format: uuid
+        company_id:
+          type: string
+          format: uuid
+        space_id:
+          type: string
+          format: uuid
+        area_sqm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        rate_per_sqm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        monthly_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        reason:
+          type: string
+      required:
+        - contract_id
+    PatchedSpace:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        space_type:
+          type: string
+          format: uuid
+          nullable: true
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        status:
+          $ref: '#/components/schemas/SpaceStatusEnum'
+        company_id:
+          type: string
+          format: uuid
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedSpaceType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 128
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    Space:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        space_type:
+          type: string
+          format: uuid
+          nullable: true
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        status:
+          $ref: '#/components/schemas/SpaceStatusEnum'
+        company_id:
+          type: string
+          format: uuid
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created_at
+        - id
+        - name
+        - updated_at
+    SpaceContract:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        contract_id:
+          type: string
+          format: uuid
+        company_id:
+          type: string
+          format: uuid
+        space:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/SpaceContractStatusEnum'
+        area_sqm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        rate_per_sqm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        monthly_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        termination_reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - area_sqm
+        - company_id
+        - contract_id
+        - created_at
+        - end_date
+        - id
+        - monthly_fee
+        - rate_per_sqm
+        - space
+        - start_date
+        - status
+        - updated_at
+    SpaceContractStatusEnum:
+      enum:
+        - Active
+        - Expired
+        - Terminated
+      type: string
+      description: |-
+        * `Active` - Active
+        * `Expired` - Expired
+        * `Terminated` - Terminated
+    SpaceOccupancy:
+      type: object
+      properties:
+        space_id:
+          type: string
+          format: uuid
+        space_name:
+          type: string
+        capacity:
+          type: integer
+        occupied:
+          type: integer
+        occupancy_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        status:
+          type: string
+      required:
+        - capacity
+        - occupancy_percent
+        - occupied
+        - space_id
+        - space_name
+        - status
+    SpaceStatusEnum:
+      enum:
+        - Available
+        - Reserved
+        - Occupied
+        - Maintenance
+        - Blocked
+      type: string
+      description: |-
+        * `Available` - Available
+        * `Reserved` - Reserved
+        * `Occupied` - Occupied
+        * `Maintenance` - Maintenance
+        * `Blocked` - Blocked
+    SpaceType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 128
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created_at
+        - id
+        - name
+        - updated_at

@@ -2,8 +2,79 @@ openapi: 3.0.3
 info:
   title: ILB Company Service API
   version: 0.1.0
-  description: Company bounded context API (stub).
+  description: Company bounded context API.
 paths:
+  /api/companies/:
+    get:
+      operationId: api_companies_list
+      description: Paginated company list with optional filters (`cae`, `maturity`,
+        `is_active`) and `search` across name / tax ID / legal representative. Directors
+        and Staff see all companies; Clients only see their row (`X-Company-Id`).
+      parameters:
+        - in: query
+          name: cae
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: is_active
+          schema:
+            type: boolean
+        - in: query
+          name: maturity
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          required: false
+          in: query
+          description: A page number within the paginated result set.
+          schema:
+            type: integer
+        - name: page_size
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
+        - name: search
+          required: false
+          in: query
+          description: A search term.
+          schema:
+            type: string
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCompanyListList'
+          description: ''
+  /api/companies/{id}/:
+    get:
+      operationId: api_companies_retrieve
+      description: Company detail including CAE and maturity-stage relations (select_related)
+        and active employees (prefetch_related). Uses active companies only. Staff
+        and Directors may retrieve any active company by id. Clients only retrieve
+        their company (`X-Company-Id`).
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyDetail'
+          description: ''
   /api/companies/cae/:
     get:
       operationId: api_companies_cae_list
@@ -187,6 +258,173 @@ components:
         - code
         - description
         - id
+    CompanyDetail:
+      type: object
+      description: Full company projection with nested CAE, maturity stage, and active
+        employees.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        tax_id:
+          type: string
+          readOnly: true
+        address:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        legal_representative:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        cae:
+          allOf:
+            - $ref: '#/components/schemas/CAE'
+          readOnly: true
+        maturity_stage:
+          allOf:
+            - $ref: '#/components/schemas/MaturityStage'
+          readOnly: true
+        employees:
+          type: array
+          items:
+            $ref: '#/components/schemas/Employee'
+          readOnly: true
+      required:
+        - address
+        - cae
+        - created_at
+        - description
+        - email
+        - employees
+        - id
+        - is_active
+        - legal_representative
+        - maturity_stage
+        - name
+        - phone
+        - tax_id
+        - updated_at
+    CompanyList:
+      type: object
+      description: Company row for GET /companies; nested FKs via select_related (no
+        employee list).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        tax_id:
+          type: string
+          readOnly: true
+        address:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        legal_representative:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        cae:
+          allOf:
+            - $ref: '#/components/schemas/CAE'
+          readOnly: true
+        maturity_stage:
+          allOf:
+            - $ref: '#/components/schemas/MaturityStage'
+          readOnly: true
+      required:
+        - address
+        - cae
+        - created_at
+        - description
+        - email
+        - id
+        - is_active
+        - legal_representative
+        - maturity_stage
+        - name
+        - phone
+        - tax_id
+        - updated_at
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        type:
+          allOf:
+            - $ref: '#/components/schemas/TypeEnum'
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+        end_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+      required:
+        - end_date
+        - id
+        - is_active
+        - name
+        - start_date
+        - type
     MaturityStage:
       type: object
       properties:
@@ -224,6 +462,29 @@ components:
         * `Startup` - Startup
         * `Intermediate` - Intermediate
         * `Consolidated` - Consolidated
+    PaginatedCompanyListList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompanyList'
     PatchedMaturityStage:
       type: object
       properties:
@@ -245,3 +506,19 @@ components:
           maximum: 9223372036854775807
           minimum: -9223372036854775808
           format: int64
+    TypeEnum:
+      enum:
+        - Regular
+        - Intern
+        - PhD
+        - Designer
+        - Junior
+        - Senior
+      type: string
+      description: |-
+        * `Regular` - Regular
+        * `Intern` - Intern
+        * `PhD` - PhD
+        * `Designer` - Designer
+        * `Junior` - Junior
+        * `Senior` - Senior

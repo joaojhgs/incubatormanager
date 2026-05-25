@@ -15,13 +15,15 @@ import {
 import type { MenuProps } from "antd";
 import { Avatar, Breadcrumb, Button, Dropdown, Layout, Menu, Space, theme, Typography } from "antd";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import { type StaffI18nKey, tStaff } from "@/lib/i18n/staffNav";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { logoutSession, redirectToCookieClearingLogout } from "@/lib/api/auth";
 import { isDirectorRole } from "@/lib/auth/constants";
+import { useLanguagePreference, type UiLanguage } from "@/lib/i18n/language";
+import { tStaff, type StaffI18nKey } from "@/lib/i18n/staffNav";
 
 import styles from "./StaffShell.module.css";
 
@@ -100,9 +102,11 @@ function breadcrumbItemsForPath(pathname: string | null): { title: ReactNode }[]
 
 export function StaffShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const { token } = theme.useToken();
-  const { user, isReady } = useAuth();
+  const { user, isReady, logoutLocal } = useAuth();
+  const { languageLabel, setLanguage } = useLanguagePreference();
 
   const selectedKey = menuBasePath(pathname ?? "/");
 
@@ -201,22 +205,37 @@ export function StaffShell({ children }: { children: ReactNode }) {
 
   const languageMenu = useMemo(
     () => ({
-      items: [
-        { key: "pt", label: tStaff("languagePt"), disabled: false },
-        { key: "en", label: tStaff("languageEn"), disabled: true },
-      ],
+      onClick: ({ key }: { key: string }) => setLanguage(key as UiLanguage),
+      items: [{ key: "pt", label: tStaff("languagePt") }],
     }),
-    [],
+    [setLanguage],
   );
+
+  const handleLogout = useCallback(() => {
+    void (async () => {
+      try {
+        await logoutSession();
+        logoutLocal();
+        router.push("/login");
+      } catch {
+        logoutLocal();
+        redirectToCookieClearingLogout("/login");
+      }
+    })();
+  }, [logoutLocal, router]);
 
   const accountMenu = useMemo(
     () => ({
       items: [
         { key: "profile", label: tStaff("menuProfile") },
-        { key: "logout", label: tStaff("menuLogout") },
+        {
+          key: "logout",
+          label: tStaff("menuLogout"),
+          onClick: handleLogout,
+        },
       ],
     }),
-    [],
+    [handleLogout],
   );
 
   return (
@@ -249,7 +268,7 @@ export function StaffShell({ children }: { children: ReactNode }) {
                 icon={<GlobalOutlined aria-hidden />}
                 aria-label={tStaff("headerLanguage")}
               >
-                PT
+                {languageLabel}
               </Button>
             </Dropdown>
             <Dropdown menu={accountMenu} trigger={["click"]}>

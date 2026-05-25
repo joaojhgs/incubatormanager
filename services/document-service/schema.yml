@@ -22,6 +22,7 @@ paths:
           schema:
             type: string
             enum:
+              - Booking
               - Company
               - Contract
           description: Owning aggregate type.
@@ -114,6 +115,48 @@ paths:
             application/json:
               schema:
                 description: Document not found.
+          description: ''
+  /api/documents/{document_id}/presigned/:
+    get:
+      operationId: api_documents_presigned_retrieve
+      description: Return document metadata plus a temporary direct object-storage
+        download URL.
+      summary: Create a pre-signed document download URL
+      parameters:
+        - in: path
+          name: document_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      security:
+        - GatewayJWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentPresignedUrl'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                description: Forbidden for this role or company scope.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Document not found.
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                description: Object storage could not generate a pre-signed URL.
           description: ''
   /api/documents/health/:
     get:
@@ -326,6 +369,7 @@ paths:
                   enum:
                     - Company
                     - Contract
+                    - Booking
                   description: Owning aggregate type.
                 entity_id:
                   type: string
@@ -441,21 +485,78 @@ components:
           type: string
           format: date-time
           readOnly: true
+        download_url:
+          type: string
+          readOnly: true
       required:
+        - download_url
         - entity_id
         - entity_type
         - file_name
         - file_size
         - id
         - uploaded_at
+    DocumentPresignedUrl:
+      type: object
+      description: Metadata plus a direct object-storage URL for download handoff.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        entity_type:
+          $ref: '#/components/schemas/EntityTypeEnum'
+        entity_id:
+          type: string
+          format: uuid
+        file_name:
+          type: string
+          maxLength: 255
+        file_size:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Size in bytes.
+        mime_type:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+          maxLength: 500
+        uploaded_by:
+          type: string
+          format: uuid
+          nullable: true
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+        download_url:
+          type: string
+          readOnly: true
+        presigned_url:
+          type: string
+          readOnly: true
+      required:
+        - download_url
+        - entity_id
+        - entity_type
+        - file_name
+        - file_size
+        - id
+        - presigned_url
+        - uploaded_at
     EntityTypeEnum:
       enum:
         - Company
         - Contract
+        - Booking
       type: string
       description: |-
         * `Company` - Company
         * `Contract` - Contract
+        * `Booking` - Booking
   securitySchemes:
     GatewayJWT:
       type: http
