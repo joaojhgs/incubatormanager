@@ -1,18 +1,12 @@
-"""Reusable ticket-scoped queryset helpers."""
+"""Service helpers for ticket-service."""
 
 from __future__ import annotations
-
-from django.db import models
 
 from core.models import Ticket
 
 
-def ticket_scope_for_user(user: object) -> models.QuerySet[Ticket]:
-    """Return tickets visible to a user.
-
-    Staff and directors can read all tickets. Client users are restricted to
-    their ``company_id``. Unknown roles return no rows.
-    """
+def ticket_scope_for_user(user: object) -> list:
+    """Return a role-scoped queryset for ticket listing and access."""
 
     role = getattr(user, "role", None)
     if role in {"Staff", "Director"}:

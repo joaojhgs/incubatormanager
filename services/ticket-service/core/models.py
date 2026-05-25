@@ -1,4 +1,4 @@
-"""Core data models for the ticket service."""
+"""Core data models for ticket-service."""
 
 from __future__ import annotations
 
@@ -8,41 +8,42 @@ from django.db import models
 
 
 class Ticket(models.Model):
-    """Support ticket raised by a client or staff."""
+    """Support ticket raised by a client company."""
 
     class Status(models.TextChoices):
         OPEN = "Open", "Open"
-        AWAITING_RESPONSE = "AwaitingResponse", "Awaiting response"
-        IN_PROGRESS = "InProgress", "In progress"
+        IN_PROGRESS = "In progress", "In progress"
+        WAITING_RESPONSE = "Waiting response", "Waiting response"
+        RESOLVED = "Resolved", "Resolved"
         CLOSED = "Closed", "Closed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     company_id = models.UUIDField(db_index=True)
-    created_by_id = models.UUIDField()
-    created_by_role = models.CharField(max_length=32)
     subject = models.CharField(max_length=255)
-    description = models.TextField(blank=True, default="")
+    description = models.TextField(blank=True)
     status = models.CharField(
-        max_length=20,
+        max_length=32,
         choices=Status.choices,
         default=Status.OPEN,
+        db_index=True,
     )
+    created_by_user_id = models.UUIDField()
+    created_by_role = models.CharField(max_length=24)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ("-updated_at",)
+        ordering = ("-updated_at", "-created_at", "subject")
         indexes = [
-            models.Index(fields=["company_id"], name="ticket_company_idx"),
-            models.Index(fields=["status"], name="ticket_status_idx"),
+            models.Index(fields=["company_id", "status"], name="core_ticket_company_status_idx"),
         ]
 
     def __str__(self) -> str:
-        return f"{self.subject} ({self.company_id})"
+        return f"{self.subject} ({self.status})"
 
 
 class TicketMessage(models.Model):
-    """Conversation message on a ticket."""
+    """Message belonging to a ticket thread."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     ticket = models.ForeignKey(
@@ -50,14 +51,17 @@ class TicketMessage(models.Model):
         on_delete=models.CASCADE,
         related_name="messages",
     )
-    sender_id = models.UUIDField()
-    sender_role = models.CharField(max_length=32)
-    body = models.TextField()
+    author_user_id = models.UUIDField()
+    author_role = models.CharField(max_length=24)
+    content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ("created_at",)
-        indexes = [models.Index(fields=["ticket_id"], name="ticketmessage_ticket_idx")]
+        indexes = [
+            models.Index(fields=["ticket_id", "created_at"], name="core_ticket_message_ticket_created_idx"),
+        ]
 
     def __str__(self) -> str:
-        return f"{self.ticket_id}:{self.sender_id}"
+        preview = self.content[:24].replace("\n", " ")
+        return f"{self.ticket_id}::{preview}"

@@ -1,30 +1,25 @@
-"""Serializers for ticket resources."""
+"""Serializers for ticket API request/response payloads."""
 
 from __future__ import annotations
 
-from rest_framework import serializers
-
 from core.models import Ticket, TicketMessage
+from rest_framework import serializers
 
 
 class TicketMessageSerializer(serializers.ModelSerializer):
-    """Read/write representation for ticket conversation messages."""
-
     class Meta:
         model = TicketMessage
-        fields = ["id", "sender_id", "sender_role", "body", "created_at"]
-        read_only_fields = ["id", "sender_id", "sender_role", "created_at"]
-
-
-class TicketMessageCreateSerializer(serializers.Serializer):
-    """Payload accepted by /tickets/{id}/messages/."""
-
-    body = serializers.CharField(min_length=1)
+        fields = [
+            "id",
+            "author_user_id",
+            "author_role",
+            "content",
+            "created_at",
+        ]
+        read_only_fields = ["id", "author_user_id", "author_role", "created_at"]
 
 
 class TicketSerializer(serializers.ModelSerializer):
-    """Ticket projection for list/detail endpoints."""
-
     messages = TicketMessageSerializer(many=True, read_only=True)
 
     class Meta:
@@ -32,27 +27,20 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "company_id",
-            "created_by_id",
-            "created_by_role",
             "subject",
             "description",
             "status",
-            "created_at",
-            "updated_at",
-            "messages",
-        ]
-        read_only_fields = [
-            "id",
-            "created_by_id",
+            "created_by_user_id",
             "created_by_role",
             "created_at",
             "updated_at",
             "messages",
         ]
+        read_only_fields = ["id", "created_by_user_id", "created_by_role", "created_at", "updated_at", "messages"]
 
 
 class TicketCreateSerializer(serializers.ModelSerializer):
-    """Payload for creating tickets."""
+    """Client-scoped create payload with optional explicit ``company_id`` for staff."""
 
     company_id = serializers.UUIDField(required=False)
 
@@ -60,10 +48,9 @@ class TicketCreateSerializer(serializers.ModelSerializer):
         model = Ticket
         fields = ["company_id", "subject", "description"]
 
-    def validate_company_id(self, value: object) -> object:
-        if value in {"", None}:
-            raise serializers.ValidationError("company_id is required.")
-        return value
+    def validate(self, attrs: dict[str, object]) -> dict[str, object]:
+        return attrs
 
-    def create(self, validated_data: dict) -> Ticket:
-        return super().create(validated_data)
+
+class TicketMessageCreateSerializer(serializers.Serializer):
+    content = serializers.CharField()
