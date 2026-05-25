@@ -3,6 +3,18 @@ import { SignJWT } from "jose";
 
 const secret = new TextEncoder().encode("e2e-playwright-secret");
 
+async function gotoAfterSessionCookie(
+  page: import("@playwright/test").Page,
+  path: string,
+): Promise<void> {
+  try {
+    await page.goto(path);
+  } catch (error) {
+    if (!String(error).includes("ERR_ABORTED")) throw error;
+    await page.goto(path);
+  }
+}
+
 const DIRECTOR_EMAIL = "director-deactivate@test.local";
 
 const SUB_DIRECTOR = "00000000-0000-4000-8000-000000000099";
@@ -158,7 +170,7 @@ test.describe("users list: show inactive toggle + deactivate", () => {
       },
     ]);
 
-    await page.goto("/users");
+    await gotoAfterSessionCookie(page, "/users");
     await expect(page.getByRole("heading", { name: "Utilizadores" })).toBeVisible();
 
     await expect(page.getByRole("cell", { name: "inactive@example.com" })).not.toBeVisible();

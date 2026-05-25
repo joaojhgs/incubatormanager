@@ -9,6 +9,7 @@ export default [
       '**/.next/**',
       '**/coverage/**',
       '**/.venv/**',
+      '**/.venv*/**',
       '**/venv/**',
     ],
   },

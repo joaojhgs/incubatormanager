@@ -21,3 +21,5 @@ coverage/
 htmlcov/
 .tilt/
 **/db.sqlite3
+.venv*/
+**/.venv*/
