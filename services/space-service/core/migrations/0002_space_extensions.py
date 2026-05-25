@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0001_space_model_and_seed"),
     ]
@@ -56,9 +55,7 @@ class Migration(migrations.Migration):
                 ("end_time", models.DateTimeField(blank=True, null=True)),
                 (
                     "quoted_price",
-                    models.DecimalField(
-                        blank=True, decimal_places=2, max_digits=12, null=True
-                    ),
+                    models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True),
                 ),
                 ("equipment_ids", models.JSONField(blank=True, default=list)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -191,9 +188,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="space",
-            index=models.Index(
-                fields=["company_id", "is_active"], name="space_company_active"
-            ),
+            index=models.Index(fields=["company_id", "is_active"], name="space_company_active"),
         ),
         migrations.AddIndex(
             model_name="space",
@@ -201,26 +196,18 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="spacebookingrecord",
-            index=models.Index(
-                fields=["space", "status"], name="space_book_space_status"
-            ),
+            index=models.Index(fields=["space", "status"], name="space_book_space_status"),
         ),
         migrations.AddIndex(
             model_name="spacebookingrecord",
-            index=models.Index(
-                fields=["company_id", "status"], name="space_book_company_status"
-            ),
+            index=models.Index(fields=["company_id", "status"], name="space_book_company_status"),
         ),
         migrations.AddIndex(
             model_name="spacecontract",
-            index=models.Index(
-                fields=["company_id", "status"], name="space_contract_c_status"
-            ),
+            index=models.Index(fields=["company_id", "status"], name="space_contract_c_status"),
         ),
         migrations.AddIndex(
             model_name="spacecontract",
-            index=models.Index(
-                fields=["space", "status"], name="space_contract_s_status"
-            ),
+            index=models.Index(fields=["space", "status"], name="space_contract_s_status"),
         ),
     ]

@@ -16,8 +16,7 @@ spec.loader.exec_module(cron_runner)
 def test_parse_crontab_ignores_comments_and_splits_commands(tmp_path: Path) -> None:
     crontab = tmp_path / "jobs.crontab"
     crontab.write_text(
-        "# comment\n"
-        "0 2 1 * * python manage.py generate_monthly_billing --as-of 2026-05-01\n"
+        "# comment\n0 2 1 * * python manage.py generate_monthly_billing --as-of 2026-05-01\n"
     )
 
     entries = cron_runner.parse_crontab(crontab)

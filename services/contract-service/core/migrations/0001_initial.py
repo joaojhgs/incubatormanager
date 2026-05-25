@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -30,9 +29,7 @@ class Migration(migrations.Migration):
                 ("rate_per_sqm", models.DecimalField(decimal_places=2, max_digits=10)),
                 (
                     "monthly_fee",
-                    models.DecimalField(
-                        decimal_places=2, editable=False, max_digits=12
-                    ),
+                    models.DecimalField(decimal_places=2, editable=False, max_digits=12),
                 ),
                 ("start_date", models.DateField()),
                 ("end_date", models.DateField()),
@@ -60,12 +57,8 @@ class Migration(migrations.Migration):
             options={
                 "ordering": ("-created_at",),
                 "indexes": [
-                    models.Index(
-                        fields=["company_id", "status"], name="cont_company_status_idx"
-                    ),
-                    models.Index(
-                        fields=["space_id", "status"], name="cont_space_status_idx"
-                    ),
+                    models.Index(fields=["company_id", "status"], name="cont_company_status_idx"),
+                    models.Index(fields=["space_id", "status"], name="cont_space_status_idx"),
                 ],
             },
         ),

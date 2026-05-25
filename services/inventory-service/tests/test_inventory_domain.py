@@ -114,6 +114,7 @@ def test_booking_event_assigns_equipment_once_then_releases() -> None:
     equipment.refresh_from_db()
     assert equipment.status == Equipment.Status.AVAILABLE
 
+
 @pytest.mark.django_db
 def test_booking_event_rolls_back_processed_marker_when_assignment_fails(monkeypatch) -> None:
     equipment_type = EquipmentType.objects.create(name="Monitor")

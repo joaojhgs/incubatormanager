@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -67,12 +66,8 @@ class Migration(migrations.Migration):
                         fields=["company_id", "status"],
                         name="booking_company_status_idx",
                     ),
-                    models.Index(
-                        fields=["space_id", "status"], name="booking_space_status_idx"
-                    ),
-                    models.Index(
-                        fields=["is_public", "status"], name="booking_public_status_idx"
-                    ),
+                    models.Index(fields=["space_id", "status"], name="booking_space_status_idx"),
+                    models.Index(fields=["is_public", "status"], name="booking_public_status_idx"),
                 ],
             },
         ),

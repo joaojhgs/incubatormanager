@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -43,9 +42,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "ordering": ("name",),
-                "indexes": [
-                    models.Index(fields=["is_active"], name="inventory_type_active_idx")
-                ],
+                "indexes": [models.Index(fields=["is_active"], name="inventory_type_active_idx")],
             },
         ),
         migrations.CreateModel(
@@ -131,12 +128,8 @@ class Migration(migrations.Migration):
             options={
                 "ordering": ("-created_at",),
                 "indexes": [
-                    models.Index(
-                        fields=["equipment", "status"], name="inv_assign_eq_status"
-                    ),
-                    models.Index(
-                        fields=["booking_id", "status"], name="inv_assign_booking"
-                    ),
+                    models.Index(fields=["equipment", "status"], name="inv_assign_eq_status"),
+                    models.Index(fields=["booking_id", "status"], name="inv_assign_booking"),
                 ],
                 "constraints": [
                     models.UniqueConstraint(
@@ -148,14 +141,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="equipment",
-            index=models.Index(
-                fields=["equipment_type", "status"], name="inv_eq_type_status"
-            ),
+            index=models.Index(fields=["equipment_type", "status"], name="inv_eq_type_status"),
         ),
         migrations.AddIndex(
             model_name="equipment",
-            index=models.Index(
-                fields=["is_active", "status"], name="inv_eq_active_status"
-            ),
+            index=models.Index(fields=["is_active", "status"], name="inv_eq_active_status"),
         ),
     ]
