@@ -3,16 +3,27 @@
 import { Button, Card, Result, Spin, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import Link from "next/link";
+import { useMemo } from "react";
 
 import { formatCurrency, formatDateTime, statusTag } from "@/components/operations/format";
-import { useMyBookings } from "@/lib/hooks";
+import { useMyBookings, useSpaces } from "@/lib/hooks";
 import { tClient } from "@/lib/i18n/clientPortal";
 import type { Booking } from "@/lib/api/bookings";
 
 export default function ClientBookingsPage() {
   const { data, isLoading, isError } = useMyBookings();
+  const spaces = useSpaces();
+  const spaceNames = useMemo(
+    () => new Map((spaces.data ?? []).map((space) => [space.id, space.name])),
+    [spaces.data],
+  );
   const columns: ColumnsType<Booking> = [
-    { title: tClient("columnSpace"), dataIndex: "space_id", key: "space_id" },
+    {
+      title: tClient("columnSpace"),
+      dataIndex: "space_id",
+      key: "space_id",
+      render: (spaceId: string) => spaceNames.get(spaceId) ?? spaceId,
+    },
     { title: tClient("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
     {
       title: tClient("columnStart"),
@@ -29,8 +40,9 @@ export default function ClientBookingsPage() {
     },
   ];
 
-  if (isLoading) return <Spin size="large" tip={tClient("pageLoading")} />;
-  if (isError) return <Result status="error" title={tClient("clientLoadError")} />;
+  if (isLoading || spaces.isLoading) return <Spin size="large" tip={tClient("pageLoading")} />;
+  if (isError || spaces.isError)
+    return <Result status="error" title={tClient("clientLoadError")} />;
 
   return (
     <Card

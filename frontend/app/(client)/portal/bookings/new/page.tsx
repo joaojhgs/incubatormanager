@@ -29,6 +29,7 @@ interface BookingFormValues {
 
 export default function ClientNewBookingPage() {
   const router = useRouter();
+  const [form] = Form.useForm<BookingFormValues>();
   const spaces = useSpaces();
   const equipment = useEquipment();
   const createBooking = useCreateBooking();
@@ -57,14 +58,20 @@ export default function ClientNewBookingPage() {
       <Typography.Paragraph type="secondary">
         {tClient("bookingNewDescription")}
       </Typography.Paragraph>
-      <Form layout="vertical" onFinish={submit}>
+      <Form form={form} layout="vertical" onFinish={submit}>
         <Form.Item
           name="space_id"
           label={tClient("fieldSpace")}
           rules={[{ required: true, message: tClient("fieldRequired") }]}
         >
           <Select
-            options={(spaces.data ?? []).map((space) => ({ value: space.id, label: space.name }))}
+            showSearch
+            optionFilterProp="label"
+            placeholder={tClient("fieldSpace")}
+            options={(spaces.data ?? []).map((space) => ({
+              value: space.id,
+              label: `${space.name} · ${space.capacity} pessoas`,
+            }))}
           />
         </Form.Item>
         <Form.Item
@@ -77,7 +84,17 @@ export default function ClientNewBookingPage() {
         <Form.Item
           name="end_time"
           label={tClient("fieldEnd")}
-          rules={[{ required: true, message: tClient("fieldRequired") }]}
+          dependencies={["start_time"]}
+          rules={[
+            { required: true, message: tClient("fieldRequired") },
+            ({ getFieldValue }) => ({
+              validator(_, value: Dayjs | undefined) {
+                const start = getFieldValue("start_time") as Dayjs | undefined;
+                if (!value || !start || value.isAfter(start)) return Promise.resolve();
+                return Promise.reject(new Error("O fim deve ser posterior ao início."));
+              },
+            }),
+          ]}
         >
           <DatePicker showTime style={{ width: "100%" }} />
         </Form.Item>

@@ -6,7 +6,13 @@ import Link from "next/link";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { formatCurrency, formatDate, statusTag } from "@/components/operations/format";
-import { useCompanyContracts, useCompanyPayments, useMyBookings, useMyTickets } from "@/lib/hooks";
+import {
+  useCompanyContracts,
+  useCompanyPayments,
+  useMyBookings,
+  useMyTickets,
+  useSpaces,
+} from "@/lib/hooks";
 import { tClient } from "@/lib/i18n/clientPortal";
 import { normalizeStatus, statusLabel } from "@/lib/i18n/status";
 
@@ -19,9 +25,13 @@ export default function ClientPortalHomePage() {
   const payments = useCompanyPayments(companyId);
   const bookings = useMyBookings();
   const tickets = useMyTickets();
+  const spaces = useSpaces();
   const firstName = user?.email?.split("@")[0] ?? "";
 
-  if (!isReady || [contracts, payments, bookings, tickets].some((query) => query.isLoading)) {
+  if (
+    !isReady ||
+    [contracts, payments, bookings, tickets, spaces].some((query) => query.isLoading)
+  ) {
     return <Spin size="large" tip={tClient("pageLoading")} />;
   }
   if (!companyId)
@@ -32,13 +42,16 @@ export default function ClientPortalHomePage() {
         subTitle={tClient("pageNoCompanyAction")}
       />
     );
-  if ([contracts, payments, bookings, tickets].some((query) => query.isError)) {
+  if ([contracts, payments, bookings, tickets, spaces].some((query) => query.isError)) {
     return <Result status="error" title={tClient("clientLoadError")} />;
   }
 
   const activeContract =
     contracts.data?.find((contract) => normalizeStatus(contract.status) === "active") ??
     contracts.data?.[0];
+  const spaceName =
+    spaces.data?.find((space) => space.id === activeContract?.space_id)?.name ??
+    activeContract?.space_id;
   const nextPayment =
     payments.data?.find((payment) => normalizeStatus(payment.status) !== "paid") ??
     payments.data?.[0];
@@ -109,7 +122,7 @@ export default function ClientPortalHomePage() {
           <Card title={tClient("contractSummary")}>
             <Space direction="vertical" style={{ width: "100%" }}>
               <Text>
-                {tClient("contractSpace")}: <Text strong>{activeContract?.space_id ?? "—"}</Text>
+                {tClient("contractSpace")}: <Text strong>{spaceName ?? "—"}</Text>
               </Text>
               <Text>
                 {tClient("contractArea")}: <Text strong>{activeContract?.area_sqm ?? "—"}</Text>

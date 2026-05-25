@@ -85,7 +85,7 @@ const clientMessages = {
   bookingPublicDescription: "Preencha os dados do pedido. A equipa irá validar a disponibilidade.",
   bookingPublicSuccess: "Pedido recebido com sucesso.",
   bookingPublicError: "Não foi possível enviar o pedido.",
-  fieldCompanyId: "ID da empresa",
+  fieldCompanyId: "Empresa",
   fieldSpace: "Espaço",
   fieldRequesterName: "Nome do requerente",
   fieldRequesterEmail: "Email do requerente",
