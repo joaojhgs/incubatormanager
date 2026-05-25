@@ -7,8 +7,15 @@ from uuid import UUID
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from ilb_common.permissions import IsClientOwner, IsStaff
+from rest_framework import status
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import IsAuthenticated
-from core.models import Ticket, TicketMessage
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from core.models import TicketMessage
 from core.permissions import IsTicketOwnerOrStaff
 from core.serializers import (
     TicketCreateSerializer,
@@ -17,12 +24,6 @@ from core.serializers import (
     TicketSerializer,
 )
 from core.services import ticket_scope_for_user
-from rest_framework import status
-from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListCreateAPIView, ListAPIView, RetrieveUpdateAPIView
-from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from core.models import Ticket, TicketMessage
 from core.permissions import IsTicketOwnerOrStaff
@@ -100,7 +101,7 @@ class TicketDetailView(RetrieveUpdateAPIView):
 
     permission_classes = [IsAuthenticated, IsTicketOwnerOrStaff]
     serializer_class = TicketSerializer
-    pk_url_kwarg = "ticket_id"
+    lookup_url_kwarg = "ticket_id"
 
     def get_queryset(self):  # type: ignore[override]
         return ticket_scope_for_user(self.request.user)
@@ -127,9 +128,8 @@ class TicketMessageCreateView(APIView):
     permission_classes = [IsAuthenticated, IsTicketOwnerOrStaff]
 
     @extend_schema(request=TicketMessageCreateSerializer, responses={201: TicketMessageSerializer})
-    def post(self, request: Request, ticket_id: str) -> Response:
-        ticket_uuid = UUID(ticket_id)
-        ticket = get_object_or_404(ticket_scope_for_user(request.user), id=ticket_uuid)
+    def post(self, request: Request, ticket_id: UUID) -> Response:
+        ticket = get_object_or_404(ticket_scope_for_user(request.user), id=ticket_id)
 
         serializer = TicketMessageCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

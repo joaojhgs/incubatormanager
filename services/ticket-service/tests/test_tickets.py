@@ -1,4 +1,4 @@
-"""Ticket service endpoint tests."""
+"""Ticket-domain endpoints."""
 
 from __future__ import annotations
 
@@ -6,209 +6,171 @@ import uuid
 
 import pytest
 from core.models import Ticket, TicketMessage
-from django.urls import reverse
 from rest_framework.test import APIClient
+
+LIST_URL = "/api/tickets/"
+MY_URL = "/api/tickets/my/"
 
 
 def _api_client(role: str, company_id: str | None = None) -> APIClient:
-    c = APIClient()
+    client = APIClient()
     headers: dict[str, str] = {
         "HTTP_X_USER_ID": str(uuid.uuid4()),
         "HTTP_X_USER_ROLE": role,
     }
     if company_id is not None:
         headers["HTTP_X_COMPANY_ID"] = company_id
-    c.credentials(**headers)
-    return c
+    client.credentials(**headers)
+    return client
+
+
+def _create_ticket(
+    *,
+    company_id: str,
+    subject: str = "Default subject",
+    description: str = "Default description",
+    status: str = Ticket.Status.OPEN,
+) -> Ticket:
+    return Ticket.objects.create(
+        company_id=company_id,
+        subject=subject,
+        description=description,
+        status=status,
+        created_by_user_id=uuid.uuid4(),
+        created_by_role="Client",
+    )
 
 
 @pytest.mark.django_db
-def test_health_tickets_routes_return_ok() -> None:
-    client = APIClient()
-    assert client.get("/health/").status_code == 200
-    assert client.get("/api/tickets/health/").status_code == 200
+def test_ticket_unauthenticated_is_denied() -> None:
+    response = APIClient().get(LIST_URL)
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
-def test_staff_can_create_ticket_with_company() -> None:
-    staff = _api_client("Staff")
-    payload = {
-        "company_id": str(uuid.uuid4()),
-        "subject": "Power outage",
-        "description": "Room 11 lights are off",
-    }
-    response = staff.post(reverse("ticket-list-create"), payload)
+def test_ticket_list_staff_and_client_scopes() -> None:
+    c1 = str(uuid.uuid4())
+    c2 = str(uuid.uuid4())
+    mine = _create_ticket(company_id=c1, subject="Mine")
+    _ = _create_ticket(company_id=c2, subject="Theirs")
+
+    staff_client = _api_client("Staff")
+    staff_resp = staff_client.get(LIST_URL)
+    assert staff_resp.status_code == 200
+    staff_ids = {row["id"] for row in staff_resp.json()}
+    assert str(mine.pk) in staff_ids
+
+    client = _api_client("Client", company_id=c1)
+    client_resp = client.get(LIST_URL)
+    assert client_resp.status_code == 200
+    client_payload = client_resp.json()
+    client_ids = {row["id"] for row in client_payload}
+    assert str(mine.pk) in client_ids
+    assert all(row["company_id"] == c1 for row in client_payload)
+
+
+@pytest.mark.django_db
+def test_ticket_detail_scope_is_enforced() -> None:
+    mine = _create_ticket(company_id=str(uuid.uuid4()), subject="Own")
+    other = _create_ticket(company_id=str(uuid.uuid4()), subject="Other")
+
+    client = _api_client("Client", company_id=str(mine.company_id))
+    own = client.get(f"/api/tickets/{mine.pk}/")
+    assert own.status_code == 200
+
+    forbidden = client.get(f"/api/tickets/{other.pk}/")
+    assert forbidden.status_code == 404
+
+
+@pytest.mark.django_db
+def test_ticket_create_client_defaults_to_own_company_and_staff_can_create_for_any() -> None:
+    company_id = str(uuid.uuid4())
+    client = _api_client("Client", company_id=company_id)
+    payload = {"subject": "New issue", "description": "Needs help"}
+    response = client.post(LIST_URL, data=payload, format="json")
     assert response.status_code == 201
-    data = response.json()
-    assert data["subject"] == payload["subject"]
-    assert data["company_id"] == payload["company_id"]
-    assert data["created_by_role"] == "Staff"
-
-
-@pytest.mark.django_db
-def test_staff_lists_all_tickets() -> None:
-    for idx in range(2):
-        Ticket.objects.create(
-            company_id=uuid.uuid4(),
-            created_by_id=uuid.uuid4(),
-            created_by_role="Staff",
-            subject=f"A-{idx}",
-            description="desc",
-        )
+    data = response.data
+    assert data["company_id"] == company_id
+    assert data["subject"] == "New issue"
+    assert data["status"] == Ticket.Status.OPEN
 
     staff = _api_client("Staff")
-    response = staff.get(reverse("ticket-list-create"))
+    response_staff = staff.post(
+        LIST_URL,
+        data={"company_id": company_id, "subject": "Staff issue", "description": "..."},
+        format="json",
+    )
+    assert response_staff.status_code == 201
+    staff_data = response_staff.data
+    assert staff_data["company_id"] == company_id
+
+    response_bad_staff = staff.post(
+        LIST_URL,
+        data={"subject": "No company", "description": "bad"},
+        format="json",
+    )
+    assert response_bad_staff.status_code == 400
+
+
+@pytest.mark.django_db
+def test_ticket_my_returns_client_only_tickets() -> None:
+    cid = str(uuid.uuid4())
+    other = str(uuid.uuid4())
+    mine1 = _create_ticket(company_id=cid, subject="A")
+    _ = _create_ticket(company_id=other, subject="B")
+
+    response = _api_client("Client", company_id=cid).get(MY_URL)
     assert response.status_code == 200
-    payload = response.json()
-    assert len(payload) == 2
-
-@pytest.mark.django_db
-def test_client_can_create_ticket_for_own_company() -> None:
-    cid = uuid.uuid4()
-    client = _api_client("Client", company_id=str(cid))
-    payload = {
-        "company_id": str(uuid.uuid4()),
-        "subject": "Invoice request",
-        "description": "Need copy of invoice",
-    }
-    response = client.post(reverse("ticket-list-create"), payload)
-    assert response.status_code == 201
-    assert response.json()["company_id"] == str(cid)
+    ids = {row["id"] for row in response.json()}
+    assert ids == {str(mine1.pk)}
 
 
 @pytest.mark.django_db
-def test_client_can_view_own_tickets_only() -> None:
-    own = uuid.uuid4()
-    other = uuid.uuid4()
-    Ticket.objects.create(
-        company_id=own,
-        created_by_id=uuid.uuid4(),
-        created_by_role="Client",
-        subject="Mine",
-        description="mine",
+def test_ticket_messages_are_client_or_staff_scoped() -> None:
+    company_id = str(uuid.uuid4())
+    foreign = str(uuid.uuid4())
+    ticket = _create_ticket(company_id=company_id, subject="Need")
+    foreign_ticket = _create_ticket(company_id=foreign, subject="Other")
+
+    client = _api_client("Client", company_id=company_id)
+    post_resp = client.post(
+        f"/api/tickets/{ticket.pk}/messages/",
+        data={"content": "Hi"},
+        format="json",
     )
-    Ticket.objects.create(
-        company_id=other,
-        created_by_id=uuid.uuid4(),
-        created_by_role="Client",
-        subject="Other",
-        description="other",
-    )
-
-    response = _api_client("Client", company_id=str(own)).get(reverse("ticket-list-mine"))
-    assert response.status_code == 200
-    rows = response.json()
-    assert len(rows) == 1
-    assert rows[0]["subject"] == "Mine"
-
-
-@pytest.mark.django_db
-def test_client_cannot_list_all_tickets() -> None:
-    response = _api_client("Client", company_id=str(uuid.uuid4())).get(
-        reverse("ticket-list-create")
-    )
-    assert response.status_code == 403
-
-
-@pytest.mark.django_db
-def test_client_can_read_and_post_message_to_own_ticket() -> None:
-    cid = uuid.uuid4()
-    ticket = Ticket.objects.create(
-        company_id=cid,
-        created_by_id=uuid.uuid4(),
-        created_by_role="Client",
-        subject="Issue",
-        description="Something wrong",
-    )
-    client = _api_client("Client", company_id=str(cid))
-
-    response = client.get(reverse("ticket-detail", args=[ticket.pk]))
-    assert response.status_code == 200
-    assert response.json()["id"] == str(ticket.pk)
-
-    msg_response = client.post(
-        reverse("ticket-messages", args=[ticket.pk]),
-        {"body": "Can you investigate?"},
-    )
-    assert msg_response.status_code == 201
-    assert msg_response.json()["body"] == "Can you investigate?"
+    assert post_resp.status_code == 201
+    assert post_resp.json()["content"] == "Hi"
     assert TicketMessage.objects.filter(ticket=ticket).count() == 1
 
+    blocked = client.get(f"/api/tickets/{ticket.pk}/messages/")
+    assert blocked.status_code == 405
 
-@pytest.mark.django_db
-def test_client_cannot_access_foreign_ticket() -> None:
-    own = uuid.uuid4()
-    other = uuid.uuid4()
-    ticket = Ticket.objects.create(
-        company_id=other,
-        created_by_id=uuid.uuid4(),
-        created_by_role="Client",
-        subject="Foreign",
-        description="not ours",
+    forbidden = _api_client("Client", company_id=company_id).post(
+        f"/api/tickets/{foreign_ticket.pk}/messages/",
+        data={"content": "Nope"},
+        format="json",
     )
-    response = _api_client("Client", company_id=str(own)).get(
-        reverse("ticket-detail", args=[ticket.pk])
-    )
-    assert response.status_code == 404
+    assert forbidden.status_code == 404
 
 
 @pytest.mark.django_db
-def test_client_message_denied_on_foreign_ticket() -> None:
-    own = uuid.uuid4()
-    other = uuid.uuid4()
-    ticket = Ticket.objects.create(
-        company_id=other,
-        created_by_id=uuid.uuid4(),
-        created_by_role="Client",
-        subject="Foreign",
-        description="not ours",
-    )
-    response = _api_client("Client", company_id=str(own)).post(
-        reverse("ticket-messages", args=[ticket.pk]),
-        {"body": "Oops"},
-    )
-    assert response.status_code == 404
-
-
-@pytest.mark.django_db
-def test_staff_can_update_ticket_status() -> None:
-    ticket = Ticket.objects.create(
-        company_id=uuid.uuid4(),
-        created_by_id=uuid.uuid4(),
-        created_by_role="Client",
-        subject="Escalation",
-        description="urgent",
-    )
+def test_ticket_update_staff_only_and_client_forbidden() -> None:
+    c = str(uuid.uuid4())
+    ticket = _create_ticket(company_id=c)
 
     staff = _api_client("Staff")
-    response = staff.patch(
-        reverse("ticket-detail", args=[ticket.pk]),
-        {"status": "Closed"},
+    staff_update = staff.patch(
+        f"/api/tickets/{ticket.pk}/",
+        data={"status": Ticket.Status.IN_PROGRESS},
         format="json",
     )
-    assert response.status_code == 200
-    assert response.json()["status"] == "Closed"
+    assert staff_update.status_code == 200
+    assert staff_update.json()["status"] == Ticket.Status.IN_PROGRESS
 
-
-@pytest.mark.django_db
-def test_staff_restriction_on_client_role_update() -> None:
-    ticket = Ticket.objects.create(
-        company_id=uuid.uuid4(),
-        created_by_id=uuid.uuid4(),
-        created_by_role="Client",
-        subject="Escalation",
-        description="urgent",
-    )
-    response = _api_client("Client", company_id=str(ticket.company_id)).patch(
-        reverse("ticket-detail", args=[ticket.pk]),
-        {"status": "Closed"},
+    client = _api_client("Client", company_id=c)
+    client_update = client.patch(
+        f"/api/tickets/{ticket.pk}/",
+        data={"status": Ticket.Status.CLOSED},
         format="json",
     )
-    assert response.status_code == 403
-    assert Ticket.objects.get(pk=ticket.pk).status == Ticket.Status.OPEN
-
-
-@pytest.mark.django_db
-def test_unauthenticated_requests_get_401() -> None:
-    response = APIClient().get(reverse("ticket-list-create"))
-    assert response.status_code == 401
+    assert client_update.status_code == 403

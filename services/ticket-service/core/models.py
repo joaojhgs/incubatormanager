@@ -59,7 +59,7 @@ class TicketMessage(models.Model):
     class Meta:
         ordering = ("created_at",)
         indexes = [
-            models.Index(fields=["ticket_id", "created_at"], name="core_ticket_message_ticket_created_idx"),
+            models.Index(fields=["ticket_id", "created_at"], name="core_tmsg_ticket_created_idx"),
         ]
 
     def __str__(self) -> str:

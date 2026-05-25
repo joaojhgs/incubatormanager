@@ -5,7 +5,6 @@ from __future__ import annotations
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 
-from core.services import ticket_scope_for_user
 from core.models import Ticket
 
 
@@ -14,9 +13,7 @@ class IsTicketOwnerOrStaff(BasePermission):
 
     def has_permission(self, request: Request, view: object) -> bool:
         role = getattr(request.user, "role", None)
-        if role in {"Staff", "Director", "Client"}:
-            return True
-        return False
+        return role in {"Staff", "Director", "Client"}
 
     def has_object_permission(self, request: Request, view: object, obj: Ticket) -> bool:
         role = getattr(request.user, "role", None)
