@@ -1,13 +1,42 @@
 "use client";
 
-import { Alert, Card, Col, Progress, Result, Row, Space, Spin, Statistic, Table } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Form,
+  Input,
+  Modal,
+  Progress,
+  Result,
+  Row,
+  Select,
+  Space,
+  Spin,
+  Statistic,
+  Switch,
+  Table,
+} from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { formatDateTime, statusTag } from "@/components/operations/format";
-import { useCompanies, useSpaceBookingRecords, useSpaceOccupancy, useSpaces } from "@/lib/hooks";
+import {
+  useCompanies,
+  useSpaceActions,
+  useSpaceBookingRecords,
+  useSpaceOccupancy,
+  useSpaces,
+  useSpaceTypes,
+} from "@/lib/hooks";
 import { tStaff } from "@/lib/i18n/staffNav";
-import type { Space as IncubatorSpace, SpaceBookingRecord, SpaceOccupancy } from "@/lib/api/spaces";
+import type {
+  Space as IncubatorSpace,
+  SpaceBookingRecord,
+  SpaceOccupancy,
+  SpaceType,
+} from "@/lib/api/spaces";
 
 type SpaceOverviewRow = IncubatorSpace & {
   activeBookingCount: number;
@@ -29,9 +58,16 @@ function getNextBooking(records: SpaceBookingRecord[]): string | null {
 
 export default function SpacesPage() {
   const spaces = useSpaces();
+  const spaceTypes = useSpaceTypes();
+  const actions = useSpaceActions();
   const occupancy = useSpaceOccupancy();
   const bookingRecords = useSpaceBookingRecords();
   const companies = useCompanies({ page_size: 200, is_active: true });
+  const [spaceForm] = Form.useForm();
+  const [typeForm] = Form.useForm();
+  const [editingSpace, setEditingSpace] = useState<IncubatorSpace | null>(null);
+  const [spaceModalOpen, setSpaceModalOpen] = useState(false);
+  const [typeModalOpen, setTypeModalOpen] = useState(false);
 
   const spacesData = useMemo(() => spaces.data ?? [], [spaces.data]);
   const occupancyData = useMemo(() => occupancy.data ?? [], [occupancy.data]);
@@ -40,6 +76,27 @@ export default function SpacesPage() {
     () => new Map((companies.data?.results ?? []).map((company) => [company.id, company.name])),
     [companies.data?.results],
   );
+  const spaceTypeNames = useMemo(
+    () => new Map((spaceTypes.data ?? []).map((type) => [type.id, type.name])),
+    [spaceTypes.data],
+  );
+
+  const openSpaceModal = (space?: IncubatorSpace) => {
+    setEditingSpace(space ?? null);
+    if (space) {
+      spaceForm.setFieldsValue(space);
+    } else {
+      spaceForm.resetFields();
+      spaceForm.setFieldsValue({ status: "Available", capacity: 1, is_active: true });
+    }
+    setSpaceModalOpen(true);
+  };
+
+  const closeSpaceModal = () => {
+    setSpaceModalOpen(false);
+    setEditingSpace(null);
+    spaceForm.resetFields();
+  };
 
   const bookingsBySpace = useMemo(() => {
     return recordsData.reduce<Map<string, SpaceBookingRecord[]>>((bySpace, record) => {
@@ -79,7 +136,7 @@ export default function SpacesPage() {
       title: tStaff("columnType"),
       dataIndex: "space_type",
       key: "space_type",
-      render: (value) => value ?? "—",
+      render: (value: string | null) => (value ? (spaceTypeNames.get(value) ?? value) : "—"),
     },
     { title: tStaff("columnCapacity"), dataIndex: "capacity", key: "capacity", width: 120 },
     { title: tStaff("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
@@ -101,6 +158,32 @@ export default function SpacesPage() {
       key: "company_id",
       render: (v: string | null) => (v ? (companyNames.get(v) ?? v) : "—"),
     },
+    {
+      title: tStaff("columnActions"),
+      key: "actions",
+      width: 180,
+      render: (_: unknown, row) => (
+        <Space>
+          <Button size="small" onClick={() => openSpaceModal(row)}>
+            Editar
+          </Button>
+          <Button
+            size="small"
+            onClick={() =>
+              actions.update.mutate({
+                id: row.id,
+                payload: {
+                  is_active: !row.is_active,
+                  status: row.is_active ? "Blocked" : "Available",
+                },
+              })
+            }
+          >
+            {row.is_active ? "Bloquear" : "Ativar"}
+          </Button>
+        </Space>
+      ),
+    },
   ];
   const occupancyColumns: ColumnsType<SpaceOccupancy> = [
     { title: tStaff("columnSpace"), dataIndex: "space_name", key: "space_name" },
@@ -118,10 +201,32 @@ export default function SpacesPage() {
     { title: tStaff("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
   ];
 
-  if (spaces.isLoading || occupancy.isLoading || bookingRecords.isLoading || companies.isLoading) {
+  const typeColumns: ColumnsType<SpaceType> = [
+    { title: tStaff("columnName"), dataIndex: "name", key: "name" },
+    {
+      title: tStaff("columnStatus"),
+      dataIndex: "is_active",
+      key: "is_active",
+      render: (value: boolean) => statusTag(value ? "Active" : "Inactive"),
+    },
+  ];
+
+  if (
+    spaces.isLoading ||
+    spaceTypes.isLoading ||
+    occupancy.isLoading ||
+    bookingRecords.isLoading ||
+    companies.isLoading
+  ) {
     return <Spin size="large" tip={tStaff("pageLoading")} />;
   }
-  if (spaces.isError || occupancy.isError || bookingRecords.isError || companies.isError) {
+  if (
+    spaces.isError ||
+    spaceTypes.isError ||
+    occupancy.isError ||
+    bookingRecords.isError ||
+    companies.isError
+  ) {
     return <Result status="error" title={tStaff("loadError")} />;
   }
 
@@ -160,7 +265,17 @@ export default function SpacesPage() {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={15}>
-          <Card title={tStaff("navSpaces")}>
+          <Card
+            title={tStaff("navSpaces")}
+            extra={
+              <Space>
+                <Button onClick={() => setTypeModalOpen(true)}>Novo tipo</Button>
+                <Button type="primary" onClick={() => openSpaceModal()}>
+                  Novo espaço
+                </Button>
+              </Space>
+            }
+          >
             <Table<SpaceOverviewRow>
               rowKey="id"
               columns={spaceColumns}
@@ -182,8 +297,114 @@ export default function SpacesPage() {
               size="small"
             />
           </Card>
+          <Card title="Tipos de espaço" style={{ marginTop: 16 }}>
+            <Table<SpaceType>
+              rowKey="id"
+              columns={typeColumns}
+              dataSource={spaceTypes.data ?? []}
+              locale={{ emptyText: tStaff("emptyData") }}
+              pagination={false}
+              size="small"
+            />
+          </Card>
         </Col>
       </Row>
+      <Modal
+        title={editingSpace ? "Editar espaço" : "Novo espaço"}
+        open={spaceModalOpen}
+        onCancel={closeSpaceModal}
+        onOk={() => spaceForm.submit()}
+        confirmLoading={actions.create.isPending || actions.update.isPending}
+        destroyOnClose
+      >
+        <Form
+          form={spaceForm}
+          layout="vertical"
+          onFinish={(values) => {
+            const payload = {
+              ...values,
+              company_id: values.company_id || null,
+              space_type: values.space_type || null,
+            };
+            if (editingSpace) {
+              actions.update.mutate(
+                { id: editingSpace.id, payload },
+                { onSuccess: closeSpaceModal },
+              );
+            } else {
+              actions.create.mutate(payload, { onSuccess: closeSpaceModal });
+            }
+          }}
+        >
+          <Form.Item name="name" label={tStaff("columnName")} rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="space_type" label={tStaff("columnType")}>
+            <Select
+              allowClear
+              options={(spaceTypes.data ?? []).map((type) => ({
+                label: type.name,
+                value: type.id,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item name="capacity" label={tStaff("columnCapacity")} rules={[{ required: true }]}>
+            <Input type="number" min={1} />
+          </Form.Item>
+          <Form.Item name="status" label={tStaff("columnStatus")} rules={[{ required: true }]}>
+            <Select
+              options={["Available", "Reserved", "Occupied", "Maintenance", "Blocked"].map(
+                (value) => ({
+                  label: value,
+                  value,
+                }),
+              )}
+            />
+          </Form.Item>
+          <Form.Item name="company_id" label={tStaff("columnCompany")}>
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={(companies.data?.results ?? []).map((company) => ({
+                label: company.name,
+                value: company.id,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item name="is_active" label="Ativo" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title="Novo tipo de espaço"
+        open={typeModalOpen}
+        onCancel={() => setTypeModalOpen(false)}
+        onOk={() => typeForm.submit()}
+        confirmLoading={actions.createType.isPending}
+        destroyOnClose
+      >
+        <Form
+          form={typeForm}
+          layout="vertical"
+          onFinish={(values) =>
+            actions.createType.mutate(values, {
+              onSuccess: () => {
+                setTypeModalOpen(false);
+                typeForm.resetFields();
+              },
+            })
+          }
+        >
+          <Form.Item name="name" label={tStaff("columnName")} rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="is_active" label="Ativo" valuePropName="checked" initialValue>
+            <Switch />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Space>
   );
 }

@@ -1,16 +1,22 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
+  Button,
   Card,
   Col,
   Descriptions,
+  Form,
+  Input,
+  Modal,
   Result,
   Row,
+  Select,
   Space,
   Spin,
   Statistic,
+  Switch,
   Table,
   Typography,
 } from "antd";
@@ -19,6 +25,7 @@ import type { ColumnsType } from "antd/es/table";
 import { formatCurrency, formatDateTime, statusTag } from "@/components/operations/format";
 import {
   useEquipment,
+  useEquipmentActions,
   useEquipmentAssignments,
   useEquipmentTypes,
   useSpaceBookingRecords,
@@ -42,10 +49,35 @@ function isActiveBookingStatus(status: string): boolean {
 
 export default function InventoryPage() {
   const equipment = useEquipment();
+  const actions = useEquipmentActions();
   const types = useEquipmentTypes();
   const spaces = useSpaces();
   const spaceBookings = useSpaceBookingRecords();
   const assignments = useEquipmentAssignments();
+  const [equipmentForm] = Form.useForm();
+  const [typeForm] = Form.useForm();
+  const [assignForm] = Form.useForm();
+  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
+  const [equipmentModalOpen, setEquipmentModalOpen] = useState(false);
+  const [typeModalOpen, setTypeModalOpen] = useState(false);
+  const [assigningEquipment, setAssigningEquipment] = useState<Equipment | null>(null);
+
+  const openEquipmentModal = (item?: Equipment) => {
+    setEditingEquipment(item ?? null);
+    if (item) {
+      equipmentForm.setFieldsValue(item);
+    } else {
+      equipmentForm.resetFields();
+      equipmentForm.setFieldsValue({ status: "Available", is_active: true });
+    }
+    setEquipmentModalOpen(true);
+  };
+
+  const closeEquipmentModal = () => {
+    setEquipmentModalOpen(false);
+    setEditingEquipment(null);
+    equipmentForm.resetFields();
+  };
 
   const equipmentData = useMemo(() => equipment.data ?? [], [equipment.data]);
   const spacesData = useMemo(() => spaces.data ?? [], [spaces.data]);
@@ -126,6 +158,57 @@ export default function InventoryPage() {
       key: "updated_at",
       render: formatDateTime,
     },
+    {
+      title: tStaff("columnActions"),
+      key: "actions",
+      width: 240,
+      render: (_: unknown, row) => (
+        <Space>
+          <Button size="small" onClick={() => openEquipmentModal(row)}>
+            Editar
+          </Button>
+          <Button
+            size="small"
+            onClick={() => {
+              setAssigningEquipment(row);
+              assignForm.resetFields();
+            }}
+          >
+            Atribuir
+          </Button>
+          <Button
+            size="small"
+            disabled={!row.assigned_space_id}
+            onClick={() =>
+              Modal.confirm({
+                title: "Libertar equipamento",
+                content: (
+                  <Input
+                    id="release-booking-id"
+                    placeholder="ID da reserva"
+                    onChange={(event) => {
+                      (window as unknown as { __releaseBookingId?: string }).__releaseBookingId =
+                        event.target.value;
+                    }}
+                  />
+                ),
+                onOk: () =>
+                  actions.release.mutate({
+                    id: row.id,
+                    payload: {
+                      booking_id:
+                        (window as unknown as { __releaseBookingId?: string }).__releaseBookingId ??
+                        "",
+                    },
+                  }),
+              })
+            }
+          >
+            Libertar
+          </Button>
+        </Space>
+      ),
+    },
   ];
   const typeColumns: ColumnsType<EquipmentType> = [
     { title: tStaff("columnName"), dataIndex: "name", key: "name" },
@@ -134,6 +217,20 @@ export default function InventoryPage() {
       dataIndex: "is_active",
       key: "is_active",
       render: (value: boolean) => statusTag(value ? "Active" : "Inactive"),
+    },
+    {
+      title: tStaff("columnActions"),
+      key: "actions",
+      render: (_: unknown, row) => (
+        <Button
+          size="small"
+          onClick={() =>
+            actions.updateType.mutate({ id: row.id, payload: { is_active: !row.is_active } })
+          }
+        >
+          {row.is_active ? "Desativar" : "Ativar"}
+        </Button>
+      ),
     },
   ];
   const spaceInventoryColumns: ColumnsType<SpaceInventoryRow> = [
@@ -260,7 +357,14 @@ export default function InventoryPage() {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={16}>
-          <Card title={tStaff("navInventory")}>
+          <Card
+            title={tStaff("navInventory")}
+            extra={
+              <Button type="primary" onClick={() => openEquipmentModal()}>
+                Novo equipamento
+              </Button>
+            }
+          >
             <Table<Equipment>
               rowKey="id"
               columns={equipmentColumns}
@@ -294,7 +398,10 @@ export default function InventoryPage() {
           </Card>
         </Col>
         <Col xs={24} lg={8}>
-          <Card title={tStaff("inventoryTypesTitle")}>
+          <Card
+            title={tStaff("inventoryTypesTitle")}
+            extra={<Button onClick={() => setTypeModalOpen(true)}>Novo tipo</Button>}
+          >
             <Table<EquipmentType>
               rowKey="id"
               columns={typeColumns}
@@ -318,6 +425,148 @@ export default function InventoryPage() {
           size="small"
         />
       </Card>
+      <Modal
+        title={editingEquipment ? "Editar equipamento" : "Novo equipamento"}
+        open={equipmentModalOpen}
+        onCancel={closeEquipmentModal}
+        onOk={() => equipmentForm.submit()}
+        confirmLoading={actions.create.isPending || actions.update.isPending}
+        destroyOnClose
+      >
+        <Form
+          form={equipmentForm}
+          layout="vertical"
+          onFinish={(values) => {
+            const payload = {
+              ...values,
+              assigned_space_id: values.assigned_space_id || null,
+              rental_cost: values.rental_cost || null,
+            };
+            if (editingEquipment) {
+              actions.update.mutate(
+                { id: editingEquipment.id, payload },
+                { onSuccess: closeEquipmentModal },
+              );
+            } else {
+              actions.create.mutate(payload, { onSuccess: closeEquipmentModal });
+            }
+          }}
+        >
+          <Form.Item name="name" label={tStaff("columnName")} rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="equipment_type"
+            label={tStaff("columnType")}
+            rules={[{ required: true }]}
+          >
+            <Select
+              options={(types.data ?? []).map((type) => ({ label: type.name, value: type.id }))}
+            />
+          </Form.Item>
+          <Form.Item name="serial_number" label={tStaff("columnSerial")}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="assigned_space_id" label={tStaff("inventoryAssignedSpace")}>
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={(spaces.data ?? []).map((space) => ({ label: space.name, value: space.id }))}
+            />
+          </Form.Item>
+          <Form.Item name="rental_cost" label={tStaff("inventoryRentalCost")}>
+            <Input placeholder="25.00" />
+          </Form.Item>
+          <Form.Item name="status" label={tStaff("columnStatus")} rules={[{ required: true }]}>
+            <Select
+              options={["Available", "In use", "Maintenance"].map((value) => ({
+                label: value,
+                value,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item name="notes" label={tStaff("bookingNotes")}>
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item name="is_active" label="Ativo" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title="Novo tipo de equipamento"
+        open={typeModalOpen}
+        onCancel={() => setTypeModalOpen(false)}
+        onOk={() => typeForm.submit()}
+        confirmLoading={actions.createType.isPending}
+        destroyOnClose
+      >
+        <Form
+          form={typeForm}
+          layout="vertical"
+          onFinish={(values) =>
+            actions.createType.mutate(values, {
+              onSuccess: () => {
+                setTypeModalOpen(false);
+                typeForm.resetFields();
+              },
+            })
+          }
+        >
+          <Form.Item name="name" label={tStaff("columnName")} rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="is_active" label="Ativo" valuePropName="checked" initialValue>
+            <Switch />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title="Atribuir equipamento"
+        open={Boolean(assigningEquipment)}
+        onCancel={() => setAssigningEquipment(null)}
+        onOk={() => assignForm.submit()}
+        confirmLoading={actions.assign.isPending}
+        destroyOnClose
+      >
+        <Form
+          form={assignForm}
+          layout="vertical"
+          onFinish={(values) => {
+            if (!assigningEquipment) return;
+            actions.assign.mutate(
+              {
+                id: assigningEquipment.id,
+                payload: {
+                  assigned_space_id: values.assigned_space_id,
+                  booking_id: values.booking_id || undefined,
+                  company_id: values.company_id || undefined,
+                },
+              },
+              { onSuccess: () => setAssigningEquipment(null) },
+            );
+          }}
+        >
+          <Form.Item
+            name="assigned_space_id"
+            label={tStaff("columnSpace")}
+            rules={[{ required: true }]}
+          >
+            <Select
+              showSearch
+              optionFilterProp="label"
+              options={(spaces.data ?? []).map((space) => ({ label: space.name, value: space.id }))}
+            />
+          </Form.Item>
+          <Form.Item name="booking_id" label={tStaff("inventoryBookingReference")}>
+            <Input placeholder="ID da reserva" />
+          </Form.Item>
+          <Form.Item name="company_id" label={tStaff("columnCompany")}>
+            <Input placeholder="ID da empresa" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Space>
   );
 }

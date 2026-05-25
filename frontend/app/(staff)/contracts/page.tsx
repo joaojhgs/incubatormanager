@@ -3,10 +3,14 @@
 import { FileTextOutlined } from "@ant-design/icons";
 import {
   Alert,
+  Button,
   Card,
   Col,
   Descriptions,
+  Form,
   Input,
+  Modal,
+  Popconfirm,
   Result,
   Row,
   Select,
@@ -19,11 +23,21 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { useMemo, useState } from "react";
 
-import { DocumentList } from "@/components/documents";
+import { DocumentManager } from "@/components/documents";
 import { formatCurrency, formatDate, statusTag } from "@/components/operations/format";
 import type { Contract } from "@/lib/api/contracts";
-import { useCompanies, useContracts, useSpaces } from "@/lib/hooks";
+import { useCompanies, useContractActions, useContracts, useSpaces } from "@/lib/hooks";
 import { tStaff } from "@/lib/i18n/staffNav";
+
+type ContractFormValues = {
+  company_id: string;
+  space_id: string;
+  area_sqm: string;
+  rate_per_sqm: string;
+  start_date: string;
+  end_date: string;
+  status?: string;
+};
 
 function normalize(value: string | null | undefined): string {
   return (value ?? "").toLocaleLowerCase("pt-PT");
@@ -37,8 +51,55 @@ export default function ContractsPage() {
   const { data, isLoading, isError } = useContracts();
   const companies = useCompanies({ page_size: 200, is_active: true });
   const spaces = useSpaces();
+  const actions = useContractActions();
+  const [form] = Form.useForm<ContractFormValues>();
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const [search, setSearch] = useState("");
+  const [editingContract, setEditingContract] = useState<Contract | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const openCreate = () => {
+    setEditingContract(null);
+    form.resetFields();
+    setModalOpen(true);
+  };
+
+  const openEdit = (contract: Contract) => {
+    setEditingContract(contract);
+    form.setFieldsValue({
+      company_id: contract.company_id,
+      space_id: contract.space_id,
+      area_sqm: contract.area_sqm,
+      rate_per_sqm: contract.rate_per_sqm,
+      start_date: contract.start_date,
+      end_date: contract.end_date,
+      status: contract.status,
+    });
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setEditingContract(null);
+    form.resetFields();
+  };
+
+  const saveContract = (values: ContractFormValues) => {
+    const payload = {
+      company_id: values.company_id,
+      space_id: values.space_id,
+      area_sqm: values.area_sqm,
+      rate_per_sqm: values.rate_per_sqm,
+      start_date: values.start_date,
+      end_date: values.end_date,
+      ...(values.status ? { status: values.status } : {}),
+    };
+    if (editingContract) {
+      actions.update.mutate({ id: editingContract.id, payload }, { onSuccess: closeModal });
+    } else {
+      actions.create.mutate(payload, { onSuccess: closeModal });
+    }
+  };
 
   const companyNames = useMemo(
     () => new Map((companies.data?.results ?? []).map((company) => [company.id, company.name])),
@@ -110,6 +171,38 @@ export default function ContractsPage() {
       render: formatDate,
     },
     { title: tStaff("columnEnd"), dataIndex: "end_date", key: "end_date", render: formatDate },
+    {
+      title: tStaff("columnActions"),
+      key: "actions",
+      width: 260,
+      render: (_: unknown, contract) => (
+        <Space>
+          <Button size="small" onClick={() => openEdit(contract)}>
+            Editar
+          </Button>
+          <Button
+            size="small"
+            disabled={contract.status === "active"}
+            loading={actions.activate.isPending}
+            onClick={() => actions.activate.mutate(contract.id)}
+          >
+            Ativar
+          </Button>
+          <Popconfirm
+            title="Terminar contrato?"
+            okText="Terminar"
+            cancelText="Cancelar"
+            onConfirm={() =>
+              actions.terminate.mutate({ id: contract.id, payload: { reason: "Staff request" } })
+            }
+          >
+            <Button size="small" danger disabled={contract.status === "terminated"}>
+              Terminar
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
   ];
 
   if (isLoading || companies.isLoading || spaces.isLoading) {
@@ -172,6 +265,9 @@ export default function ContractsPage() {
         }
       >
         <Space wrap style={{ marginBottom: 16 }} size="middle">
+          <Button type="primary" onClick={openCreate}>
+            Novo contrato
+          </Button>
           <Input.Search
             allowClear
             placeholder={tStaff("contractsSearchPlaceholder")}
@@ -209,13 +305,62 @@ export default function ContractsPage() {
                   </Descriptions.Item>
                 </Descriptions>
                 <Card type="inner" title={tStaff("documentsTitle")}>
-                  <DocumentList entityType="Contract" entityId={contract.id} readOnly />
+                  <DocumentManager entityType="Contract" entityId={contract.id} />
                 </Card>
               </Space>
             ),
           }}
         />
       </Card>
+      <Modal
+        title={editingContract ? "Editar contrato" : "Novo contrato"}
+        open={modalOpen}
+        onCancel={closeModal}
+        onOk={() => form.submit()}
+        confirmLoading={actions.create.isPending || actions.update.isPending}
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical" onFinish={saveContract}>
+          <Form.Item name="company_id" label={tStaff("columnCompany")} rules={[{ required: true }]}>
+            <Select
+              showSearch
+              options={(companies.data?.results ?? []).map((company) => ({
+                label: company.name,
+                value: company.id,
+              }))}
+              optionFilterProp="label"
+            />
+          </Form.Item>
+          <Form.Item name="space_id" label={tStaff("columnSpace")} rules={[{ required: true }]}>
+            <Select
+              showSearch
+              options={(spaces.data ?? []).map((space) => ({ label: space.name, value: space.id }))}
+              optionFilterProp="label"
+            />
+          </Form.Item>
+          <Form.Item name="area_sqm" label={tStaff("contractsArea")} rules={[{ required: true }]}>
+            <Input placeholder="25.00" />
+          </Form.Item>
+          <Form.Item
+            name="rate_per_sqm"
+            label={tStaff("contractsRatePerSqm")}
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="12.50" />
+          </Form.Item>
+          <Form.Item name="start_date" label={tStaff("columnStart")} rules={[{ required: true }]}>
+            <Input placeholder="2026-06-01" />
+          </Form.Item>
+          <Form.Item name="end_date" label={tStaff("columnEnd")} rules={[{ required: true }]}>
+            <Input placeholder="2027-05-31" />
+          </Form.Item>
+          {editingContract ? (
+            <Form.Item name="status" label={tStaff("columnStatus")}>
+              <Select options={statusOptions} />
+            </Form.Item>
+          ) : null}
+        </Form>
+      </Modal>
     </Space>
   );
 }
