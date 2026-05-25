@@ -14,17 +14,39 @@ export default function ClientBookingsPage() {
   const columns: ColumnsType<Booking> = [
     { title: tClient("columnSpace"), dataIndex: "space_id", key: "space_id" },
     { title: tClient("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
-    { title: tClient("columnStart"), dataIndex: "start_time", key: "start_time", render: formatDateTime },
+    {
+      title: tClient("columnStart"),
+      dataIndex: "start_time",
+      key: "start_time",
+      render: formatDateTime,
+    },
     { title: tClient("columnEnd"), dataIndex: "end_time", key: "end_time", render: formatDateTime },
-    { title: tClient("columnPrice"), dataIndex: "quoted_price", key: "quoted_price", render: formatCurrency },
+    {
+      title: tClient("columnPrice"),
+      dataIndex: "quoted_price",
+      key: "quoted_price",
+      render: formatCurrency,
+    },
   ];
 
   if (isLoading) return <Spin size="large" tip={tClient("pageLoading")} />;
   if (isError) return <Result status="error" title={tClient("clientLoadError")} />;
 
   return (
-    <Card title={tClient("pageBookingsTitle")} extra={<Link href="/portal/bookings/new"><Button type="primary">{tClient("bookingNewTitle")}</Button></Link>}>
-      <Table<Booking> rowKey="id" columns={columns} dataSource={data ?? []} locale={{ emptyText: tClient("bookingsEmpty") }} />
+    <Card
+      title={tClient("pageBookingsTitle")}
+      extra={
+        <Link href="/portal/bookings/new">
+          <Button type="primary">{tClient("bookingNewTitle")}</Button>
+        </Link>
+      }
+    >
+      <Table<Booking>
+        rowKey="id"
+        columns={columns}
+        dataSource={data ?? []}
+        locale={{ emptyText: tClient("bookingsEmpty") }}
+      />
     </Card>
   );
 }

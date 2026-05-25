@@ -19,26 +19,61 @@ export default function FinancePage() {
     { title: tStaff("columnDueDate"), dataIndex: "due_date", key: "due_date", render: formatDate },
   ];
 
-  if (dashboard.isLoading || payments.isLoading) return <Spin size="large" tip={tStaff("pageLoading")} />;
-  if (dashboard.isError || payments.isError) return <Result status="error" title={tStaff("loadError")} />;
+  if (dashboard.isLoading || payments.isLoading)
+    return <Spin size="large" tip={tStaff("pageLoading")} />;
+  if (dashboard.isError || payments.isError)
+    return <Result status="error" title={tStaff("loadError")} />;
 
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} sm={12} lg={6}>
-        <Card><Statistic title={tStaff("financeTotalAmount")} value={Number(dashboard.data?.total_amount ?? 0)} prefix="€" precision={2} /></Card>
+        <Card>
+          <Statistic
+            title={tStaff("financeTotalAmount")}
+            value={Number(dashboard.data?.total_amount ?? 0)}
+            prefix="€"
+            precision={2}
+          />
+        </Card>
       </Col>
       <Col xs={24} sm={12} lg={6}>
-        <Card><Statistic title={tStaff("financePaidAmount")} value={Number(dashboard.data?.paid_amount ?? 0)} prefix="€" precision={2} /></Card>
+        <Card>
+          <Statistic
+            title={tStaff("financePaidAmount")}
+            value={Number(dashboard.data?.paid_amount ?? 0)}
+            prefix="€"
+            precision={2}
+          />
+        </Card>
       </Col>
       <Col xs={24} sm={12} lg={6}>
-        <Card><Statistic title={tStaff("financePendingAmount")} value={Number(dashboard.data?.pending_amount ?? 0)} prefix="€" precision={2} /></Card>
+        <Card>
+          <Statistic
+            title={tStaff("financePendingAmount")}
+            value={Number(dashboard.data?.pending_amount ?? 0)}
+            prefix="€"
+            precision={2}
+          />
+        </Card>
       </Col>
       <Col xs={24} sm={12} lg={6}>
-        <Card><Statistic title={tStaff("financeOverdueAmount")} value={Number(dashboard.data?.overdue_amount ?? 0)} prefix="€" precision={2} /></Card>
+        <Card>
+          <Statistic
+            title={tStaff("financeOverdueAmount")}
+            value={Number(dashboard.data?.overdue_amount ?? 0)}
+            prefix="€"
+            precision={2}
+          />
+        </Card>
       </Col>
       <Col span={24}>
         <Card title={tStaff("navFinance")}>
-          <Table<Payment> rowKey="id" columns={columns} dataSource={payments.data ?? []} locale={{ emptyText: tStaff("emptyData") }} />
+          <Table<Payment>
+            rowKey="id"
+            columns={columns}
+            dataSource={payments.data ?? []}
+            locale={{ emptyText: tStaff("emptyData") }}
+          />
         </Card>
       </Col>
     </Row>

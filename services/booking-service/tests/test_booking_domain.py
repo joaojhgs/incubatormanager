@@ -141,6 +141,7 @@ def test_staff_only_lifecycle_endpoints_reject_clients(endpoint: str) -> None:
     response = _client("Client", company_id).patch(f"/api/bookings/{booking.id}/{endpoint}/")
     assert response.status_code == 403
 
+
 @pytest.mark.django_db
 @override_settings(RABBITMQ_URL="amqp://rabbit")
 @pytest.mark.parametrize(

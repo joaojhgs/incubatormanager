@@ -8,7 +8,7 @@ paths:
     get:
       operationId: api_bookings_list
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -21,7 +21,7 @@ paths:
     post:
       operationId: api_bookings_create
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -45,14 +45,14 @@ paths:
     get:
       operationId: api_bookings_retrieve
       parameters:
-      - in: path
-        name: booking_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: booking_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -64,14 +64,14 @@ paths:
     patch:
       operationId: api_bookings_approve_partial_update
       parameters:
-      - in: path
-        name: booking_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: booking_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -83,14 +83,14 @@ paths:
     patch:
       operationId: api_bookings_cancel_partial_update
       parameters:
-      - in: path
-        name: booking_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: booking_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -102,14 +102,14 @@ paths:
     patch:
       operationId: api_bookings_complete_partial_update
       parameters:
-      - in: path
-        name: booking_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: booking_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -121,14 +121,14 @@ paths:
     patch:
       operationId: api_bookings_reject_partial_update
       parameters:
-      - in: path
-        name: booking_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: booking_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -140,7 +140,7 @@ paths:
     get:
       operationId: api_bookings_calendar_retrieve
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -155,7 +155,7 @@ paths:
     post:
       operationId: api_bookings_external_create
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -179,7 +179,7 @@ paths:
     get:
       operationId: api_bookings_health_retrieve
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -195,7 +195,7 @@ paths:
     get:
       operationId: api_bookings_my_list
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -209,7 +209,7 @@ paths:
     get:
       operationId: health_retrieve
       tags:
-      - health
+        - health
       responses:
         '200':
           content:
@@ -272,7 +272,7 @@ components:
         equipment_ids: {}
         status:
           allOf:
-          - $ref: '#/components/schemas/StatusEnum'
+            - $ref: '#/components/schemas/StatusEnum'
           readOnly: true
         notes:
           type: string
@@ -285,16 +285,16 @@ components:
           format: date-time
           readOnly: true
       required:
-      - created_at
-      - created_by_role
-      - created_by_user_id
-      - end_time
-      - id
-      - is_public
-      - space_id
-      - start_time
-      - status
-      - updated_at
+        - created_at
+        - created_by_role
+        - created_by_user_id
+        - end_time
+        - id
+        - is_public
+        - space_id
+        - start_time
+        - status
+        - updated_at
     BookingCreate:
       type: object
       properties:
@@ -330,9 +330,9 @@ components:
         notes:
           type: string
       required:
-      - end_time
-      - space_id
-      - start_time
+        - end_time
+        - space_id
+        - start_time
     PublicBooking:
       type: object
       properties:
@@ -365,19 +365,19 @@ components:
         notes:
           type: string
       required:
-      - end_time
-      - requester_email
-      - requester_name
-      - requester_phone
-      - space_id
-      - start_time
+        - end_time
+        - requester_email
+        - requester_name
+        - requester_phone
+        - space_id
+        - start_time
     StatusEnum:
       enum:
-      - Pending
-      - Approved
-      - Rejected
-      - Cancelled
-      - Completed
+        - Pending
+        - Approved
+        - Rejected
+        - Cancelled
+        - Completed
       type: string
       description: |-
         * `Pending` - Pending

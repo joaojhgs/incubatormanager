@@ -9,7 +9,7 @@ paths:
       operationId: api_dashboard_companies_retrieve
       description: Company analytics from materialized company and employee projections.
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -24,7 +24,7 @@ paths:
       description: Finance analytics from payment projections and cold-start finance
         snapshots.
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -38,7 +38,7 @@ paths:
       operationId: api_dashboard_health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -55,7 +55,7 @@ paths:
       operationId: api_dashboard_overview_retrieve
       description: Staff dashboard with materialized KPIs and downstream health snapshots.
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -69,7 +69,7 @@ paths:
       operationId: api_dashboard_reports_retrieve
       description: Simple report projection for staff overview pages.
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -83,7 +83,7 @@ paths:
       operationId: api_dashboard_spaces_retrieve
       description: Space utilization analytics from contract and booking projections.
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -97,7 +97,7 @@ paths:
       operationId: dashboard_companies_retrieve
       description: Company analytics from materialized company and employee projections.
       tags:
-      - dashboard
+        - dashboard
       responses:
         '200':
           content:
@@ -112,7 +112,7 @@ paths:
       description: Finance analytics from payment projections and cold-start finance
         snapshots.
       tags:
-      - dashboard
+        - dashboard
       responses:
         '200':
           content:
@@ -126,7 +126,7 @@ paths:
       operationId: dashboard_spaces_retrieve
       description: Space utilization analytics from contract and booking projections.
       tags:
-      - dashboard
+        - dashboard
       responses:
         '200':
           content:
@@ -140,7 +140,7 @@ paths:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload.
       tags:
-      - health
+        - health
       responses:
         '200':
           content:

@@ -8,7 +8,7 @@ paths:
     get:
       operationId: api_space_types_list
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -21,7 +21,7 @@ paths:
     post:
       operationId: api_space_types_create
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -45,14 +45,14 @@ paths:
     get:
       operationId: api_space_types_retrieve
       parameters:
-      - in: path
-        name: type_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -63,14 +63,14 @@ paths:
     put:
       operationId: api_space_types_update
       parameters:
-      - in: path
-        name: type_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -93,14 +93,14 @@ paths:
     patch:
       operationId: api_space_types_partial_update
       parameters:
-      - in: path
-        name: type_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -122,14 +122,14 @@ paths:
     delete:
       operationId: api_space_types_destroy
       parameters:
-      - in: path
-        name: type_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: type_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '204':
           description: No response body
@@ -137,7 +137,7 @@ paths:
     get:
       operationId: api_spaces_list
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -150,7 +150,7 @@ paths:
     post:
       operationId: api_spaces_create
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -174,14 +174,14 @@ paths:
     get:
       operationId: api_spaces_retrieve
       parameters:
-      - in: path
-        name: space_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: space_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -192,14 +192,14 @@ paths:
     put:
       operationId: api_spaces_update
       parameters:
-      - in: path
-        name: space_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: space_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -222,14 +222,14 @@ paths:
     patch:
       operationId: api_spaces_partial_update
       parameters:
-      - in: path
-        name: space_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: space_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -251,14 +251,14 @@ paths:
     delete:
       operationId: api_spaces_destroy
       parameters:
-      - in: path
-        name: space_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: space_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       responses:
         '204':
           description: No response body
@@ -266,13 +266,13 @@ paths:
     post:
       operationId: api_spaces_bookings_create
       parameters:
-      - in: path
-        name: event_type
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: event_type
+          schema:
+            type: string
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -292,7 +292,7 @@ paths:
     get:
       operationId: api_spaces_bookings_records_retrieve
       tags:
-      - api
+        - api
       responses:
         '200':
           description: No response body
@@ -300,7 +300,7 @@ paths:
     get:
       operationId: api_spaces_contracts_list
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -314,13 +314,13 @@ paths:
     post:
       operationId: api_spaces_contracts_create
       parameters:
-      - in: path
-        name: event_type
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: event_type
+          schema:
+            type: string
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -340,7 +340,7 @@ paths:
     get:
       operationId: api_spaces_health_retrieve
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -356,7 +356,7 @@ paths:
     get:
       operationId: api_spaces_occupancy_map_list
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -370,7 +370,7 @@ paths:
     get:
       operationId: health_retrieve
       tags:
-      - health
+        - health
       responses:
         '200':
           content:
@@ -414,8 +414,8 @@ components:
             type: string
             format: uuid
       required:
-      - booking_id
-      - space_id
+        - booking_id
+        - space_id
     ContractEvent:
       type: object
       properties:
@@ -449,7 +449,7 @@ components:
         reason:
           type: string
       required:
-      - contract_id
+        - contract_id
     PatchedSpace:
       type: object
       properties:
@@ -541,10 +541,10 @@ components:
           format: date-time
           readOnly: true
       required:
-      - created_at
-      - id
-      - name
-      - updated_at
+        - created_at
+        - id
+        - name
+        - updated_at
     SpaceContract:
       type: object
       properties:
@@ -592,23 +592,23 @@ components:
           format: date-time
           readOnly: true
       required:
-      - area_sqm
-      - company_id
-      - contract_id
-      - created_at
-      - end_date
-      - id
-      - monthly_fee
-      - rate_per_sqm
-      - space
-      - start_date
-      - status
-      - updated_at
+        - area_sqm
+        - company_id
+        - contract_id
+        - created_at
+        - end_date
+        - id
+        - monthly_fee
+        - rate_per_sqm
+        - space
+        - start_date
+        - status
+        - updated_at
     SpaceContractStatusEnum:
       enum:
-      - Active
-      - Expired
-      - Terminated
+        - Active
+        - Expired
+        - Terminated
       type: string
       description: |-
         * `Active` - Active
@@ -633,19 +633,19 @@ components:
         status:
           type: string
       required:
-      - capacity
-      - occupancy_percent
-      - occupied
-      - space_id
-      - space_name
-      - status
+        - capacity
+        - occupancy_percent
+        - occupied
+        - space_id
+        - space_name
+        - status
     SpaceStatusEnum:
       enum:
-      - Available
-      - Reserved
-      - Occupied
-      - Maintenance
-      - Blocked
+        - Available
+        - Reserved
+        - Occupied
+        - Maintenance
+        - Blocked
       type: string
       description: |-
         * `Available` - Available
@@ -674,7 +674,7 @@ components:
           format: date-time
           readOnly: true
       required:
-      - created_at
-      - id
-      - name
-      - updated_at
+        - created_at
+        - id
+        - name
+        - updated_at

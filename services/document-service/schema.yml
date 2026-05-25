@@ -10,27 +10,27 @@ paths:
       description: List active document metadata rows for a company or contract aggregate.
       summary: List documents
       parameters:
-      - in: query
-        name: entity_id
-        schema:
-          type: string
-          format: uuid
-        description: Owning aggregate id.
-        required: true
-      - in: query
-        name: entity_type
-        schema:
-          type: string
-          enum:
-          - Booking
-          - Company
-          - Contract
-        description: Owning aggregate type.
-        required: true
+        - in: query
+          name: entity_id
+          schema:
+            type: string
+            format: uuid
+          description: Owning aggregate id.
+          required: true
+        - in: query
+          name: entity_type
+          schema:
+            type: string
+            enum:
+              - Booking
+              - Company
+              - Contract
+          description: Owning aggregate type.
+          required: true
       tags:
-      - api
+        - api
       security:
-      - GatewayJWT: []
+        - GatewayJWT: []
       responses:
         '200':
           content:
@@ -58,16 +58,16 @@ paths:
       description: Soft-delete metadata and remove the object from MinIO.
       summary: Delete document
       parameters:
-      - in: path
-        name: document_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: document_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       security:
-      - GatewayJWT: []
+        - GatewayJWT: []
       responses:
         '204':
           content:
@@ -87,16 +87,16 @@ paths:
       description: Stream a stored object from MinIO using the gateway trust headers.
       summary: Download document bytes
       parameters:
-      - in: path
-        name: document_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: document_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       security:
-      - GatewayJWT: []
+        - GatewayJWT: []
       responses:
         '200':
           content:
@@ -123,16 +123,16 @@ paths:
         download URL.
       summary: Create a pre-signed document download URL
       parameters:
-      - in: path
-        name: document_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: document_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - api
+        - api
       security:
-      - GatewayJWT: []
+        - GatewayJWT: []
       responses:
         '200':
           content:
@@ -163,7 +163,7 @@ paths:
       operationId: api_documents_health_retrieve
       description: Liveness/readiness-style health payload (includes MinIO when configured).
       tags:
-      - api
+        - api
       responses:
         '200':
           content:
@@ -200,121 +200,121 @@ paths:
         - YAML: application/vnd.oai.openapi
         - JSON: application/vnd.oai.openapi+json
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - json
-          - yaml
-      - in: query
-        name: lang
-        schema:
-          type: string
-          enum:
-          - af
-          - ar
-          - ar-dz
-          - ast
-          - az
-          - be
-          - bg
-          - bn
-          - br
-          - bs
-          - ca
-          - ckb
-          - cs
-          - cy
-          - da
-          - de
-          - dsb
-          - el
-          - en
-          - en-au
-          - en-gb
-          - eo
-          - es
-          - es-ar
-          - es-co
-          - es-mx
-          - es-ni
-          - es-ve
-          - et
-          - eu
-          - fa
-          - fi
-          - fr
-          - fy
-          - ga
-          - gd
-          - gl
-          - he
-          - hi
-          - hr
-          - hsb
-          - hu
-          - hy
-          - ia
-          - id
-          - ig
-          - io
-          - is
-          - it
-          - ja
-          - ka
-          - kab
-          - kk
-          - km
-          - kn
-          - ko
-          - ky
-          - lb
-          - lt
-          - lv
-          - mk
-          - ml
-          - mn
-          - mr
-          - ms
-          - my
-          - nb
-          - ne
-          - nl
-          - nn
-          - os
-          - pa
-          - pl
-          - pt
-          - pt-br
-          - ro
-          - ru
-          - sk
-          - sl
-          - sq
-          - sr
-          - sr-latn
-          - sv
-          - sw
-          - ta
-          - te
-          - tg
-          - th
-          - tk
-          - tr
-          - tt
-          - udm
-          - ug
-          - uk
-          - ur
-          - uz
-          - vi
-          - zh-hans
-          - zh-hant
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - json
+              - yaml
+        - in: query
+          name: lang
+          schema:
+            type: string
+            enum:
+              - af
+              - ar
+              - ar-dz
+              - ast
+              - az
+              - be
+              - bg
+              - bn
+              - br
+              - bs
+              - ca
+              - ckb
+              - cs
+              - cy
+              - da
+              - de
+              - dsb
+              - el
+              - en
+              - en-au
+              - en-gb
+              - eo
+              - es
+              - es-ar
+              - es-co
+              - es-mx
+              - es-ni
+              - es-ve
+              - et
+              - eu
+              - fa
+              - fi
+              - fr
+              - fy
+              - ga
+              - gd
+              - gl
+              - he
+              - hi
+              - hr
+              - hsb
+              - hu
+              - hy
+              - ia
+              - id
+              - ig
+              - io
+              - is
+              - it
+              - ja
+              - ka
+              - kab
+              - kk
+              - km
+              - kn
+              - ko
+              - ky
+              - lb
+              - lt
+              - lv
+              - mk
+              - ml
+              - mn
+              - mr
+              - ms
+              - my
+              - nb
+              - ne
+              - nl
+              - nn
+              - os
+              - pa
+              - pl
+              - pt
+              - pt-br
+              - ro
+              - ru
+              - sk
+              - sl
+              - sq
+              - sr
+              - sr-latn
+              - sv
+              - sw
+              - ta
+              - te
+              - tg
+              - th
+              - tk
+              - tr
+              - tt
+              - udm
+              - ug
+              - uk
+              - ur
+              - uz
+              - vi
+              - zh-hans
+              - zh-hant
       tags:
-      - api
+        - api
       security:
-      - {}
+        - {}
       responses:
         '200':
           content:
@@ -341,9 +341,9 @@ paths:
       description: Interactive OpenAPI documentation for the document service.
       summary: Swagger UI
       tags:
-      - api
+        - api
       security:
-      - {}
+        - {}
       responses:
         '200':
           description: Swagger UI page (HTML).
@@ -354,7 +354,7 @@ paths:
         restricted to office, PDF, and common images.'
       summary: Upload a document
       tags:
-      - api
+        - api
       requestBody:
         content:
           multipart/form-data:
@@ -367,9 +367,9 @@ paths:
                 entity_type:
                   type: string
                   enum:
-                  - Company
-                  - Contract
-                  - Booking
+                    - Company
+                    - Contract
+                    - Booking
                   description: Owning aggregate type.
                 entity_id:
                   type: string
@@ -378,11 +378,11 @@ paths:
                   type: string
                   maxLength: 500
               required:
-              - file
-              - entity_type
-              - entity_id
+                - file
+                - entity_type
+                - entity_id
       security:
-      - GatewayJWT: []
+        - GatewayJWT: []
       responses:
         '201':
           content:
@@ -419,7 +419,7 @@ paths:
       operationId: health_retrieve
       description: Liveness/readiness-style health payload (includes MinIO when configured).
       tags:
-      - health
+        - health
       responses:
         '200':
           content:
@@ -489,13 +489,13 @@ components:
           type: string
           readOnly: true
       required:
-      - download_url
-      - entity_id
-      - entity_type
-      - file_name
-      - file_size
-      - id
-      - uploaded_at
+        - download_url
+        - entity_id
+        - entity_type
+        - file_name
+        - file_size
+        - id
+        - uploaded_at
     DocumentPresignedUrl:
       type: object
       description: Metadata plus a direct object-storage URL for download handoff.
@@ -539,19 +539,19 @@ components:
           type: string
           readOnly: true
       required:
-      - download_url
-      - entity_id
-      - entity_type
-      - file_name
-      - file_size
-      - id
-      - presigned_url
-      - uploaded_at
+        - download_url
+        - entity_id
+        - entity_type
+        - file_name
+        - file_size
+        - id
+        - presigned_url
+        - uploaded_at
     EntityTypeEnum:
       enum:
-      - Company
-      - Contract
-      - Booking
+        - Company
+        - Contract
+        - Booking
       type: string
       description: |-
         * `Company` - Company

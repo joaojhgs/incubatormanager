@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -94,16 +93,12 @@ class Migration(migrations.Migration):
             options={
                 "ordering": ("-created_at",),
                 "indexes": [
-                    models.Index(
-                        fields=["company_id", "status"], name="pay_company_status_idx"
-                    ),
+                    models.Index(fields=["company_id", "status"], name="pay_company_status_idx"),
                     models.Index(
                         fields=["contract_id", "period_start"],
                         name="pay_contract_period_idx",
                     ),
-                    models.Index(
-                        fields=["booking_id", "source"], name="pay_booking_source_idx"
-                    ),
+                    models.Index(fields=["booking_id", "source"], name="pay_booking_source_idx"),
                 ],
             },
         ),
@@ -126,9 +121,7 @@ class Migration(migrations.Migration):
             options={
                 "ordering": ("-processed_at",),
                 "indexes": [
-                    models.Index(
-                        fields=["event_type"], name="core_processed_event_type_idx"
-                    )
+                    models.Index(fields=["event_type"], name="core_processed_event_type_idx")
                 ],
             },
         ),

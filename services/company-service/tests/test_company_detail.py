@@ -105,9 +105,7 @@ def test_company_detail_unauthenticated(company_url: str) -> None:
 
 
 @pytest.mark.django_db
-def test_company_detail_inactive_not_visible_for_staff(
-    company_url: str, company: Company
-) -> None:
+def test_company_detail_inactive_not_visible_for_staff(company_url: str, company: Company) -> None:
     company.is_active = False
     company.save(update_fields=("is_active",))
     response = _api_client("Staff").get(company_url)

@@ -101,7 +101,11 @@ export function useBookingActions() {
 }
 
 export function useContracts() {
-  return useQuery({ queryKey: operationalKeys.contracts, queryFn: listContracts, staleTime: 30_000 });
+  return useQuery({
+    queryKey: operationalKeys.contracts,
+    queryFn: listContracts,
+    staleTime: 30_000,
+  });
 }
 
 export function useCompanyContracts(companyId: string | null | undefined) {
@@ -135,7 +139,11 @@ export function useFinanceDashboard() {
 }
 
 export function useEquipment() {
-  return useQuery({ queryKey: operationalKeys.equipment, queryFn: listEquipment, staleTime: 30_000 });
+  return useQuery({
+    queryKey: operationalKeys.equipment,
+    queryFn: listEquipment,
+    staleTime: 30_000,
+  });
 }
 
 export function useEquipmentTypes() {

@@ -23,7 +23,6 @@ const staffMessages = {
   // Service status pages (finance/contracts/bookings/...) currently backed by service health.
   pageLoading: "A carregar…",
 
-
   // Operational data pages
   loadError: "Não foi possível carregar os dados.",
   emptyData: "Sem registos para apresentar.",

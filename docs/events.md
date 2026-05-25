@@ -141,4 +141,3 @@ See `docs/architecture.md` for platform context and integration rules.
   - `amount` (decimal)
   - `paid_at` (ISO-8601 datetime)
 - **Typical consumers:** dashboard, reporting, finance reconciliation flows.
-

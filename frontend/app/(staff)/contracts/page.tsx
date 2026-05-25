@@ -16,8 +16,18 @@ export default function ContractsPage() {
     { title: tStaff("columnCompany"), dataIndex: "company_id", key: "company_id" },
     { title: tStaff("columnSpace"), dataIndex: "space_id", key: "space_id" },
     { title: tStaff("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
-    { title: tStaff("columnPrice"), dataIndex: "monthly_fee", key: "monthly_fee", render: formatCurrency },
-    { title: tStaff("columnStart"), dataIndex: "start_date", key: "start_date", render: formatDate },
+    {
+      title: tStaff("columnPrice"),
+      dataIndex: "monthly_fee",
+      key: "monthly_fee",
+      render: formatCurrency,
+    },
+    {
+      title: tStaff("columnStart"),
+      dataIndex: "start_date",
+      key: "start_date",
+      render: formatDate,
+    },
     { title: tStaff("columnEnd"), dataIndex: "end_date", key: "end_date", render: formatDate },
   ];
 
@@ -26,7 +36,12 @@ export default function ContractsPage() {
 
   return (
     <Card title={tStaff("navContracts")}>
-      <Table<Contract> rowKey="id" columns={columns} dataSource={data ?? []} locale={{ emptyText: tStaff("emptyData") }} />
+      <Table<Contract>
+        rowKey="id"
+        columns={columns}
+        dataSource={data ?? []}
+        locale={{ emptyText: tStaff("emptyData") }}
+      />
       {firstContract ? (
         <Card type="inner" title={tStaff("documentsTitle")} style={{ marginTop: 16 }}>
           <DocumentList entityType="Contract" entityId={firstContract.id} readOnly />

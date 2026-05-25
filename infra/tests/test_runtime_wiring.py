@@ -137,9 +137,7 @@ def test_rabbitmq_definitions_include_runtime_consumer_queues_and_bindings() -> 
     queue_names = {queue["name"] for queue in definitions["queues"]}
     assert set(EXPECTED_BINDINGS).issubset(queue_names)
 
-    bindings_by_destination: dict[str, set[str]] = {
-        queue: set() for queue in EXPECTED_BINDINGS
-    }
+    bindings_by_destination: dict[str, set[str]] = {queue: set() for queue in EXPECTED_BINDINGS}
     for binding in definitions["bindings"]:
         destination = binding["destination"]
         if destination in bindings_by_destination:
@@ -148,8 +146,6 @@ def test_rabbitmq_definitions_include_runtime_consumer_queues_and_bindings() -> 
             bindings_by_destination[destination].add(binding["routing_key"])
 
     assert bindings_by_destination == EXPECTED_BINDINGS
-
-
 
 
 def test_rabbitmq_definitions_dead_letter_failed_consumer_messages() -> None:

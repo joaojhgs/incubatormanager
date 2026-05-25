@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0001_initial"),
     ]
@@ -18,9 +17,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="equipment",
             name="rental_cost",
-            field=models.DecimalField(
-                blank=True, decimal_places=2, max_digits=12, null=True
-            ),
+            field=models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True),
         ),
         migrations.AddField(
             model_name="equipmentassignment",
@@ -29,8 +26,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="equipment",
-            index=models.Index(
-                fields=["assigned_space_id", "status"], name="inv_eq_space_status"
-            ),
+            index=models.Index(fields=["assigned_space_id", "status"], name="inv_eq_space_status"),
         ),
     ]

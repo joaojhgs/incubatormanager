@@ -17,16 +17,33 @@ export default function ClientPaymentsPage() {
     { title: tClient("columnAmount"), dataIndex: "amount", key: "amount", render: formatCurrency },
     { title: tClient("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
     { title: tClient("columnDueDate"), dataIndex: "due_date", key: "due_date", render: formatDate },
-    { title: tClient("columnUpdatedAt"), dataIndex: "updated_at", key: "updated_at", render: formatDate },
+    {
+      title: tClient("columnUpdatedAt"),
+      dataIndex: "updated_at",
+      key: "updated_at",
+      render: formatDate,
+    },
   ];
 
   if (!isReady || isLoading) return <Spin size="large" tip={tClient("pageLoading")} />;
-  if (!companyId) return <Result status="warning" title={tClient("pageNoCompany")} subTitle={tClient("pageNoCompanyAction")} />;
+  if (!companyId)
+    return (
+      <Result
+        status="warning"
+        title={tClient("pageNoCompany")}
+        subTitle={tClient("pageNoCompanyAction")}
+      />
+    );
   if (isError) return <Result status="error" title={tClient("clientLoadError")} />;
 
   return (
     <Card title={tClient("pagePaymentsTitle")}>
-      <Table<Payment> rowKey="id" columns={columns} dataSource={data ?? []} locale={{ emptyText: tClient("paymentsEmpty") }} />
+      <Table<Payment>
+        rowKey="id"
+        columns={columns}
+        dataSource={data ?? []}
+        locale={{ emptyText: tClient("paymentsEmpty") }}
+      />
     </Card>
   );
 }

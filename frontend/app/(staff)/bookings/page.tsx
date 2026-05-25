@@ -34,13 +34,25 @@ export default function BookingsPage() {
       key: "actions",
       render: (_: unknown, row) => (
         <Space>
-          <Button size="small" onClick={() => actions.approve.mutate(row.id)} disabled={row.status !== "Pending"}>
+          <Button
+            size="small"
+            onClick={() => actions.approve.mutate(row.id)}
+            disabled={row.status !== "Pending"}
+          >
             {tStaff("bookingApprove")}
           </Button>
-          <Button size="small" onClick={() => actions.reject.mutate(row.id)} disabled={row.status !== "Pending"}>
+          <Button
+            size="small"
+            onClick={() => actions.reject.mutate(row.id)}
+            disabled={row.status !== "Pending"}
+          >
             {tStaff("bookingReject")}
           </Button>
-          <Button size="small" onClick={() => actions.cancel.mutate(row.id)} disabled={!['Pending','Approved'].includes(row.status)}>
+          <Button
+            size="small"
+            onClick={() => actions.cancel.mutate(row.id)}
+            disabled={!["Pending", "Approved"].includes(row.status)}
+          >
             {tStaff("bookingCancel")}
           </Button>
         </Space>
@@ -53,7 +65,12 @@ export default function BookingsPage() {
 
   return (
     <Card title={tStaff("navBookings")}>
-      <Table<Booking> rowKey="id" columns={columns} dataSource={data ?? []} locale={{ emptyText: tStaff("emptyData") }} />
+      <Table<Booking>
+        rowKey="id"
+        columns={columns}
+        dataSource={data ?? []}
+        locale={{ emptyText: tStaff("emptyData") }}
+      />
     </Card>
   );
 }
