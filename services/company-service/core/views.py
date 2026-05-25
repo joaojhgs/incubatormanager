@@ -106,7 +106,10 @@ class CompanyCreateUpdateView(generics.ListCreateAPIView):
         return [IsAuthenticated()]
 
     def get_queryset(self):  # type: ignore[override]
-        return company_list_queryset(_scope_role_key(self.request.user), _scope_company_id(self.request.user))
+        return company_list_queryset(
+            _scope_role_key(self.request.user),
+            _scope_company_id(self.request.user),
+        )
 
     def get_serializer_class(self):  # type: ignore[override]
         if self.request is not None and self.request.method == "POST":
@@ -135,7 +138,10 @@ class CompanyDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
         return [IsAuthenticated()]
 
     def get_queryset(self):  # type: ignore[override]
-        return company_detail_queryset(_scope_role_key(self.request.user), _scope_company_id(self.request.user))
+        return company_detail_queryset(
+            _scope_role_key(self.request.user),
+            _scope_company_id(self.request.user),
+        )
 
     def get_serializer_class(self):  # type: ignore[override]
         if self.request is not None and self.request.method in {"PATCH", "PUT"}:
@@ -167,7 +173,9 @@ class CompanyMaturityStageChangeView(APIView):
         return Response(CompanyDetailSerializer(company).data)
 
 
-@extend_schema(description="List or create employees for a company. Staff and Directors can manage employees.")
+@extend_schema(
+    description="List or create employees for a company. Staff and Directors can manage employees."
+)
 class CompanyEmployeeListCreateView(generics.ListCreateAPIView):
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated, IsStaff]
@@ -229,7 +237,11 @@ class CompanyEmployeeStatsView(APIView):
         if scoped_company is None:
             raise PermissionDenied("Company is outside the caller scope")
         get_object_or_404(Company.active, pk=scoped_company)
-        stats = Employee.objects.filter(company_id=scoped_company).values("type").annotate(total=Count("id"))
+        stats = (
+            Employee.objects.filter(company_id=scoped_company)
+            .values("type")
+            .annotate(total=Count("id"))
+        )
         by_type = {row["type"]: row["total"] for row in stats}
         active = Employee.objects.filter(company_id=scoped_company, is_active=True).count()
         inactive = Employee.objects.filter(company_id=scoped_company, is_active=False).count()
@@ -295,6 +307,13 @@ class HealthView(APIView):
     authentication_classes = ()
     permission_classes = ()
 
-    @extend_schema(responses={200: {"type": "object", "properties": {"status": {"type": "string", "example": "ok"}}}})
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object",
+                "properties": {"status": {"type": "string", "example": "ok"}},
+            }
+        }
+    )
     def get(self, request: Request) -> Response:
         return Response({"status": "ok"})

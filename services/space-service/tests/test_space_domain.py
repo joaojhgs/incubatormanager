@@ -74,11 +74,7 @@ def test_contract_and_booking_events_are_idempotent() -> None:
         "event_id": str(uuid.uuid4()),
         "event_type": "contract.expired",
         "occurred_at": "",
-        "payload": {
-            "contract_id": contract_event["payload"]["contract_id"],
-            "company_id": contract_event["payload"]["company_id"],
-            "space_id": str(space.id),
-        },
+        "payload": {"contract_id": contract_event["payload"]["contract_id"]},
     }
     apply_contract_event(expired_event)  # type: ignore[arg-type]
     apply_contract_event(expired_event)  # type: ignore[arg-type]

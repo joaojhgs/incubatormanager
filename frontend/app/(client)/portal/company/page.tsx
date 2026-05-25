@@ -18,7 +18,13 @@ export default function ClientCompanyPage() {
   }
 
   if (!companyId) {
-    return <Result status="warning" title={tClient("pageNoCompany")} subTitle={tClient("pageNoCompanyAction")} />;
+    return (
+      <Result
+        status="warning"
+        title={tClient("pageNoCompany")}
+        subTitle={tClient("pageNoCompanyAction")}
+      />
+    );
   }
 
   if (isError) {
@@ -26,7 +32,13 @@ export default function ClientCompanyPage() {
   }
 
   if (!data) {
-    return <Result status="warning" title={tClient("pageNoCompany")} subTitle={tClient("pageNoCompanyAction")} />;
+    return (
+      <Result
+        status="warning"
+        title={tClient("pageNoCompany")}
+        subTitle={tClient("pageNoCompanyAction")}
+      />
+    );
   }
 
   return (

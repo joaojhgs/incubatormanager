@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-
 from unittest.mock import patch
 
 import pytest
@@ -89,9 +88,10 @@ def test_company_create_post_staff_publishes_event_on_commit(
 ) -> None:
     monkeypatch.setenv("RABBITMQ_URL", "amqp://rabbit")
 
-    with patch("core.views.transaction.on_commit") as on_commit, patch(
-        "core.views.event_bus.publish"
-    ) as publish:
+    with (
+        patch("core.views.transaction.on_commit") as on_commit,
+        patch("core.views.event_bus.publish") as publish,
+    ):
         response = _api_client("Staff").post(
             "/api/companies/",
             data=_company_payload(cae_seed, stage_startup),
@@ -282,7 +282,7 @@ def test_company_stats_scope_for_staff_and_client(
         cae=cae_seed,
         maturity_stage=stage_startup,
     )
-    other = Company.objects.create(
+    Company.objects.create(
         name="Other",
         tax_id="PT111111119",
         legal_representative="B",
@@ -295,9 +295,7 @@ def test_company_stats_scope_for_staff_and_client(
     assert staff_response.status_code == 200
     assert staff_response.json()["total"] == 2
 
-    client_response = _api_client("Client", company_id=str(ours.id)).get(
-        "/api/companies/stats/"
-    )
+    client_response = _api_client("Client", company_id=str(ours.id)).get("/api/companies/stats/")
     assert client_response.status_code == 200
     assert client_response.json() == {
         "total": 1,

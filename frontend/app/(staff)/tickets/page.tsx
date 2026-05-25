@@ -12,7 +12,8 @@ const { Title, Text } = Typography;
 function statusTag(status: string) {
   if (status === "Open") return <Tag color="red">{tStaff("ticketStatusOpen")}</Tag>;
   if (status === "In progress") return <Tag color="blue">{tStaff("ticketStatusInProgress")}</Tag>;
-  if (status === "Waiting response") return <Tag color="gold">{tStaff("ticketStatusWaitingResponse")}</Tag>;
+  if (status === "Waiting response")
+    return <Tag color="gold">{tStaff("ticketStatusWaitingResponse")}</Tag>;
   if (status === "Resolved") return <Tag color="green">{tStaff("ticketStatusResolved")}</Tag>;
   if (status === "Closed") return <Tag color="default">{tStaff("ticketStatusClosed")}</Tag>;
   return <Tag>{status}</Tag>;

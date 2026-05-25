@@ -72,13 +72,13 @@ class BookingEventSerializer(serializers.Serializer):
 
 class ContractEventSerializer(serializers.Serializer):
     contract_id = serializers.UUIDField()
-    company_id = serializers.UUIDField()
-    space_id = serializers.UUIDField()
-    area_sqm = serializers.DecimalField(max_digits=10, decimal_places=2)
-    rate_per_sqm = serializers.DecimalField(max_digits=10, decimal_places=2)
-    monthly_fee = serializers.DecimalField(max_digits=12, decimal_places=2)
-    start_date = serializers.DateField()
-    end_date = serializers.DateField()
+    company_id = serializers.UUIDField(required=False)
+    space_id = serializers.UUIDField(required=False)
+    area_sqm = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    rate_per_sqm = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    monthly_fee = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    start_date = serializers.DateField(required=False)
+    end_date = serializers.DateField(required=False)
     reason = serializers.CharField(required=False, allow_blank=True)
 
 
