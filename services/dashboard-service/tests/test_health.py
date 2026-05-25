@@ -21,3 +21,15 @@ def test_api_dashboard_health_returns_ok(client: Client) -> None:
     response = client.get("/api/dashboard/health/")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_root_metrics_returns_stub(client: Client) -> None:
+    response = client.get("/metrics/")
+    assert response.status_code == 200
+    assert response.json() == {"service": "dashboard-service", "status": "ok", "metrics": {}}
+
+
+def test_api_dashboard_metrics_returns_stub(client: Client) -> None:
+    response = client.get("/api/dashboard/metrics/")
+    assert response.status_code == 200
+    assert response.json() == {"service": "dashboard-service", "status": "ok", "metrics": {}}

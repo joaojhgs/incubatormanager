@@ -9,6 +9,7 @@ from core.views import (
     IntrospectView,
     LoginView,
     LogoutView,
+    MetricsView,
     RefreshView,
     UserDetailView,
     UserListView,
@@ -16,6 +17,8 @@ from core.views import (
 )
 
 urlpatterns = [
+    path("metrics/", MetricsView.as_view(), name="metrics-root"),
+    path("api/auth/metrics/", MetricsView.as_view(), name="metrics-auth"),
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/auth/health/", HealthView.as_view(), name="health-auth"),
     path("api/auth/login/", LoginView.as_view(), name="auth-login"),

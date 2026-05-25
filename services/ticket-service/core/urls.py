@@ -6,6 +6,7 @@ from django.urls import path
 
 from core.views import (
     HealthView,
+    MetricsView,
     MyTicketsView,
     TicketDetailView,
     TicketListCreateView,
@@ -14,6 +15,7 @@ from core.views import (
 )
 
 urlpatterns = [
+    path("metrics/", MetricsView.as_view(), name="metrics-root"),
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/tickets/health/", HealthView.as_view(), name="health-tickets"),
     path("api/tickets/metrics/", TicketMetricsView.as_view(), name="ticket-metrics"),

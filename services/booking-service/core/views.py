@@ -22,6 +22,7 @@ from core.serializers import (
     PublicBookingSerializer,
 )
 from core.services import scope_bookings, set_status
+from core.throttling import PublicBookingIPRateThrottle
 
 
 def _role(request: Request) -> str:
@@ -109,13 +110,13 @@ class BookingListCreateView(generics.ListCreateAPIView):
 class PublicBookingCreateView(APIView):
     authentication_classes = ()
     permission_classes = ()
+    throttle_classes = [PublicBookingIPRateThrottle]
 
     @extend_schema(request=PublicBookingSerializer, responses={201: BookingSerializer})
     def post(self, request: Request) -> Response:
         serializer = PublicBookingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = dict(serializer.validated_data)
-        data["company_id"] = None
         booking = Booking.objects.create(
             **data,
             created_by_user_id=None,
@@ -247,3 +248,25 @@ class MyBookingsView(generics.ListAPIView):
 
     def get_queryset(self):  # type: ignore[override]
         return Booking.objects.filter(company_id=self.request.user.company_id)
+
+
+class MetricsView(APIView):
+    """Minimal operational metrics endpoint for local demos and probes."""
+
+    authentication_classes = ()
+    permission_classes = ()
+
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "service": {"type": "string", "example": "booking-service"},
+                    "status": {"type": "string", "example": "ok"},
+                    "metrics": {"type": "object"},
+                },
+            }
+        }
+    )
+    def get(self, request: Request) -> Response:
+        return Response({"service": "booking-service", "status": "ok", "metrics": {}})

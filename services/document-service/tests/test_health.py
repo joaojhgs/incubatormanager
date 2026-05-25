@@ -84,3 +84,15 @@ def test_swagger_ui_returns_html(client: Client) -> None:
     assert response.status_code == 200
     assert "text/html" in response["Content-Type"]
     assert b"swagger" in response.content.lower()
+
+
+def test_root_metrics_returns_stub(client: Client) -> None:
+    response = client.get("/metrics/")
+    assert response.status_code == 200
+    assert response.json() == {"service": "document-service", "status": "ok", "metrics": {}}
+
+
+def test_api_documents_metrics_returns_stub(client: Client) -> None:
+    response = client.get("/api/documents/metrics/")
+    assert response.status_code == 200
+    assert response.json() == {"service": "document-service", "status": "ok", "metrics": {}}

@@ -21,7 +21,9 @@ def test_openapi_schema_yaml_returns_ok(client: Client) -> None:
     doc = yaml.safe_load(body)
     assert doc["openapi"].startswith("3.")
     paths = doc["paths"]
-    assert len(paths) == 11
+    assert len(paths) == 13
+    assert "/metrics/" in paths
+    assert "/api/auth/metrics/" in paths
     assert "/api/auth/schema/" in paths
     assert "/api/auth/schema/swagger/" in paths
     assert "/api/users/me/" in paths
@@ -31,7 +33,7 @@ def test_openapi_schema_json_format(client: Client) -> None:
     response = client.get("/api/auth/schema/?format=json")
     assert response.status_code == 200
     doc = json.loads(response.content.decode())
-    assert len(doc["paths"]) == 11
+    assert len(doc["paths"]) == 13
 
 
 def test_swagger_ui_returns_html(client: Client) -> None:

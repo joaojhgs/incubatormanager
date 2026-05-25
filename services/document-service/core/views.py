@@ -65,3 +65,25 @@ class HealthView(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         return Response({"status": "ok", "minio": "ok"})
+
+
+class MetricsView(APIView):
+    """Minimal operational metrics endpoint for local demos and probes."""
+
+    authentication_classes = ()
+    permission_classes = ()
+
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "service": {"type": "string", "example": "document-service"},
+                    "status": {"type": "string", "example": "ok"},
+                    "metrics": {"type": "object"},
+                },
+            }
+        }
+    )
+    def get(self, request: Request) -> Response:
+        return Response({"service": "document-service", "status": "ok", "metrics": {}})

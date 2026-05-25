@@ -44,9 +44,16 @@ SERVICE_DEFAULTS: dict[str, str] = {
 }
 
 METRIC_ENDPOINTS: dict[str, str] = {
-    "company": "http://company-service:8002/api/companies/stats/",
-    "finance": "http://finance-service:8004/api/finance/dashboard/",
-    "ticket": "http://ticket-service:8008/api/tickets/metrics/",
+    "auth": "http://auth-service:8001/metrics/",
+    "company": "http://company-service:8002/metrics/",
+    "contract": "http://contract-service:8003/metrics/",
+    "finance": "http://finance-service:8004/metrics/",
+    "space": "http://space-service:8005/metrics/",
+    "booking": "http://booking-service:8006/metrics/",
+    "inventory": "http://inventory-service:8007/metrics/",
+    "ticket": "http://ticket-service:8008/metrics/",
+    "dashboard": "http://dashboard-service:8009/metrics/",
+    "document": "http://document-service:8010/metrics/",
 }
 
 ZERO = Decimal("0")
@@ -310,3 +317,25 @@ class DashboardReportsView(APIView):
             ok, payload = _fetch_json(_env_url("HEALTH", name, default_url), headers)
             rows.append({"service": name, "status": "up" if ok else "down", "payload": payload})
         return Response({"type": report_type, "rows": rows})
+
+
+class MetricsView(APIView):
+    """Minimal operational metrics endpoint for local demos and probes."""
+
+    authentication_classes = ()
+    permission_classes = ()
+
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "service": {"type": "string", "example": "dashboard-service"},
+                    "status": {"type": "string", "example": "ok"},
+                    "metrics": {"type": "object"},
+                },
+            }
+        }
+    )
+    def get(self, request: Request) -> Response:
+        return Response({"service": "dashboard-service", "status": "ok", "metrics": {}})

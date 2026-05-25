@@ -253,3 +253,25 @@ class ContractCompanyListView(generics.ListAPIView):
             raise PermissionDenied("Company mismatch")
 
         return Contract.objects.filter(company_id=UUID(company_id))
+
+
+class MetricsView(APIView):
+    """Minimal operational metrics endpoint for local demos and probes."""
+
+    authentication_classes = ()
+    permission_classes = ()
+
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "service": {"type": "string", "example": "contract-service"},
+                    "status": {"type": "string", "example": "ok"},
+                    "metrics": {"type": "object"},
+                },
+            }
+        }
+    )
+    def get(self, request: Request) -> Response:
+        return Response({"service": "contract-service", "status": "ok", "metrics": {}})

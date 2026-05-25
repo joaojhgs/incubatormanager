@@ -7,6 +7,8 @@ from django.urls import path
 from core import views
 
 urlpatterns = [
+    path("metrics/", views.MetricsView.as_view(), name="metrics-root"),
+    path("api/finance/metrics/", views.MetricsView.as_view(), name="metrics-finance"),
     path("health/", views.HealthView.as_view(), name="health-root"),
     path("api/finance/health/", views.HealthView.as_view(), name="health-finance"),
     path("api/finance/payments/", views.PaymentListView.as_view(), name="finance-payment-list"),

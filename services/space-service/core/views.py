@@ -243,3 +243,25 @@ class SpaceBookingRecordListView(generics.ListAPIView):
                 }
             )
         return Response(payload)
+
+
+class MetricsView(APIView):
+    """Minimal operational metrics endpoint for local demos and probes."""
+
+    authentication_classes = ()
+    permission_classes = ()
+
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "service": {"type": "string", "example": "space-service"},
+                    "status": {"type": "string", "example": "ok"},
+                    "metrics": {"type": "object"},
+                },
+            }
+        }
+    )
+    def get(self, request: Request) -> Response:
+        return Response({"service": "space-service", "status": "ok", "metrics": {}})

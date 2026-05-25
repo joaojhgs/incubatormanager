@@ -11,6 +11,8 @@ COMPOSE = ROOT / "infra" / "docker-compose.yml"
 RABBITMQ_DEFINITIONS = ROOT / "infra" / "docker" / "rabbitmq" / "definitions.json"
 RABBITMQ_CONFIG = ROOT / "infra" / "docker" / "rabbitmq" / "rabbitmq.conf"
 MAKEFILE = ROOT / "Makefile"
+DOCS_INDEX = ROOT / "gateway" / "docs-index.html"
+GATEWAY_DOCKERFILE = ROOT / "gateway" / "Dockerfile"
 
 
 DEAD_LETTER_EXCHANGE = "incubator.events.dead-letter"
@@ -255,3 +257,42 @@ def test_compose_resolves_repo_root_paths_from_supported_invocations() -> None:
         assert rabbit_mounts == expected_mounts
         for source in rabbit_mounts.values():
             assert Path(source).exists()
+
+
+def test_gateway_exposes_docs_index_and_public_api_metadata_routes() -> None:
+    nginx = (ROOT / "gateway" / "nginx.conf").read_text()
+    dockerfile = GATEWAY_DOCKERFILE.read_text()
+    docs_html = DOCS_INDEX.read_text()
+
+    assert "COPY gateway/docs-index.html /etc/nginx/html/docs-index.html" in dockerfile
+    assert "location = /docs" in nginx
+    assert "alias /etc/nginx/html/docs-index.html" in nginx
+
+    for prefix in (
+        "auth",
+        "companies",
+        "contracts",
+        "finance",
+        "spaces",
+        "bookings",
+        "inventory",
+        "tickets",
+        "dashboard",
+        "documents",
+    ):
+        assert f"/api/{prefix}/schema/swagger/" in docs_html
+        assert f"location ^~ /api/{prefix}/schema" in nginx
+
+    for prefix in (
+        "auth",
+        "companies",
+        "contracts",
+        "finance",
+        "spaces",
+        "bookings",
+        "inventory",
+        "dashboard",
+        "documents",
+    ):
+        assert f"/api/{prefix}/metrics/" in docs_html
+        assert f"location ^~ /api/{prefix}/metrics" in nginx
