@@ -171,6 +171,18 @@ def apply_booking_event_dict(envelope: EventEnvelope) -> None:
         company_id=company_id,
     )
 
+        if updated == 0:
+            # If a record was not present (late-arriving event), create one for auditability.
+            # No time window is available for historical events with no approval payload.
+            SpaceBookingRecord.objects.create(
+                space=space,
+                booking_id=payload.booking_id,
+                company_id=payload.company_id,
+                state=state,
+                start_time=now(),
+                end_time=now(),
+            )
+
 
 def consume_event(envelope: EventEnvelope) -> None:
     if envelope["event_type"] in {

@@ -9,7 +9,7 @@ from drf_spectacular.utils import extend_schema
 from ilb_common.permissions import IsClientOwner, IsStaff
 from rest_framework import generics, status as http_status
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
