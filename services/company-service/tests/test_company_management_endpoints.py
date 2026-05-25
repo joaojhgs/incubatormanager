@@ -27,11 +27,13 @@ def _api_client(role: str, company_id: str | None = None) -> APIClient:
 @pytest.fixture
 def company_payloads(db) -> tuple[CAE, MaturityStage, MaturityStage]:
     cae = CAE.objects.create(code="X123", description="Test CAE")
-    startup = MaturityStage.objects.create(
-        name="Incubated", rate_per_sqm="10.00", display_order=10
+    startup, _ = MaturityStage.objects.get_or_create(
+        name="Incubated",
+        defaults={"rate_per_sqm": "10.00", "display_order": 10, "description": ""},
     )
-    growth = MaturityStage.objects.create(
-        name="Startup", rate_per_sqm="20.00", display_order=20
+    growth, _ = MaturityStage.objects.get_or_create(
+        name="Startup",
+        defaults={"rate_per_sqm": "20.00", "display_order": 20, "description": ""},
     )
     return cae, startup, growth
 
@@ -214,3 +216,45 @@ def test_employee_stats_scoped_to_company(company_payloads: tuple[CAE, MaturityS
     assert payload["active"] == 1
     assert payload["by_type"][Employee.Type.REGULAR] == 1
     assert payload["by_type"][Employee.Type.INTERN] == 1
+
+
+@pytest.mark.django_db
+def test_company_stats_scope_for_staff_and_client(company_payloads: tuple[CAE, MaturityStage, MaturityStage]) -> None:
+    cae, startup, _ = company_payloads
+    ours = Company.objects.create(
+        name="StatsCo",
+        tax_id="PT888888888",
+        legal_representative="Rep",
+        cae=cae,
+        maturity_stage=startup,
+    )
+    theirs = Company.objects.create(
+        name="OtherCo",
+        tax_id="PT999999999",
+        legal_representative="Rep",
+        cae=cae,
+        maturity_stage=startup,
+        is_active=False,
+    )
+
+    Employee.objects.create(
+        company=ours,
+        name="Active",
+        type=Employee.Type.REGULAR,
+        start_date=date(2026, 1, 1),
+        is_active=True,
+    )
+
+    staff_response = _api_client("Staff").get("/api/companies/stats/")
+    assert staff_response.status_code == 200
+    staff_payload = staff_response.json()
+    assert staff_payload["company_count"] == 2
+    assert staff_payload["active_companies"] == 1
+    assert staff_payload["inactive_companies"] == 1
+
+    client_response = _api_client("Client", company_id=str(ours.pk)).get("/api/companies/stats/")
+    assert client_response.status_code == 200
+    client_payload = client_response.json()
+    assert client_payload["company_count"] == 1
+    assert client_payload["active_companies"] == 1
+    assert client_payload["inactive_companies"] == 0

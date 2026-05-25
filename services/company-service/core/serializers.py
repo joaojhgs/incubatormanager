@@ -56,6 +56,12 @@ class MaturityStageSerializer(serializers.ModelSerializer):
         return update_maturity_stage(instance, **validated_data)
 
 
+class CompanyMaturityStageUpdateSerializer(serializers.Serializer):
+    """Payload for PATCH /api/companies/{id}/maturity-stage/."""
+
+    maturity_stage = serializers.UUIDField()
+
+
 class CompanyListSerializer(serializers.ModelSerializer):
     """Company row for GET /companies; nested FKs via select_related (no employee list)."""
 
