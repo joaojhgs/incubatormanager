@@ -1,5 +1,7 @@
 import { Tag } from "antd";
 
+import { normalizeStatus, statusLabel } from "@/lib/i18n/status";
+
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return "—";
   const date = new Date(value);
@@ -19,18 +21,29 @@ export function formatCurrency(value: string | number | null | undefined): strin
   return new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(amount);
 }
 
+const positiveStatuses = new Set(["active", "approved", "paid", "resolved", "completed"]);
+const warningStatuses = new Set(["pending", "draft", "waiting response"]);
+const dangerStatuses = new Set([
+  "overdue",
+  "rejected",
+  "maintenance",
+  "blocked",
+  "terminated",
+  "expired",
+]);
+const neutralStatuses = new Set(["cancelled", "canceled", "closed", "inactive", "released"]);
+const progressStatuses = new Set(["in use", "occupied", "reserved", "assigned", "in progress"]);
+
+export function statusColor(status: string): string {
+  const normalized = normalizeStatus(status);
+  if (positiveStatuses.has(normalized)) return "green";
+  if (warningStatuses.has(normalized)) return "gold";
+  if (dangerStatuses.has(normalized)) return "red";
+  if (progressStatuses.has(normalized)) return "blue";
+  if (neutralStatuses.has(normalized)) return "default";
+  return "default";
+}
+
 export function statusTag(status: string) {
-  const normalized = status.toLowerCase();
-  const color = normalized.includes("active") || normalized.includes("approved") || normalized.includes("paid")
-    ? "green"
-    : normalized.includes("pending")
-      ? "gold"
-      : normalized.includes("overdue") || normalized.includes("rejected")
-        ? "red"
-        : normalized.includes("cancel") || normalized.includes("closed")
-          ? "default"
-          : normalized.includes("use") || normalized.includes("occupied") || normalized.includes("reserved")
-            ? "blue"
-            : "default";
-  return <Tag color={color}>{status}</Tag>;
+  return <Tag color={statusColor(status)}>{statusLabel(status)}</Tag>;
 }
