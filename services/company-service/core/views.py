@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import OpenApiResponse, extend_schema
-from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from django.shortcuts import get_object_or_404
 from ilb_common.permissions import IsDirector, IsStaff
@@ -101,8 +100,11 @@ class CompanyMaturityStageChangeView(APIView):
 
     permission_classes = [IsAuthenticated, IsStaff]
 
+    class _MaturityPayload(serializers.Serializer):
+        maturity_stage = serializers.UUIDField()
+
     @extend_schema(
-        request={"application/json": {"type": "object", "properties": {"maturity_stage": {"type": "string", "format": "uuid"}}},
+        request=_MaturityPayload,
         responses={
             200: CompanyDetailSerializer,
             400: OpenApiResponse(description="Validation error"),
@@ -115,17 +117,10 @@ class CompanyMaturityStageChangeView(APIView):
             company_id=str(getattr(request.user, "company_id", "")) if getattr(request.user, "company_id", None) is not None else None,
         )
         company = get_object_or_404(qs, pk=pk)
-        serializer = serializers.Serializer(
-            data=request.data,
-            context=self.get_serializer_context(),
-            partial=True,
-        )
+        serializer = self._MaturityPayload(data=request.data)
         serializer.is_valid(raise_exception=True)
         stage_id = serializer.validated_data["maturity_stage"]
-        try:
-            stage = get_object_or_404(MaturityStage, pk=stage_id)
-        except Exception as exc:  # pragma: no cover - safety for malformed payloads
-            raise serializers.ValidationError({"maturity_stage": "Invalid maturity stage."}) from exc
+        stage = get_object_or_404(MaturityStage, pk=stage_id)
         company.maturity_stage = stage
         company.save(update_fields=["maturity_stage"])
         return Response(CompanyDetailSerializer(company).data)
@@ -137,8 +132,6 @@ class CompanyEmployeeListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_serializer_context(self) -> dict[str, object]:
-        return {"request": getattr(self, "request", None)}
-
     def get_permissions(self):  # type: ignore[override]
         if self.request.method in {"POST"}:
             return [IsAuthenticated(), IsStaff()]
@@ -150,8 +143,6 @@ class CompanyEmployeeListCreateView(APIView):
             return get_object_or_404(Company.active, pk=company_id)
         user_company_id = getattr(request.user, "company_id", None)
         if not user_company_id or str(user_company_id) != company_id:
-            from django.http import Http404
-
             raise Http404
         return get_object_or_404(Company.active, pk=company_id)
 
@@ -219,8 +210,6 @@ class CompanyEmployeeStatsView(APIView):
             return get_object_or_404(Company.active, pk=company_id)
         user_company_id = getattr(request.user, "company_id", None)
         if not user_company_id or str(user_company_id) != company_id:
-            from django.http import Http404
-
             raise Http404
         return get_object_or_404(Company.active, pk=company_id)
 
