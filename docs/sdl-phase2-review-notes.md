@@ -16,8 +16,9 @@ Covered in the current branch:
 - Space list/type/occupancy, contract projections, booking projections, and minimal contract-ended event handling.
 - Booking public/internal/client flows and approve/reject/cancel/complete lifecycle events.
 - Inventory equipment/type CRUD, assign/release flows, booking event projection endpoint, and client assignment scoping.
-- Ticket create/list/my/detail/message flows with role and company scoping.
-- Dashboard overview/report aggregation against downstream services with guarded availability reporting.
+- Ticket create/list/my/detail/message flows with role and company scoping,
+  plus a staff-only metrics endpoint for open-ticket dashboard counters.
+- Dashboard overview/report aggregation against downstream services with guarded availability reporting and ticket metric snapshots.
 - Document upload/list/download/delete paths backed by the configured document storage adapter.
 
 ## Frontend coverage

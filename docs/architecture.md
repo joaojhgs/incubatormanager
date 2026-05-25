@@ -28,6 +28,11 @@ gateway) and/or **asynchronous messaging** on RabbitMQ.
 | `dashboard-service`    | Aggregated dashboards                                                 | `/api/dashboard/`   | 8009          | `dashboard_db` |
 | `document-service`     | Document metadata and storage integration (MinIO)                     | `/api/documents/`   | 8010          | `document_db`  |
 
+Ticket operational counters are exposed at `/api/tickets/metrics/` for
+staff-only dashboard aggregation. Dashboard snapshot rebuilds read that
+endpoint, plus company and finance metric endpoints, instead of deriving ticket
+KPIs from full ticket list payloads.
+
 All backend ports are **internal to the Docker network** only. External clients
 and the Next.js **frontend** call a single **Nginx gateway**, which routes by
 path prefix to the correct upstream. JWT validation uses `auth_request` against
