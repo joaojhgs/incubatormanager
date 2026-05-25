@@ -10,11 +10,13 @@ from core.views import (
     TicketDetailView,
     TicketListCreateView,
     TicketMessageCreateView,
+    TicketMetricsView,
 )
 
 urlpatterns = [
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/tickets/health/", HealthView.as_view(), name="health-tickets"),
+    path("api/tickets/metrics/", TicketMetricsView.as_view(), name="ticket-metrics"),
     path("api/tickets/my/", MyTicketsView.as_view(), name="ticket-list-mine"),
     path("api/tickets/<uuid:ticket_id>/", TicketDetailView.as_view(), name="ticket-detail"),
     path(
