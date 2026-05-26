@@ -36,7 +36,7 @@ export default function LoginForm() {
     setBannerError(null);
     setSubmitting(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/login/", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         credentials: "include",

@@ -60,7 +60,7 @@ test.describe("smoke: login → users list → create user → re-login", () => 
       });
     });
 
-    await page.route("**/api/auth/login", async (route) => {
+    await page.route("**/api/auth/login/", async (route) => {
       const raw = route.request().postData();
       const body = raw ? (JSON.parse(raw) as { email?: string }) : {};
       const email = body.email ?? "";

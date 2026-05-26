@@ -40,7 +40,7 @@ test.describe("create user page", () => {
   test("director can submit create-user form with mocked API", async ({ page }) => {
     const { access, refresh } = await mintPair("director");
 
-    await page.route("**/api/auth/login", async (route) => {
+    await page.route("**/api/auth/login/", async (route) => {
       await route.fulfill({
         status: 200,
         headers: { "Content-Type": "application/json" },
