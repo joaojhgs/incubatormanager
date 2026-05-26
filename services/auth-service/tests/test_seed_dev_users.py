@@ -29,6 +29,21 @@ def test_seed_dev_users_is_idempotent(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.django_db
+def test_seed_dev_users_refreshes_existing_passwords(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AUTH_DEV_SEED_PASSWORD", "first-shared-secret")
+    call_command("seed_dev_users")
+    director = User.objects.get(email="dev.director@ilb.test")
+    assert director.check_password("first-shared-secret")
+
+    monkeypatch.setenv("AUTH_DEV_SEED_PASSWORD", "second-shared-secret")
+    call_command("seed_dev_users")
+
+    director.refresh_from_db()
+    assert director.check_password("second-shared-secret")
+    assert not director.check_password("first-shared-secret")
+
+
+@pytest.mark.django_db
 def test_seed_dev_users_role_password_overrides(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -76,11 +76,24 @@ class Command(BaseCommand):
                     "is_active": True,
                 },
             )
-            if created:
-                user.set_password(pwd)
-                user.save(update_fields=["password"])
-                self.stdout.write(self.style.SUCCESS(f"created user {email} ({role})"))
-            else:
-                self.stdout.write(f"skip existing user {email}")
+            user.role = role
+            user.first_name = first_name
+            user.last_name = last_name
+            user.company_id = company_id
+            user.is_active = True
+            user.set_password(pwd)
+            user.save(
+                update_fields=[
+                    "role",
+                    "first_name",
+                    "last_name",
+                    "company_id",
+                    "is_active",
+                    "password",
+                    "updated_at",
+                ]
+            )
+            action = "created" if created else "updated"
+            self.stdout.write(self.style.SUCCESS(f"{action} user {email} ({role})"))
 
         self.stdout.write(self.style.SUCCESS("seed_dev_users: done"))
