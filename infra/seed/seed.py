@@ -363,6 +363,7 @@ def payment_rows() -> list[dict[str, Any]]:
                 "contract_id": contract["id"],
                 "booking_id": None,
                 "source": "contract",
+                "payment_type": "monthly",
                 "amount": contract["monthly_fee"],
                 "currency": "EUR",
                 "status": statuses[index - 1],
@@ -384,6 +385,7 @@ def payment_rows() -> list[dict[str, Any]]:
                 "contract_id": None,
                 "booking_id": booking["id"],
                 "source": "booking",
+                "payment_type": "rental",
                 "amount": booking["quoted_price"],
                 "currency": "EUR",
                 "status": statuses[(index + 2) % len(statuses)],
@@ -578,7 +580,9 @@ def seed_company(cursor: Any) -> None:
         """
         INSERT INTO core_cae (id, code, description)
         VALUES (%s, %s, %s)
-        ON CONFLICT (code) DO UPDATE SET description = EXCLUDED.description
+        ON CONFLICT (code) DO UPDATE SET
+            id = EXCLUDED.id,
+            description = EXCLUDED.description
         """,
         CAE_ROWS,
     )
@@ -588,6 +592,7 @@ def seed_company(cursor: Any) -> None:
         INSERT INTO core_maturitystage (id, name, rate_per_sqm, description, display_order)
         VALUES (%s, %s, %s, %s, %s)
         ON CONFLICT (name) DO UPDATE SET
+            id = EXCLUDED.id,
             rate_per_sqm = EXCLUDED.rate_per_sqm,
             description = EXCLUDED.description,
             display_order = EXCLUDED.display_order
@@ -971,14 +976,15 @@ def seed_finance(cursor: Any) -> None:
         cursor,
         """
         INSERT INTO core_payment (
-            id, company_id, contract_id, booking_id, source, amount, currency, status,
+            id, company_id, contract_id, booking_id, source, payment_type, amount, currency, status,
             due_date, paid_at, period_start, period_end, reference_id, created_at, updated_at
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
         ON CONFLICT (id) DO UPDATE SET
             company_id = EXCLUDED.company_id,
             contract_id = EXCLUDED.contract_id,
             booking_id = EXCLUDED.booking_id,
             source = EXCLUDED.source,
+            payment_type = EXCLUDED.payment_type,
             amount = EXCLUDED.amount,
             currency = EXCLUDED.currency,
             status = EXCLUDED.status,
@@ -996,6 +1002,7 @@ def seed_finance(cursor: Any) -> None:
                 row["contract_id"],
                 row["booking_id"],
                 row["source"],
+                row["payment_type"],
                 row["amount"],
                 row["currency"],
                 row["status"],
