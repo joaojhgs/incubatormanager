@@ -16,17 +16,10 @@ import {
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { formatCurrency, formatDate, statusTag } from "@/components/operations/format";
-import {
-  useFinanceDashboard,
-  useFinanceReport,
-  useNextDuePayment,
-  usePaymentActions,
-  usePayments,
-} from "@/lib/hooks";
-import { tStaff } from "@/lib/i18n/staffNav";
+import { BarList, DonutChart, TrendBars, type ChartDatum } from "@/components/visual/InsightCharts";
 import type {
   FinanceReportFilters,
   FinanceReportGroupBy,
@@ -38,8 +31,17 @@ import type {
   PaymentStatus,
   PaymentType,
 } from "@/lib/api/finance";
+import {
+  useCompanies,
+  useFinanceDashboard,
+  useFinanceReport,
+  useNextDuePayment,
+  usePaymentActions,
+  usePayments,
+} from "@/lib/hooks";
+import { tStaff } from "@/lib/i18n/staffNav";
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 const statusOptions: Array<{ value: PaymentStatus; label: string }> = [
   { value: "pending", label: "Pendente" },
@@ -76,6 +78,17 @@ function renderPaymentType(paymentType: string) {
   return paymentType;
 }
 
+function paymentStatusLabel(status: string | undefined): string {
+  return statusOptions.find((option) => option.value === status)?.label ?? status ?? "Sem estado";
+}
+
+function paymentStatusColor(status: string | undefined): string | undefined {
+  if (status === "paid") return "#22c55e";
+  if (status === "pending") return "#f59e0b";
+  if (status === "overdue") return "#fb7185";
+  return undefined;
+}
+
 function reportRowKey(row: FinanceReportRow, index?: number): string {
   return [row.company_id, row.status, row.period, row.maturity_stage, index ?? 0]
     .filter((value) => value !== null && value !== undefined && value !== "")
@@ -89,7 +102,31 @@ function formatReportValue(value: FinanceReportRow[string]) {
 }
 
 function isAmountColumn(key: string) {
-  return key.includes("amount") || key === "collected_amount";
+  return key.includes("amount") || key === "collected_amount" || key === "total_revenue";
+}
+
+function reportColumnTitle(key: string): string {
+  const labels: Record<string, string> = {
+    period: tStaff("columnPeriodReport"),
+    company_id: tStaff("columnCompany"),
+    company_name: tStaff("columnCompany"),
+    maturity_stage: "Maturidade",
+    status: tStaff("columnStatus"),
+    count: "Pagamentos",
+    amount: tStaff("columnAmount"),
+    total_amount: tStaff("financeTotalAmount"),
+    collected_amount: "Receita cobrada",
+    total_revenue: "Receita total",
+  };
+  return labels[key] ?? key.replaceAll("_", " ");
+}
+
+function firstNumber(row: FinanceReportRow, keys: string[]): number {
+  for (const key of keys) {
+    const value = Number(row[key] ?? 0);
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+  return 0;
 }
 
 export default function FinancePage() {
@@ -108,14 +145,73 @@ export default function FinancePage() {
     }
   }, []);
 
+  const companies = useCompanies({ page_size: 200, is_active: true });
   const dashboard = useFinanceDashboard();
   const payments = usePayments(paymentFilters);
   const report = useFinanceReport(reportFilters);
+  const cashFlow = useFinanceReport({ type: "cash_flow_trend", group_by: "month" });
   const nextDue = useNextDuePayment();
   const paymentActions = usePaymentActions();
 
+  const companyNames = useMemo(
+    () => new Map((companies.data?.results ?? []).map((company) => [company.id, company.name])),
+    [companies.data],
+  );
+
+  const renderCompanyName = useCallback(
+    (companyId: string | null | undefined) => {
+      if (!companyId) return "—";
+      return companyNames.get(companyId) ?? companyId;
+    },
+    [companyNames],
+  );
+
+  const statusChartData = useMemo<ChartDatum[]>(
+    () =>
+      (dashboard.data?.status_breakdown ?? []).map((row) => ({
+        label: paymentStatusLabel(row.status),
+        value: Number(row.amount || 0),
+        color: paymentStatusColor(row.status),
+      })),
+    [dashboard.data?.status_breakdown],
+  );
+
+  const sectorChartData = useMemo<ChartDatum[]>(
+    () =>
+      (dashboard.data?.by_sector ?? [])
+        .map((row) => ({ label: row.sector || "Sem setor", value: Number(row.amount || 0) }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 6),
+    [dashboard.data?.by_sector],
+  );
+
+  const sourceChartData = useMemo<ChartDatum[]>(
+    () =>
+      (dashboard.data?.source_breakdown ?? []).map((row) => ({
+        label: row.source ? renderSource(row.source) : "Sem origem",
+        value: Number(row.amount || 0),
+      })),
+    [dashboard.data?.source_breakdown],
+  );
+
+  const cashFlowData = useMemo<ChartDatum[]>(
+    () =>
+      (cashFlow.data?.results ?? []).map((row) => ({
+        label: String(row.period ?? "—"),
+        value: firstNumber(row, ["collected_amount", "amount", "total_amount", "total_revenue"]),
+      })),
+    [cashFlow.data?.results],
+  );
+
   const columns: ColumnsType<Payment> = [
-    { title: tStaff("columnCompany"), dataIndex: "company_id", key: "company_id", width: 220 },
+    {
+      title: tStaff("columnCompany"),
+      dataIndex: "company_id",
+      key: "company_id",
+      width: 260,
+      ellipsis: true,
+      render: renderCompanyName,
+    },
     { title: tStaff("columnAmount"), dataIndex: "amount", key: "amount", render: formatCurrency },
     { title: tStaff("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
     { title: tStaff("columnSource"), dataIndex: "source", key: "source", render: renderSource },
@@ -130,12 +226,14 @@ export default function FinancePage() {
       title: tStaff("columnReference"),
       dataIndex: "reference_id",
       key: "reference_id",
+      ellipsis: true,
+      width: 210,
       render: (value: string) => value || "—",
     },
     {
       title: tStaff("columnActions"),
       key: "actions",
-      fixed: "right",
+      width: 160,
       render: (_: unknown, row) => (
         <Popconfirm
           title="Marcar pagamento como pago?"
@@ -167,25 +265,59 @@ export default function FinancePage() {
     const rows = report.data?.results ?? [];
     const keys = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
     return keys.map((key) => ({
-      title: key === "period" ? tStaff("columnPeriodReport") : key,
+      title: reportColumnTitle(key),
       dataIndex: key,
       key,
-      render: (value: FinanceReportRow[string]) =>
-        isAmountColumn(key)
-          ? formatCurrency(value as string | number | null | undefined)
-          : formatReportValue(value),
+      ellipsis: true,
+      render: (value: FinanceReportRow[string]) => {
+        if (key === "company_id") return renderCompanyName(String(value ?? ""));
+        if (isAmountColumn(key)) return formatCurrency(value as string | number | null | undefined);
+        if (key === "status") return statusTag(String(value ?? ""));
+        return formatReportValue(value);
+      },
     }));
-  }, [report.data?.results]);
+  }, [report.data?.results, renderCompanyName]);
 
-  if (dashboard.isLoading || payments.isLoading || report.isLoading || nextDue.isLoading) {
+  if (
+    companies.isLoading ||
+    dashboard.isLoading ||
+    payments.isLoading ||
+    report.isLoading ||
+    cashFlow.isLoading ||
+    nextDue.isLoading
+  ) {
     return <Spin size="large" tip={tStaff("pageLoading")} />;
   }
-  if (dashboard.isError || payments.isError || report.isError || nextDue.isError) {
+  if (
+    companies.isError ||
+    dashboard.isError ||
+    payments.isError ||
+    report.isError ||
+    cashFlow.isError ||
+    nextDue.isError
+  ) {
     return <Result status="error" title={tStaff("loadError")} />;
   }
 
   return (
     <Space direction="vertical" size="large" style={{ width: "100%" }}>
+      <Card>
+        <Row gutter={[24, 16]} align="middle">
+          <Col xs={24} lg={15}>
+            <Text type="secondary">Financeiro</Text>
+            <Title level={2} style={{ marginTop: 6, marginBottom: 8 }}>
+              Receita, cobranças e risco de atraso
+            </Title>
+            <Text type="secondary">
+              Acompanhe pagamentos por estado, origem, setor e evolução mensal sem expor IDs técnicos.
+            </Text>
+          </Col>
+          <Col xs={24} lg={9}>
+            <DonutChart data={statusChartData} centerLabel="receita" />
+          </Col>
+        </Row>
+      </Card>
+
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
           <Card>
@@ -229,11 +361,29 @@ export default function FinancePage() {
         </Col>
       </Row>
 
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={8}>
+          <Card title="Receita por setor">
+            <BarList data={sectorChartData} currency />
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Receita por origem">
+            <DonutChart data={sourceChartData} centerLabel="origens" />
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Fluxo mensal">
+            <TrendBars data={cashFlowData} currency />
+          </Card>
+        </Col>
+      </Row>
+
       <Card title={tStaff("financeNextDueTitle")}>
         {nextDue.data?.payment_id ? (
           <Descriptions size="small" column={{ xs: 1, md: 3 }} bordered>
             <Descriptions.Item label={tStaff("columnCompany")}>
-              {nextDue.data.company_id}
+              {renderCompanyName(nextDue.data.company_id)}
             </Descriptions.Item>
             <Descriptions.Item label={tStaff("columnAmount")}>
               {formatCurrency(nextDue.data.amount)}
@@ -293,15 +443,17 @@ export default function FinancePage() {
           columns={columns}
           dataSource={payments.data ?? []}
           locale={{ emptyText: tStaff("emptyData") }}
-          scroll={{ x: 1200 }}
+          pagination={{ pageSize: 8, hideOnSinglePage: true }}
+          scroll={{ x: 1320 }}
+          size="middle"
           expandable={{
             expandedRowRender: (row) => (
               <Descriptions size="small" column={1} bordered>
                 <Descriptions.Item label={tStaff("columnPeriod")}>
                   {formatDate(row.period_start)} — {formatDate(row.period_end)}
                 </Descriptions.Item>
-                <Descriptions.Item label="Contract ID">{row.contract_id ?? "—"}</Descriptions.Item>
-                <Descriptions.Item label="Booking ID">{row.booking_id ?? "—"}</Descriptions.Item>
+                <Descriptions.Item label="Contrato">{row.contract_id ?? "—"}</Descriptions.Item>
+                <Descriptions.Item label="Reserva">{row.booking_id ?? "—"}</Descriptions.Item>
               </Descriptions>
             ),
           }}
@@ -334,7 +486,8 @@ export default function FinancePage() {
             dataSource={report.data?.results ?? []}
             locale={{ emptyText: tStaff("emptyData") }}
             pagination={false}
-            size="small"
+            scroll={{ x: 800 }}
+            size="middle"
           />
         </Space>
       </Card>

@@ -13,7 +13,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
-import { Avatar, Breadcrumb, Button, Dropdown, Layout, Menu, Space, theme, Typography } from "antd";
+import { Avatar, Breadcrumb, Button, Dropdown, Layout, Menu, Space, Typography } from "antd";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -104,7 +104,6 @@ export function StaffShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
-  const { token } = theme.useToken();
   const { user, isReady, logoutLocal } = useAuth();
   const { languageLabel, setLanguage } = useLanguagePreference();
 
@@ -251,13 +250,7 @@ export function StaffShell({ children }: { children: ReactNode }) {
         <Menu theme="dark" mode="inline" selectedKeys={[selectedKey]} items={menuItems} />
       </Sider>
       <Layout>
-        <Header
-          className={styles.headerBar}
-          style={{
-            background: token.colorBgContainer,
-            borderBottom: `1px solid ${token.colorSplit}`,
-          }}
-        >
+        <Header className={styles.headerBar}>
           <Typography.Title level={4} className={styles.headerTitle}>
             {tStaff("headerWorkspace")}
           </Typography.Title>
@@ -281,10 +274,7 @@ export function StaffShell({ children }: { children: ReactNode }) {
             </Dropdown>
           </Space>
         </Header>
-        <Content
-          className={styles.contentArea}
-          style={{ background: token.colorBgContainer, border: `1px solid ${token.colorSplit}` }}
-        >
+        <Content className={styles.contentArea}>
           <Breadcrumb className={styles.breadcrumbRow} items={breadcrumbItems} />
           {children}
         </Content>

@@ -20,6 +20,7 @@ import {
 
 import {
   useAddTicketMessageAction,
+  useCompanies,
   useTicketDetail,
   useTickets,
   useUpdateTicket,
@@ -195,6 +196,7 @@ function TicketDrawer({ ticketId, onClose }: { ticketId: string | null; onClose:
 
 export default function TicketsPage() {
   const { data, isLoading, isError } = useTickets();
+  const companies = useCompanies({ page_size: 200, is_active: true });
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
 
@@ -202,6 +204,11 @@ export default function TicketsPage() {
     const status = new URLSearchParams(window.location.search).get("status") ?? undefined;
     if (status) setStatusFilter(status);
   }, []);
+
+  const companyNames = useMemo(
+    () => new Map((companies.data?.results ?? []).map((company) => [company.id, company.name])),
+    [companies.data],
+  );
 
   const filteredTickets = useMemo(
     () => (data ?? []).filter((ticket) => !statusFilter || ticket.status === statusFilter),
@@ -213,7 +220,10 @@ export default function TicketsPage() {
       title: tStaff("ticketsColumnCompany"),
       dataIndex: "company_id",
       key: "company_id",
-      width: 220,
+      width: 260,
+      ellipsis: true,
+      render: (companyId: string | null) =>
+        companyId ? (companyNames.get(companyId) ?? companyId) : "—",
     },
     {
       title: tStaff("ticketsColumnSubject"),
@@ -234,9 +244,9 @@ export default function TicketsPage() {
       width: 180,
       render: (_: unknown, row: Ticket) => (
         <Text>
-          {row.created_by_user_id}
+          {row.created_by_role || "Cliente"}
           <br />
-          <Text type="secondary">{row.created_by_role}</Text>
+          <Text type="secondary">Solicitante</Text>
         </Text>
       ),
     },
@@ -258,11 +268,11 @@ export default function TicketsPage() {
     },
   ];
 
-  if (isLoading) {
+  if (isLoading || companies.isLoading) {
     return <Spin size="large" tip={tStaff("pageLoading")} />;
   }
 
-  if (isError) {
+  if (isError || companies.isError) {
     return <Result status="error" title={tStaff("ticketsLoadError")} />;
   }
 
@@ -287,6 +297,7 @@ export default function TicketsPage() {
           locale={{ emptyText: tStaff("ticketsEmpty") }}
           pagination={{ pageSize: 10, hideOnSinglePage: true }}
           scroll={{ x: 1100 }}
+          size="middle"
         />
       </Card>
       <TicketDrawer ticketId={selectedTicketId} onClose={() => setSelectedTicketId(null)} />
