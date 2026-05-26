@@ -10,9 +10,15 @@ function makeJwt(payload: Record<string, unknown>): string {
 
 describe("decodeAccessTokenPayload", () => {
   it("decodes a JWT payload segment", () => {
-    const token = makeJwt({ sub: "u-1", role: "director", company_id: "c-9" });
+    const token = makeJwt({
+      sub: "u-1",
+      user_id: "legacy-u-1",
+      role: "director",
+      company_id: "c-9",
+    });
     const claims = decodeAccessTokenPayload(token);
     expect(claims?.sub).toBe("u-1");
+    expect(claims?.user_id).toBe("legacy-u-1");
     expect(claims?.role).toBe("director");
     expect(claims?.company_id).toBe("c-9");
   });

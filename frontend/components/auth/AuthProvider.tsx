@@ -23,7 +23,12 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function claimsToUser(claims: ReturnType<typeof decodeAccessTokenPayload>): AuthUser | null {
   if (!claims?.role || typeof claims.role !== "string") return null;
-  const id = typeof claims.sub === "string" && claims.sub ? claims.sub : "";
+  let id = "";
+  if (typeof claims.sub === "string" && claims.sub) {
+    id = claims.sub;
+  } else if (typeof claims.user_id === "string" && claims.user_id) {
+    id = claims.user_id;
+  }
   if (!id) return null;
   return {
     id,
