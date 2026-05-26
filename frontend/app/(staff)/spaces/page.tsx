@@ -23,6 +23,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { useMemo, useState } from "react";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import { formatDateTime, statusTag } from "@/components/operations/format";
 import {
   useCompanies,
@@ -59,12 +60,17 @@ function getNextBooking(records: SpaceBookingRecord[]): string | null {
 }
 
 export default function SpacesPage() {
-  const spaces = useSpaces();
-  const spaceTypes = useSpaceTypes();
+  const { isAuthenticated, isReady } = useAuth();
+  const canFetch = isReady && isAuthenticated;
+  const queryControls = useMemo(() => ({ enabled: canFetch, retry: false }), [canFetch]);
+  const companyParams = useMemo(() => ({ page_size: 200, is_active: true }), []);
+
+  const spaces = useSpaces(queryControls);
+  const spaceTypes = useSpaceTypes(queryControls);
   const actions = useSpaceActions();
-  const occupancy = useSpaceOccupancy();
-  const bookingRecords = useSpaceBookingRecords();
-  const companies = useCompanies({ page_size: 200, is_active: true });
+  const occupancy = useSpaceOccupancy(queryControls);
+  const bookingRecords = useSpaceBookingRecords(queryControls);
+  const companies = useCompanies(companyParams, queryControls);
   const [spaceForm] = Form.useForm();
   const [typeForm] = Form.useForm();
   const [editingSpace, setEditingSpace] = useState<IncubatorSpace | null>(null);
@@ -216,6 +222,7 @@ export default function SpacesPage() {
   ];
 
   if (
+    !isReady ||
     spaces.isLoading ||
     spaceTypes.isLoading ||
     occupancy.isLoading ||
@@ -224,6 +231,10 @@ export default function SpacesPage() {
   ) {
     return <Spin size="large" tip={tStaff("pageLoading")} />;
   }
+  if (!isAuthenticated) {
+    return <Result status="403" title="Sessão expirada" subTitle="Inicie sessão novamente." />;
+  }
+
   if (
     spaces.isError ||
     spaceTypes.isError ||

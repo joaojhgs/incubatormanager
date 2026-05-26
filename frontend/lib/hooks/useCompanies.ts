@@ -18,6 +18,11 @@ import {
 import { message } from "antd";
 import { tCompany } from "@/lib/i18n/companies";
 
+type QueryControls = {
+  enabled?: boolean;
+  retry?: boolean | number;
+};
+
 // ---------------------------------------------------------------------------
 // Query keys
 // ---------------------------------------------------------------------------
@@ -38,10 +43,11 @@ export const companyKeys = {
 // ---------------------------------------------------------------------------
 
 /** Fetch a paginated, filterable list of companies. */
-export function useCompanies(params?: CompanyListParams) {
+export function useCompanies(params?: CompanyListParams, options: QueryControls = {}) {
   return useQuery({
     queryKey: companyKeys.list(params),
     queryFn: () => listCompanies(params),
+    ...options,
   });
 }
 
