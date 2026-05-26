@@ -62,7 +62,16 @@ function getNextBooking(records: SpaceBookingRecord[]): string | null {
 export default function SpacesPage() {
   const { isAuthenticated, isReady } = useAuth();
   const canFetch = isReady && isAuthenticated;
-  const queryControls = useMemo(() => ({ enabled: canFetch, retry: false }), [canFetch]);
+  const queryControls = useMemo(
+    () => ({
+      enabled: canFetch,
+      retry: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      staleTime: 5 * 60_000,
+    }),
+    [canFetch],
+  );
   const companyParams = useMemo(() => ({ page_size: 200, is_active: true }), []);
 
   const spaces = useSpaces(queryControls);

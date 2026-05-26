@@ -21,6 +21,9 @@ import { tCompany } from "@/lib/i18n/companies";
 type QueryControls = {
   enabled?: boolean;
   retry?: boolean | number;
+  refetchOnMount?: boolean | "always";
+  refetchOnReconnect?: boolean | "always";
+  staleTime?: number;
 };
 
 // ---------------------------------------------------------------------------
