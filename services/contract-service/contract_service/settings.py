@@ -65,7 +65,7 @@ WSGI_APPLICATION = "contract_service.wsgi.application"
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
+        conn_max_age=int(os.environ.get("DATABASE_CONN_MAX_AGE", "600")),
     ),
 }
 

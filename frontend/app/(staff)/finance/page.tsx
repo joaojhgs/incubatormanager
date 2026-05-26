@@ -16,6 +16,7 @@ import {
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { formatCurrency, formatDate, statusTag } from "@/components/operations/format";
@@ -42,6 +43,15 @@ import {
 import { tStaff } from "@/lib/i18n/staffNav";
 
 const { Text, Title } = Typography;
+
+const cardColumnStyle: CSSProperties = { display: "flex" };
+const fullHeightCardStyle: CSSProperties = { width: "100%", height: "100%" };
+const metricBodyStyle: CSSProperties = { minHeight: 92 };
+const chartBodyStyle: CSSProperties = {
+  minHeight: 232,
+  display: "flex",
+  alignItems: "center",
+};
 
 const statusOptions: Array<{ value: PaymentStatus; label: string }> = [
   { value: "pending", label: "Pendente" },
@@ -208,32 +218,39 @@ export default function FinancePage() {
       title: tStaff("columnCompany"),
       dataIndex: "company_id",
       key: "company_id",
-      width: 260,
+      width: 220,
       ellipsis: true,
       render: renderCompanyName,
     },
-    { title: tStaff("columnAmount"), dataIndex: "amount", key: "amount", render: formatCurrency },
-    { title: tStaff("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
-    { title: tStaff("columnSource"), dataIndex: "source", key: "source", render: renderSource },
+    {
+      title: tStaff("columnAmount"),
+      dataIndex: "amount",
+      key: "amount",
+      width: 120,
+      align: "right",
+      render: formatCurrency,
+    },
+    { title: tStaff("columnStatus"), dataIndex: "status", key: "status", width: 120, render: statusTag },
+    { title: tStaff("columnSource"), dataIndex: "source", key: "source", width: 110, render: renderSource },
     {
       title: tStaff("columnPaymentType"),
       dataIndex: "payment_type",
       key: "payment_type",
+      width: 110,
       render: renderPaymentType,
     },
-    { title: tStaff("columnDueDate"), dataIndex: "due_date", key: "due_date", render: formatDate },
     {
-      title: tStaff("columnReference"),
-      dataIndex: "reference_id",
-      key: "reference_id",
-      ellipsis: true,
-      width: 210,
-      render: (value: string) => value || "—",
+      title: tStaff("columnDueDate"),
+      dataIndex: "due_date",
+      key: "due_date",
+      width: 125,
+      render: formatDate,
     },
     {
       title: tStaff("columnActions"),
       key: "actions",
-      width: 160,
+      width: 128,
+      align: "right",
       render: (_: unknown, row) => (
         <Popconfirm
           title="Marcar pagamento como pago?"
@@ -319,8 +336,8 @@ export default function FinancePage() {
       </Card>
 
       <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
+        <Col xs={24} sm={12} lg={6} style={cardColumnStyle}>
+          <Card style={fullHeightCardStyle} styles={{ body: metricBodyStyle }}>
             <Statistic
               title={tStaff("financeTotalAmount")}
               value={Number(dashboard.data?.total_amount ?? 0)}
@@ -329,8 +346,8 @@ export default function FinancePage() {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
+        <Col xs={24} sm={12} lg={6} style={cardColumnStyle}>
+          <Card style={fullHeightCardStyle} styles={{ body: metricBodyStyle }}>
             <Statistic
               title={tStaff("financePaidAmount")}
               value={Number(dashboard.data?.paid_amount ?? 0)}
@@ -339,8 +356,8 @@ export default function FinancePage() {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
+        <Col xs={24} sm={12} lg={6} style={cardColumnStyle}>
+          <Card style={fullHeightCardStyle} styles={{ body: metricBodyStyle }}>
             <Statistic
               title={tStaff("financePendingAmount")}
               value={Number(dashboard.data?.pending_amount ?? 0)}
@@ -349,8 +366,8 @@ export default function FinancePage() {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
+        <Col xs={24} sm={12} lg={6} style={cardColumnStyle}>
+          <Card style={fullHeightCardStyle} styles={{ body: metricBodyStyle }}>
             <Statistic
               title={tStaff("financeOverdueAmount")}
               value={Number(dashboard.data?.overdue_amount ?? 0)}
@@ -362,18 +379,18 @@ export default function FinancePage() {
       </Row>
 
       <Row gutter={[16, 16]}>
-        <Col xs={24} lg={8}>
-          <Card title="Receita por setor">
+        <Col xs={24} lg={8} style={cardColumnStyle}>
+          <Card title="Receita por setor" style={fullHeightCardStyle} styles={{ body: chartBodyStyle }}>
             <BarList data={sectorChartData} currency />
           </Card>
         </Col>
-        <Col xs={24} lg={8}>
-          <Card title="Receita por origem">
+        <Col xs={24} lg={8} style={cardColumnStyle}>
+          <Card title="Receita por origem" style={fullHeightCardStyle} styles={{ body: chartBodyStyle }}>
             <DonutChart data={sourceChartData} centerLabel="origens" />
           </Card>
         </Col>
-        <Col xs={24} lg={8}>
-          <Card title="Fluxo mensal">
+        <Col xs={24} lg={8} style={cardColumnStyle}>
+          <Card title="Fluxo mensal" style={fullHeightCardStyle} styles={{ body: chartBodyStyle }}>
             <TrendBars data={cashFlowData} currency />
           </Card>
         </Col>
@@ -444,13 +461,18 @@ export default function FinancePage() {
           dataSource={payments.data ?? []}
           locale={{ emptyText: tStaff("emptyData") }}
           pagination={{ pageSize: 8, hideOnSinglePage: true }}
-          scroll={{ x: 1320 }}
+          scroll={{ x: 980 }}
           size="middle"
           expandable={{
+            columnTitle: "Detalhes",
+            columnWidth: 76,
             expandedRowRender: (row) => (
               <Descriptions size="small" column={1} bordered>
                 <Descriptions.Item label={tStaff("columnPeriod")}>
                   {formatDate(row.period_start)} — {formatDate(row.period_end)}
+                </Descriptions.Item>
+                <Descriptions.Item label={tStaff("columnReference")}>
+                  {row.reference_id || "—"}
                 </Descriptions.Item>
                 <Descriptions.Item label="Contrato">{row.contract_id ?? "—"}</Descriptions.Item>
                 <Descriptions.Item label="Reserva">{row.booking_id ?? "—"}</Descriptions.Item>
@@ -486,7 +508,7 @@ export default function FinancePage() {
             dataSource={report.data?.results ?? []}
             locale={{ emptyText: tStaff("emptyData") }}
             pagination={false}
-            scroll={{ x: 800 }}
+            scroll={{ x: 1000 }}
             size="middle"
           />
         </Space>
