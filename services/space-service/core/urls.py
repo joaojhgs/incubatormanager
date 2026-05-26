@@ -43,13 +43,13 @@ urlpatterns = [
         name="space-contracts-events",
     ),
     path(
-        "api/spaces/bookings/<str:event_type>/",
-        SpaceBookingEventView.as_view(),
-        name="space-booking-events",
-    ),
-    path(
         "api/spaces/bookings/records/",
         SpaceBookingRecordListView.as_view(),
         name="space-booking-records",
+    ),
+    path(
+        "api/spaces/bookings/<str:event_type>/",
+        SpaceBookingEventView.as_view(),
+        name="space-booking-events",
     ),
 ]
