@@ -17,6 +17,7 @@ import {
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { useMemo } from "react";
 
 import { formatCurrency, formatDateTime, statusTag } from "@/components/operations/format";
@@ -32,6 +33,16 @@ import {
 import { tStaff } from "@/lib/i18n/staffNav";
 
 const { Text, Title } = Typography;
+
+const cardColumnStyle: CSSProperties = { display: "flex" };
+const fullHeightCardStyle: CSSProperties = { width: "100%", height: "100%" };
+const metricBodyStyle: CSSProperties = { minHeight: 92 };
+const chartBodyStyle: CSSProperties = {
+  minHeight: 214,
+  display: "flex",
+  alignItems: "center",
+};
+const summaryBodyStyle: CSSProperties = { minHeight: 122 };
 
 function statusColor(status: string | undefined): string | undefined {
   if (status === "paid") return "#22c55e";
@@ -63,21 +74,24 @@ export default function StaffDashboardPage() {
       title: tStaff("columnCompany"),
       dataIndex: "company_id",
       key: "company_id",
+      width: 280,
       ellipsis: true,
       render: (companyId: string | null) =>
         companyId ? (companyNames.get(companyId) ?? companyId) : tStaff("bookingCompanyMissing"),
     },
-    { title: tStaff("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
+    { title: tStaff("columnStatus"), dataIndex: "status", key: "status", width: 180, render: statusTag },
     {
       title: tStaff("columnStart"),
       dataIndex: "start_time",
       key: "start_time",
+      width: 220,
       render: formatDateTime,
     },
     {
       title: tStaff("columnPrice"),
       dataIndex: "quoted_price",
       key: "quoted_price",
+      width: 160,
       align: "right",
       render: formatCurrency,
     },
@@ -164,45 +178,63 @@ export default function StaffDashboardPage() {
       </Card>
 
       <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card extra={<Link href="/companies?is_active=true">{tStaff("dashboardViewDetails")}</Link>}>
+        <Col xs={24} sm={12} lg={6} style={cardColumnStyle}>
+          <Card
+            style={fullHeightCardStyle}
+            styles={{ body: metricBodyStyle }}
+            extra={<Link href="/companies?is_active=true">{tStaff("dashboardViewDetails")}</Link>}
+          >
             <Statistic title={tStaff("dashboardKpiCompanies")} value={companies.data?.count ?? 0} />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card extra={<Link href="/contracts?status=active">{tStaff("dashboardViewDetails")}</Link>}>
+        <Col xs={24} sm={12} lg={6} style={cardColumnStyle}>
+          <Card
+            style={fullHeightCardStyle}
+            styles={{ body: metricBodyStyle }}
+            extra={<Link href="/contracts?status=active">{tStaff("dashboardViewDetails")}</Link>}
+          >
             <Statistic title={tStaff("dashboardKpiContracts")} value={contracts.data?.length ?? 0} />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card extra={<Link href="/bookings?status=Pending">{tStaff("dashboardViewDetails")}</Link>}>
+        <Col xs={24} sm={12} lg={6} style={cardColumnStyle}>
+          <Card
+            style={fullHeightCardStyle}
+            styles={{ body: metricBodyStyle }}
+            extra={<Link href="/bookings?status=Pending">{tStaff("dashboardViewDetails")}</Link>}
+          >
             <Statistic title={tStaff("dashboardKpiPendingBookings")} value={pendingBookings} />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card extra={<Link href="/tickets?status=Open">{tStaff("dashboardViewDetails")}</Link>}>
+        <Col xs={24} sm={12} lg={6} style={cardColumnStyle}>
+          <Card
+            style={fullHeightCardStyle}
+            styles={{ body: metricBodyStyle }}
+            extra={<Link href="/tickets?status=Open">{tStaff("dashboardViewDetails")}</Link>}
+          >
             <Statistic title={tStaff("dashboardKpiOpenTickets")} value={openTickets} />
           </Card>
         </Col>
 
-        <Col xs={24} lg={8}>
-          <Card title="Maturidade das empresas">
+        <Col xs={24} lg={8} style={cardColumnStyle}>
+          <Card title="Maturidade das empresas" style={fullHeightCardStyle} styles={{ body: chartBodyStyle }}>
             <DonutChart data={maturityData} centerLabel="empresas" />
           </Card>
         </Col>
-        <Col xs={24} lg={8}>
-          <Card title="Receita por setor">
+        <Col xs={24} lg={8} style={cardColumnStyle}>
+          <Card title="Receita por setor" style={fullHeightCardStyle} styles={{ body: chartBodyStyle }}>
             <BarList data={sectorData} currency />
           </Card>
         </Col>
-        <Col xs={24} lg={8}>
-          <Card title="Reservas por dia">
+        <Col xs={24} lg={8} style={cardColumnStyle}>
+          <Card title="Reservas por dia" style={fullHeightCardStyle} styles={{ body: chartBodyStyle }}>
             <TrendBars data={bookingTrendData} />
           </Card>
         </Col>
 
-        <Col xs={24} lg={16}>
+        <Col xs={24} lg={16} style={cardColumnStyle}>
           <Card
+            style={fullHeightCardStyle}
+            styles={{ body: summaryBodyStyle }}
             title={tStaff("dashboardFinanceSummary")}
             extra={<Link href="/finance?status=overdue">{tStaff("dashboardOpenReport")}</Link>}
           >
@@ -235,8 +267,8 @@ export default function StaffDashboardPage() {
             </Row>
           </Card>
         </Col>
-        <Col xs={24} lg={8}>
-          <Card title={tStaff("dashboardOpsFocus")}>
+        <Col xs={24} lg={8} style={cardColumnStyle}>
+          <Card title={tStaff("dashboardOpsFocus")} style={fullHeightCardStyle} styles={{ body: summaryBodyStyle }}>
             <List
               size="small"
               dataSource={[
