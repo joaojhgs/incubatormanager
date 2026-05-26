@@ -79,6 +79,9 @@ import { tClient } from "@/lib/i18n/clientPortal";
 export type QueryControls = {
   enabled?: boolean;
   retry?: boolean | number;
+  refetchOnMount?: boolean | "always";
+  refetchOnReconnect?: boolean | "always";
+  staleTime?: number;
 };
 
 const operationalKeys = {
