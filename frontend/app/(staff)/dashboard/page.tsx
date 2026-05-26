@@ -13,12 +13,15 @@ import {
   Spin,
   Statistic,
   Table,
+  Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import Link from "next/link";
 import { useMemo } from "react";
 
 import { formatCurrency, formatDateTime, statusTag } from "@/components/operations/format";
+import { BarList, DonutChart, TrendBars, type ChartDatum } from "@/components/visual/InsightCharts";
+import type { Booking } from "@/lib/api/bookings";
 import {
   useBookings,
   useCompanies,
@@ -26,8 +29,22 @@ import {
   useFinanceDashboard,
   useTickets,
 } from "@/lib/hooks";
-import type { Booking } from "@/lib/api/bookings";
 import { tStaff } from "@/lib/i18n/staffNav";
+
+const { Text, Title } = Typography;
+
+function statusColor(status: string | undefined): string | undefined {
+  if (status === "paid") return "#22c55e";
+  if (status === "pending") return "#f59e0b";
+  if (status === "overdue") return "#fb7185";
+  return undefined;
+}
+
+function bookingDayLabel(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("pt-PT", { day: "2-digit", month: "short" });
+}
 
 export default function StaffDashboardPage() {
   const companies = useCompanies({ page_size: 200, is_active: true });
@@ -74,6 +91,43 @@ export default function StaffDashboardPage() {
     [bookings.data],
   );
 
+  const maturityData = useMemo<ChartDatum[]>(() => {
+    const counts = new Map<string, number>();
+    for (const company of companies.data?.results ?? []) {
+      const label = company.maturity_stage_name || "Sem estágio";
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+    return Array.from(counts, ([label, value]) => ({ label, value }));
+  }, [companies.data]);
+
+  const sectorData = useMemo<ChartDatum[]>(
+    () =>
+      (finance.data?.by_sector ?? [])
+        .map((row) => ({ label: row.sector || "Sem setor", value: Number(row.amount || 0) }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 6),
+    [finance.data?.by_sector],
+  );
+
+  const paymentStatusData = useMemo<ChartDatum[]>(
+    () =>
+      (finance.data?.status_breakdown ?? []).map((row) => ({
+        label: row.status ? String(row.status) : "Sem estado",
+        value: Number(row.amount || 0),
+        color: statusColor(row.status),
+      })),
+    [finance.data?.status_breakdown],
+  );
+
+  const bookingTrendData = useMemo<ChartDatum[]>(() => {
+    const counts = new Map<string, number>();
+    for (const booking of bookings.data ?? []) {
+      const label = bookingDayLabel(booking.start_time);
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+    return Array.from(counts, ([label, value]) => ({ label, value })).slice(-8);
+  }, [bookings.data]);
+
   if (queries.some((query) => query.isLoading)) {
     return <Spin size="large" tip={tStaff("pageLoading")} />;
   }
@@ -91,105 +145,139 @@ export default function StaffDashboardPage() {
   const overduePercent = totalPayments > 0 ? Math.round((overdueCount / totalPayments) * 100) : 0;
 
   return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} sm={12} lg={6}>
-        <Card
-          extra={<Link href="/companies?is_active=true">{tStaff("dashboardViewDetails")}</Link>}
-        >
-          <Statistic title={tStaff("dashboardKpiCompanies")} value={companies.data?.count ?? 0} />
-        </Card>
-      </Col>
-      <Col xs={24} sm={12} lg={6}>
-        <Card extra={<Link href="/contracts?status=active">{tStaff("dashboardViewDetails")}</Link>}>
-          <Statistic title={tStaff("dashboardKpiContracts")} value={contracts.data?.length ?? 0} />
-        </Card>
-      </Col>
-      <Col xs={24} sm={12} lg={6}>
-        <Card extra={<Link href="/bookings?status=Pending">{tStaff("dashboardViewDetails")}</Link>}>
-          <Statistic title={tStaff("dashboardKpiPendingBookings")} value={pendingBookings} />
-        </Card>
-      </Col>
-      <Col xs={24} sm={12} lg={6}>
-        <Card extra={<Link href="/tickets?status=Open">{tStaff("dashboardViewDetails")}</Link>}>
-          <Statistic title={tStaff("dashboardKpiOpenTickets")} value={openTickets} />
-        </Card>
-      </Col>
+    <Space direction="vertical" size="large" style={{ width: "100%" }}>
+      <Card>
+        <Row gutter={[24, 16]} align="middle">
+          <Col xs={24} lg={15}>
+            <Text type="secondary">Centro operacional</Text>
+            <Title level={2} style={{ marginTop: 6, marginBottom: 8 }}>
+              Visão geral do ecossistema SDL
+            </Title>
+            <Text type="secondary">
+              Empresas, contratos, reservas, pagamentos e suporte reunidos num painel executivo.
+            </Text>
+          </Col>
+          <Col xs={24} lg={9}>
+            <BarList data={paymentStatusData} currency />
+          </Col>
+        </Row>
+      </Card>
 
-      <Col xs={24} lg={16}>
-        <Card
-          title={tStaff("dashboardFinanceSummary")}
-          extra={<Link href="/finance?status=overdue">{tStaff("dashboardOpenReport")}</Link>}
-        >
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={8}>
-              <Statistic
-                title={tStaff("financePaidAmount")}
-                value={Number(finance.data?.paid_amount ?? 0)}
-                prefix="€"
-                precision={2}
-              />
-            </Col>
-            <Col xs={24} sm={8}>
-              <Statistic
-                title={tStaff("financePendingAmount")}
-                value={Number(finance.data?.pending_amount ?? 0)}
-                prefix="€"
-                precision={2}
-              />
-            </Col>
-            <Col xs={24} sm={8}>
-              <Statistic
-                title={tStaff("financeOverdueAmount")}
-                value={Number(finance.data?.overdue_amount ?? 0)}
-                prefix="€"
-                precision={2}
-              />
-              <Progress percent={overduePercent} size="small" status="exception" />
-            </Col>
-          </Row>
-        </Card>
-      </Col>
-      <Col xs={24} lg={8}>
-        <Card title={tStaff("dashboardOpsFocus")}>
-          <List
-            size="small"
-            dataSource={[
-              `${pendingBookings} ${tStaff("dashboardPendingBookingHint")}`,
-              `${approvedBookings} ${tStaff("dashboardApprovedBookingHint")}`,
-              `${overdueCount} ${tStaff("dashboardOverduePaymentHint")}`,
-            ]}
-            renderItem={(item) => <List.Item>{item}</List.Item>}
-          />
-        </Card>
-      </Col>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card extra={<Link href="/companies?is_active=true">{tStaff("dashboardViewDetails")}</Link>}>
+            <Statistic title={tStaff("dashboardKpiCompanies")} value={companies.data?.count ?? 0} />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card extra={<Link href="/contracts?status=active">{tStaff("dashboardViewDetails")}</Link>}>
+            <Statistic title={tStaff("dashboardKpiContracts")} value={contracts.data?.length ?? 0} />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card extra={<Link href="/bookings?status=Pending">{tStaff("dashboardViewDetails")}</Link>}>
+            <Statistic title={tStaff("dashboardKpiPendingBookings")} value={pendingBookings} />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card extra={<Link href="/tickets?status=Open">{tStaff("dashboardViewDetails")}</Link>}>
+            <Statistic title={tStaff("dashboardKpiOpenTickets")} value={openTickets} />
+          </Card>
+        </Col>
 
-      <Col span={24}>
-        <Card
-          title={tStaff("dashboardRecentBookings")}
-          extra={
-            <Space>
-              <Button size="small" href="/bookings?status=Pending">
-                {tStaff("dashboardBookingDrillthrough")}
-              </Button>
-              <Button size="small" href="/inventory?focus=assignments">
-                {tStaff("dashboardInventoryDrillthrough")}
-              </Button>
-            </Space>
-          }
-        >
-          {recentBookings.length === 0 ? (
-            <Alert type="info" showIcon message={tStaff("dashboardNoRecentBookings")} />
-          ) : (
-            <Table<Booking>
-              rowKey="id"
-              columns={recentBookingColumns}
-              dataSource={recentBookings}
-              pagination={false}
+        <Col xs={24} lg={8}>
+          <Card title="Maturidade das empresas">
+            <DonutChart data={maturityData} centerLabel="empresas" />
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Receita por setor">
+            <BarList data={sectorData} currency />
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Reservas por dia">
+            <TrendBars data={bookingTrendData} />
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={16}>
+          <Card
+            title={tStaff("dashboardFinanceSummary")}
+            extra={<Link href="/finance?status=overdue">{tStaff("dashboardOpenReport")}</Link>}
+          >
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={8}>
+                <Statistic
+                  title={tStaff("financePaidAmount")}
+                  value={Number(finance.data?.paid_amount ?? 0)}
+                  prefix="€"
+                  precision={2}
+                />
+              </Col>
+              <Col xs={24} sm={8}>
+                <Statistic
+                  title={tStaff("financePendingAmount")}
+                  value={Number(finance.data?.pending_amount ?? 0)}
+                  prefix="€"
+                  precision={2}
+                />
+              </Col>
+              <Col xs={24} sm={8}>
+                <Statistic
+                  title={tStaff("financeOverdueAmount")}
+                  value={Number(finance.data?.overdue_amount ?? 0)}
+                  prefix="€"
+                  precision={2}
+                />
+                <Progress percent={overduePercent} size="small" status="exception" />
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title={tStaff("dashboardOpsFocus")}>
+            <List
               size="small"
+              dataSource={[
+                `${pendingBookings} ${tStaff("dashboardPendingBookingHint")}`,
+                `${approvedBookings} ${tStaff("dashboardApprovedBookingHint")}`,
+                `${overdueCount} ${tStaff("dashboardOverduePaymentHint")}`,
+              ]}
+              renderItem={(item) => <List.Item>{item}</List.Item>}
             />
-          )}
-        </Card>
-      </Col>
-    </Row>
+          </Card>
+        </Col>
+
+        <Col span={24}>
+          <Card
+            title={tStaff("dashboardRecentBookings")}
+            extra={
+              <Space>
+                <Button size="small" href="/bookings?status=Pending">
+                  {tStaff("dashboardBookingDrillthrough")}
+                </Button>
+                <Button size="small" href="/inventory?focus=assignments">
+                  {tStaff("dashboardInventoryDrillthrough")}
+                </Button>
+              </Space>
+            }
+          >
+            {recentBookings.length === 0 ? (
+              <Alert type="info" showIcon message={tStaff("dashboardNoRecentBookings")} />
+            ) : (
+              <Table<Booking>
+                rowKey="id"
+                columns={recentBookingColumns}
+                dataSource={recentBookings}
+                pagination={false}
+                scroll={{ x: 800 }}
+                size="middle"
+              />
+            )}
+          </Card>
+        </Col>
+      </Row>
+    </Space>
   );
 }

@@ -148,31 +148,42 @@ export default function SpacesPage() {
   ).length;
 
   const spaceColumns: ColumnsType<SpaceOverviewRow> = [
-    { title: tStaff("columnName"), dataIndex: "name", key: "name" },
+    { title: tStaff("columnName"), dataIndex: "name", key: "name", width: 180 },
     {
       title: tStaff("columnType"),
       dataIndex: "space_type",
       key: "space_type",
+      width: 170,
       render: (value: string | null) => (value ? (spaceTypeNames.get(value) ?? value) : "—"),
     },
     { title: tStaff("columnCapacity"), dataIndex: "capacity", key: "capacity", width: 120 },
-    { title: tStaff("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
+    {
+      title: tStaff("columnStatus"),
+      dataIndex: "status",
+      key: "status",
+      width: 150,
+      render: statusTag,
+    },
     {
       title: tStaff("spacesActiveBookings"),
       dataIndex: "activeBookingCount",
       key: "activeBookingCount",
       align: "right",
+      width: 150,
     },
     {
       title: tStaff("spacesNextBooking"),
       dataIndex: "nextBookingAt",
       key: "nextBookingAt",
+      width: 190,
       render: formatDateTime,
     },
     {
       title: tStaff("columnCompany"),
       dataIndex: "company_id",
       key: "company_id",
+      width: 220,
+      ellipsis: true,
       render: (v: string | null) => (v ? (companyNames.get(v) ?? v) : "—"),
     },
     {
@@ -288,7 +299,7 @@ export default function SpacesPage() {
       />
 
       <Row gutter={[16, 16]}>
-        <Col xs={24} lg={15}>
+        <Col span={24}>
           <Card
             title={tStaff("navSpaces")}
             extra={
@@ -306,11 +317,12 @@ export default function SpacesPage() {
               dataSource={spaceRows}
               locale={{ emptyText: tStaff("emptyData") }}
               pagination={false}
-              scroll={{ x: 1000 }}
+              scroll={{ x: 1340 }}
+              size="middle"
             />
           </Card>
         </Col>
-        <Col xs={24} lg={9}>
+        <Col xs={24} lg={14}>
           <Card title={tStaff("spacesOccupancyTitle")}>
             <Table<SpaceOccupancy>
               rowKey="space_id"
@@ -321,7 +333,9 @@ export default function SpacesPage() {
               size="small"
             />
           </Card>
-          <Card title="Tipos de espaço" style={{ marginTop: 16 }}>
+        </Col>
+        <Col xs={24} lg={10}>
+          <Card title="Tipos de espaço">
             <Table<SpaceType>
               rowKey="id"
               columns={typeColumns}
