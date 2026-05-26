@@ -25,7 +25,7 @@ test.describe("login page", () => {
 
   test("staff login redirects to dashboard", async ({ page }) => {
     const { access, refresh } = await mintPair("staff");
-    await page.route("**/api/auth/login", async (route) => {
+    await page.route("**/api/auth/login/", async (route) => {
       await route.fulfill({
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -65,7 +65,7 @@ test.describe("login page", () => {
 
   test("client login redirects to portal", async ({ page }) => {
     const { access, refresh } = await mintPair("client");
-    await page.route("**/api/auth/login", async (route) => {
+    await page.route("**/api/auth/login/", async (route) => {
       await route.fulfill({
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -104,7 +104,7 @@ test.describe("login page", () => {
   });
 
   test("invalid credentials shows an error alert", async ({ page }) => {
-    await page.route("**/api/auth/login", async (route) => {
+    await page.route("**/api/auth/login/", async (route) => {
       await route.fulfill({
         status: 401,
         headers: { "Content-Type": "application/json" },
