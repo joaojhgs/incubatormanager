@@ -76,7 +76,12 @@ import {
 import { tStaff } from "@/lib/i18n/staffNav";
 import { tClient } from "@/lib/i18n/clientPortal";
 
-export const operationalKeys = {
+export type QueryControls = {
+  enabled?: boolean;
+  retry?: boolean | number;
+};
+
+const operationalKeys = {
   bookings: ["bookings"] as const,
   bookingCalendar: ["bookings", "calendar"] as const,
   myBookings: ["bookings", "mine"] as const,
@@ -416,15 +421,21 @@ export function useEquipmentAssignments(filters: EquipmentAssignmentFilters = {}
   });
 }
 
-export function useSpaces() {
-  return useQuery({ queryKey: operationalKeys.spaces, queryFn: listSpaces, staleTime: 30_000 });
+export function useSpaces(options: QueryControls = {}) {
+  return useQuery({
+    queryKey: operationalKeys.spaces,
+    queryFn: listSpaces,
+    staleTime: 30_000,
+    ...options,
+  });
 }
 
-export function useSpaceTypes() {
+export function useSpaceTypes(options: QueryControls = {}) {
   return useQuery({
     queryKey: operationalKeys.spaceTypes,
     queryFn: listSpaceTypes,
     staleTime: 60_000,
+    ...options,
   });
 }
 
@@ -490,18 +501,20 @@ export function useSpaceActions() {
   };
 }
 
-export function useSpaceOccupancy() {
+export function useSpaceOccupancy(options: QueryControls = {}) {
   return useQuery({
     queryKey: operationalKeys.occupancy,
     queryFn: listSpaceOccupancy,
     staleTime: 30_000,
+    ...options,
   });
 }
 
-export function useSpaceBookingRecords() {
+export function useSpaceBookingRecords(options: QueryControls = {}) {
   return useQuery({
     queryKey: operationalKeys.spaceBookingRecords,
     queryFn: listSpaceBookingRecords,
     staleTime: 30_000,
+    ...options,
   });
 }
