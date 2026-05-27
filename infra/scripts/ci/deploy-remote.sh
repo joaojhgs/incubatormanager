@@ -7,10 +7,10 @@ DEPLOY_USER="${DEPLOY_USER:-a69603}"
 : "${DEPLOY_PATH:?Set DEPLOY_PATH or keep the CI default}"
 : "${DEPLOY_PASSWORD:?Set DEPLOY_PASSWORD as a protected GitLab CI variable}"
 : "${CI_REGISTRY_IMAGE:?CI_REGISTRY_IMAGE is required}"
-: "${CI_REGISTRY:?CI_REGISTRY is required}"
 : "${CI_REGISTRY_USER:?CI_REGISTRY_USER is required}"
 : "${CI_REGISTRY_PASSWORD:?CI_REGISTRY_PASSWORD is required}"
 
+registry_host="${CI_REGISTRY:-${CI_REGISTRY_IMAGE%%/*}}"
 image_tag="${IMAGE_TAG:-${CI_COMMIT_SHA:-latest}}"
 compose_services="${DEPLOY_COMPOSE_SERVICES:-}"
 if [[ -z "$compose_services" ]]; then
@@ -55,7 +55,7 @@ else
 fi
 
 registry_password_escaped="$(printf '%s' "$CI_REGISTRY_PASSWORD" | sed "s/'/'\\''/g")"
-"${ssh_cmd[@]}" "$ssh_target" "docker login '${CI_REGISTRY}' -u '${CI_REGISTRY_USER}' -p '${registry_password_escaped}'"
+"${ssh_cmd[@]}" "$ssh_target" "docker login '${registry_host}' -u '${CI_REGISTRY_USER}' -p '${registry_password_escaped}'"
 
 "${ssh_cmd[@]}" "$ssh_target" \
   "ln -sfn '${remote_release}' '${remote_current}' && cd '${remote_current}' && ln -sfn '${DEPLOY_PATH}/shared/.env' .env && IMAGE_TAG='${image_tag}' CI_REGISTRY_IMAGE='${CI_REGISTRY_IMAGE}' docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml pull ${compose_services} && IMAGE_TAG='${image_tag}' CI_REGISTRY_IMAGE='${CI_REGISTRY_IMAGE}' docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml up -d --no-build --remove-orphans ${compose_services} && docker image prune -f"

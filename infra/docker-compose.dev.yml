@@ -8,7 +8,7 @@
 
 x-django-dev-env: &django-dev-env
   PYTHONPATH: /opt/ilb-py-common
-  DATABASE_CONN_MAX_AGE: "0"
+  DATABASE_CONN_MAX_AGE: '0'
 
 services:
   auth-service:

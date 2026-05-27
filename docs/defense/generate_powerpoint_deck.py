@@ -5,6 +5,7 @@ The deck content mirrors docs/defense/slides.md and the release evidence docs.
 It writes a standards-compliant .pptx Open XML package that can be opened in
 PowerPoint, LibreOffice, or Keynote.
 """
+
 from __future__ import annotations
 
 # ruff: noqa: E501
@@ -149,11 +150,22 @@ def xml_text(text: str) -> str:
     return escape(text, {"\n": "&#10;"})
 
 
-def shape_text(spid: int, name: str, x: int, y: int, cx: int, cy: int, paragraphs: list[str], font_size: int = 2400,
-               color: str = "1F2937", bold_first: bool = False, bullet: bool = False) -> str:
+def shape_text(
+    spid: int,
+    name: str,
+    x: int,
+    y: int,
+    cx: int,
+    cy: int,
+    paragraphs: list[str],
+    font_size: int = 2400,
+    color: str = "1F2937",
+    bold_first: bool = False,
+    bullet: bool = False,
+) -> str:
     p_xml = []
     for idx, para in enumerate(paragraphs):
-        bullet_xml = '<a:buChar char="•"/>' if bullet else '<a:buNone/>'
+        bullet_xml = '<a:buChar char="•"/>' if bullet else "<a:buNone/>"
         indent = ' marL="342900" indent="-228600"' if bullet else ""
         bold = ' b="1"' if bold_first and idx == 0 else ""
         p_xml.append(f'''
@@ -166,12 +178,18 @@ def shape_text(spid: int, name: str, x: int, y: int, cx: int, cy: int, paragraph
       <p:sp>
         <p:nvSpPr><p:cNvPr id="{spid}" name="{xml_text(name)}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>
         <p:spPr><a:xfrm><a:off x="{x}" y="{y}"/><a:ext cx="{cx}" cy="{cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr>
-        <p:txBody><a:bodyPr wrap="square"/><a:lstStyle/>{''.join(p_xml)}</p:txBody>
+        <p:txBody><a:bodyPr wrap="square"/><a:lstStyle/>{"".join(p_xml)}</p:txBody>
       </p:sp>'''
 
 
-def rect(spid: int, name: str, x: int, y: int, cx: int, cy: int, fill: str, line: str | None = None) -> str:
-    line_xml = f'<a:ln><a:solidFill><a:srgbClr val="{line}"/></a:solidFill></a:ln>' if line else '<a:ln><a:noFill/></a:ln>'
+def rect(
+    spid: int, name: str, x: int, y: int, cx: int, cy: int, fill: str, line: str | None = None
+) -> str:
+    line_xml = (
+        f'<a:ln><a:solidFill><a:srgbClr val="{line}"/></a:solidFill></a:ln>'
+        if line
+        else "<a:ln><a:noFill/></a:ln>"
+    )
     return f'''
       <p:sp>
         <p:nvSpPr><p:cNvPr id="{spid}" name="{xml_text(name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
@@ -187,19 +205,71 @@ def slide_xml(slide: dict[str, object], n: int) -> str:
     shapes = [
         rect(2, "Header band", 0, 0, SLIDE_W, 820_000, "0F3D3E"),
         rect(3, "Accent bar", 0, 820_000, SLIDE_W, 70_000, "22C55E"),
-        shape_text(4, "Title", 520_000, 130_000, 12_200_000, 350_000, [title], font_size=3000, color="FFFFFF", bold_first=True),
-        shape_text(5, "Subtitle", 540_000, 500_000, 11_800_000, 230_000, [subtitle], font_size=1450, color="D1FAE5"),
-        shape_text(6, "Bullets", 780_000, 1_230_000, 11_900_000, 5_250_000, [str(b) for b in bullets], font_size=2050, color="1F2937", bullet=True),
+        shape_text(
+            4,
+            "Title",
+            520_000,
+            130_000,
+            12_200_000,
+            350_000,
+            [title],
+            font_size=3000,
+            color="FFFFFF",
+            bold_first=True,
+        ),
+        shape_text(
+            5,
+            "Subtitle",
+            540_000,
+            500_000,
+            11_800_000,
+            230_000,
+            [subtitle],
+            font_size=1450,
+            color="D1FAE5",
+        ),
+        shape_text(
+            6,
+            "Bullets",
+            780_000,
+            1_230_000,
+            11_900_000,
+            5_250_000,
+            [str(b) for b in bullets],
+            font_size=2050,
+            color="1F2937",
+            bullet=True,
+        ),
         rect(7, "Footer divider", 520_000, 6_780_000, 12_050_000, 18_000, "CBD5E1"),
-        shape_text(8, "Footer", 540_000, 6_880_000, 10_700_000, 250_000, [footer], font_size=950, color="64748B"),
-        shape_text(9, "Slide number", 12_220_000, 6_880_000, 600_000, 250_000, [f"{n}/{len(SLIDES)}"], font_size=950, color="64748B"),
+        shape_text(
+            8,
+            "Footer",
+            540_000,
+            6_880_000,
+            10_700_000,
+            250_000,
+            [footer],
+            font_size=950,
+            color="64748B",
+        ),
+        shape_text(
+            9,
+            "Slide number",
+            12_220_000,
+            6_880_000,
+            600_000,
+            250_000,
+            [f"{n}/{len(SLIDES)}"],
+            font_size=950,
+            color="64748B",
+        ),
     ]
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sld xmlns:a="{NS['a']}" xmlns:r="{NS['r']}" xmlns:p="{NS['p']}">
+<p:sld xmlns:a="{NS["a"]}" xmlns:r="{NS["r"]}" xmlns:p="{NS["p"]}">
   <p:cSld><p:spTree>
     <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
     <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
-    {''.join(shapes)}
+    {"".join(shapes)}
   </p:spTree></p:cSld>
   <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
 </p:sld>'''
@@ -210,7 +280,7 @@ def content_types() -> str:
         f'<Override PartName="/ppt/slides/slide{i}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>'
         for i in range(1, len(SLIDES) + 1)
     )
-    return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
@@ -221,23 +291,25 @@ def content_types() -> str:
   <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
   <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
   {overrides}
-</Types>'''
+</Types>"""
 
 
 def rels_root() -> str:
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
   <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
-</Relationships>'''
+</Relationships>"""
 
 
 def presentation_xml() -> str:
-    slide_ids = "\n".join(f'<p:sldId id="{255+i}" r:id="rId{i}"/>' for i in range(1, len(SLIDES) + 1))
+    slide_ids = "\n".join(
+        f'<p:sldId id="{255 + i}" r:id="rId{i}"/>' for i in range(1, len(SLIDES) + 1)
+    )
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:presentation xmlns:a="{NS['a']}" xmlns:r="{NS['r']}" xmlns:p="{NS['p']}" saveSubsetFonts="1">
-  <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId{len(SLIDES)+1}"/></p:sldMasterIdLst>
+<p:presentation xmlns:a="{NS["a"]}" xmlns:r="{NS["r"]}" xmlns:p="{NS["p"]}" saveSubsetFonts="1">
+  <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId{len(SLIDES) + 1}"/></p:sldMasterIdLst>
   <p:sldIdLst>{slide_ids}</p:sldIdLst>
   <p:sldSz cx="{SLIDE_W}" cy="{SLIDE_H}" type="wide"/>
   <p:notesSz cx="6858000" cy="9144000"/>
@@ -247,38 +319,44 @@ def presentation_xml() -> str:
 def presentation_rels() -> str:
     rels = []
     for i in range(1, len(SLIDES) + 1):
-        rels.append(f'<Relationship Id="rId{i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide{i}.xml"/>')
-    rels.append(f'<Relationship Id="rId{len(SLIDES)+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>')
-    rels.append(f'<Relationship Id="rId{len(SLIDES)+2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>')
-    return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">{''.join(rels)}</Relationships>'''
+        rels.append(
+            f'<Relationship Id="rId{i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide{i}.xml"/>'
+        )
+    rels.append(
+        f'<Relationship Id="rId{len(SLIDES) + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>'
+    )
+    rels.append(
+        f'<Relationship Id="rId{len(SLIDES) + 2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>'
+    )
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">{"".join(rels)}</Relationships>"""
 
 
 def slide_rels() -> str:
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
-</Relationships>'''
+</Relationships>"""
 
 
 def slide_layout_xml() -> str:
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sldLayout xmlns:a="{NS['a']}" xmlns:r="{NS['r']}" xmlns:p="{NS['p']}" type="blank" preserve="1">
+<p:sldLayout xmlns:a="{NS["a"]}" xmlns:r="{NS["r"]}" xmlns:p="{NS["p"]}" type="blank" preserve="1">
   <p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>
   <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
 </p:sldLayout>'''
 
 
 def slide_layout_rels() -> str:
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
-</Relationships>'''
+</Relationships>"""
 
 
 def slide_master_xml() -> str:
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sldMaster xmlns:a="{NS['a']}" xmlns:r="{NS['r']}" xmlns:p="{NS['p']}" preserve="1">
+<p:sldMaster xmlns:a="{NS["a"]}" xmlns:r="{NS["r"]}" xmlns:p="{NS["p"]}" preserve="1">
   <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>
   <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
   <p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>
@@ -287,15 +365,15 @@ def slide_master_xml() -> str:
 
 
 def slide_master_rels() -> str:
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>
-</Relationships>'''
+</Relationships>"""
 
 
 def theme_xml() -> str:
-    return dedent('''\
+    return dedent("""\
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="ILB Defense">
       <a:themeElements>
@@ -304,12 +382,12 @@ def theme_xml() -> str:
         <a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme>
       </a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/>
     </a:theme>
-    ''')
+    """)
 
 
 def core_xml() -> str:
     now = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <dc:title>ILB Incubator Management Platform — Defense Deck</dc:title>
   <dc:subject>SDL project defense deck</dc:subject>
@@ -317,14 +395,14 @@ def core_xml() -> str:
   <cp:keywords>ILB, incubator, microservices, Django, Next.js, defense</cp:keywords>
   <dcterms:created xsi:type="dcterms:W3CDTF">{now}</dcterms:created>
   <dcterms:modified xsi:type="dcterms:W3CDTF">{now}</dcterms:modified>
-</cp:coreProperties>'''
+</cp:coreProperties>"""
 
 
 def app_xml() -> str:
-    return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
   <Application>Python stdlib Open XML generator</Application><PresentationFormat>Widescreen</PresentationFormat><Slides>{len(SLIDES)}</Slides><Company>SDL Project Group 20</Company>
-</Properties>'''
+</Properties>"""
 
 
 def build() -> None:

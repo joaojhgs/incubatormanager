@@ -56,7 +56,11 @@ export function disabledBookingDate(
   const dayStart = date.startOf("day");
   if (dayStart.isBefore(now.startOf("day"))) return true;
   const dayEnd = dayStart.add(1, "day");
-  for (let cursor = dayStart; cursor.isBefore(dayEnd); cursor = cursor.add(SLOT_MINUTES, "minute")) {
+  for (
+    let cursor = dayStart;
+    cursor.isBefore(dayEnd);
+    cursor = cursor.add(SLOT_MINUTES, "minute")
+  ) {
     const slotEnd = cursor.add(SLOT_MINUTES, "minute");
     const isPast = !slotEnd.isAfter(now);
     if (!isPast && !bookingRangeOverlaps(windows, spaceId, cursor, slotEnd)) return false;
@@ -79,11 +83,8 @@ export function disabledBookingTime(
       return [0, 30].every((minute) => {
         const slotStart = hourStart.minute(minute);
         const slotEnd = slotStart.add(SLOT_MINUTES, "minute");
-        return !slotEnd.isAfter(now) || bookingRangeOverlaps(
-          intervals,
-          spaceId,
-          slotStart,
-          slotEnd,
+        return (
+          !slotEnd.isAfter(now) || bookingRangeOverlaps(intervals, spaceId, slotStart, slotEnd)
         );
       });
     });
@@ -93,12 +94,7 @@ export function disabledBookingTime(
     return [0, 30].filter((minute) => {
       const slotStart = date.hour(selectedHour).minute(minute).second(0).millisecond(0);
       const slotEnd = slotStart.add(SLOT_MINUTES, "minute");
-      return !slotEnd.isAfter(now) || bookingRangeOverlaps(
-        intervals,
-        spaceId,
-        slotStart,
-        slotEnd,
-      );
+      return !slotEnd.isAfter(now) || bookingRangeOverlaps(intervals, spaceId, slotStart, slotEnd);
     });
   };
 

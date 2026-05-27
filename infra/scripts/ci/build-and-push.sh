@@ -15,6 +15,11 @@ if [[ -z "$services_string" ]]; then
   exit 0
 fi
 
+: "${CI_REGISTRY_USER:?CI_REGISTRY_USER is required}"
+: "${CI_REGISTRY_PASSWORD:?CI_REGISTRY_PASSWORD is required}"
+registry_host="${CI_REGISTRY:-${CI_REGISTRY_IMAGE%%/*}}"
+echo "$CI_REGISTRY_PASSWORD" | docker login "$registry_host" -u "$CI_REGISTRY_USER" --password-stdin
+
 for svc in $services_string; do
   dockerfile="$(dockerfile_for "$svc")"
   image="${CI_REGISTRY_IMAGE}/${svc}:${image_tag}"

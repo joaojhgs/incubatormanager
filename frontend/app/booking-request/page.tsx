@@ -195,9 +195,7 @@ export default function PublicBookingRequestPage() {
                   if (!value || !start || !value.isAfter(start)) {
                     return Promise.reject(new Error(tPublicBooking("endTimeAfterStart")));
                   }
-                  if (
-                    !bookingRangeOverlaps(bookingWindows.data, selectedSpaceId, start, value)
-                  ) {
+                  if (!bookingRangeOverlaps(bookingWindows.data, selectedSpaceId, start, value)) {
                     return Promise.resolve();
                   }
                   return Promise.reject(new Error("O espaço já tem uma reserva nesse período."));

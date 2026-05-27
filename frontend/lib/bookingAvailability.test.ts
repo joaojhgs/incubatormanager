@@ -70,11 +70,7 @@ describe("bookingAvailability", () => {
     expect(disabledBookingDate(dayjs("2026-06-16T12:00:00.000Z"), windows, SPACE_ID)).toBe(true);
     expect(disabledBookingDate(dayjs("2026-06-18T12:00:00.000Z"), windows, SPACE_ID)).toBe(false);
 
-    const disabledTime = disabledBookingTime(
-      dayjs("2026-06-18T00:00:00.000Z"),
-      windows,
-      SPACE_ID,
-    );
+    const disabledTime = disabledBookingTime(dayjs("2026-06-18T00:00:00.000Z"), windows, SPACE_ID);
     expect(disabledTime.disabledHours?.()).toEqual(expect.arrayContaining([9, 14]));
     expect(disabledTime.disabledHours?.()).not.toContain(10);
     expect(disabledTime.disabledMinutes?.(9)).toEqual([0, 30]);

@@ -22,7 +22,13 @@ function formatCompact(value: number): string {
   );
 }
 
-export function DonutChart({ data, centerLabel = "Total" }: { data: ChartDatum[]; centerLabel?: string }) {
+export function DonutChart({
+  data,
+  centerLabel = "Total",
+}: {
+  data: ChartDatum[];
+  centerLabel?: string;
+}) {
   const rows = safeData(data);
   const total = rows.reduce((sum, item) => sum + item.value, 0);
   const circumference = 2 * Math.PI * 42;
@@ -63,7 +69,10 @@ export function DonutChart({ data, centerLabel = "Total" }: { data: ChartDatum[]
       <div className={styles.legend}>
         {rows.map((item) => (
           <div key={item.label} className={styles.legendItem}>
-            <span className={styles.legendSwatch} style={{ color: item.color, background: item.color }} />
+            <span
+              className={styles.legendSwatch}
+              style={{ color: item.color, background: item.color }}
+            />
             <span className={styles.legendLabel}>{item.label}</span>
             <span className={styles.legendValue}>{formatCompact(item.value)}</span>
           </div>
@@ -77,7 +86,11 @@ export function BarList({ data, currency = false }: { data: ChartDatum[]; curren
   const rows = safeData(data);
   const max = Math.max(...rows.map((item) => item.value), 0);
   const formatter = currency
-    ? new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })
+    ? new Intl.NumberFormat("pt-PT", {
+        style: "currency",
+        currency: "EUR",
+        maximumFractionDigits: 0,
+      })
     : new Intl.NumberFormat("pt-PT", { maximumFractionDigits: 0 });
 
   if (rows.length === 0 || max === 0) {
@@ -92,7 +105,12 @@ export function BarList({ data, currency = false }: { data: ChartDatum[]; curren
           <div className={styles.barTrack}>
             <div
               className={styles.barFill}
-              style={{ width: `${Math.max(6, (item.value / max) * 100)}%`, "--bar-color": item.color } as CSSProperties}
+              style={
+                {
+                  width: `${Math.max(6, (item.value / max) * 100)}%`,
+                  "--bar-color": item.color,
+                } as CSSProperties
+              }
             />
           </div>
           <div className={styles.barValue}>{formatter.format(item.value)}</div>
@@ -106,7 +124,11 @@ export function TrendBars({ data, currency = false }: { data: ChartDatum[]; curr
   const rows = safeData(data).slice(-8);
   const max = Math.max(...rows.map((item) => item.value), 0);
   const formatter = currency
-    ? new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })
+    ? new Intl.NumberFormat("pt-PT", {
+        style: "currency",
+        currency: "EUR",
+        maximumFractionDigits: 0,
+      })
     : new Intl.NumberFormat("pt-PT", { maximumFractionDigits: 0 });
 
   if (rows.length === 0 || max === 0) {
@@ -116,8 +138,15 @@ export function TrendBars({ data, currency = false }: { data: ChartDatum[]; curr
   return (
     <div className={styles.trend}>
       {rows.map((item) => (
-        <div key={item.label} className={styles.trendColumn} title={`${item.label}: ${formatter.format(item.value)}`}>
-          <div className={styles.trendBar} style={{ height: `${Math.max(10, (item.value / max) * 150)}px` }} />
+        <div
+          key={item.label}
+          className={styles.trendColumn}
+          title={`${item.label}: ${formatter.format(item.value)}`}
+        >
+          <div
+            className={styles.trendBar}
+            style={{ height: `${Math.max(10, (item.value / max) * 150)}px` }}
+          />
           <div className={styles.trendLabel}>{item.label}</div>
         </div>
       ))}

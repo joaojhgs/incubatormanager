@@ -79,7 +79,13 @@ export default function StaffDashboardPage() {
       render: (companyId: string | null) =>
         companyId ? (companyNames.get(companyId) ?? companyId) : tStaff("bookingCompanyMissing"),
     },
-    { title: tStaff("columnStatus"), dataIndex: "status", key: "status", width: 180, render: statusTag },
+    {
+      title: tStaff("columnStatus"),
+      dataIndex: "status",
+      key: "status",
+      width: 180,
+      render: statusTag,
+    },
     {
       title: tStaff("columnStart"),
       dataIndex: "start_time",
@@ -193,7 +199,10 @@ export default function StaffDashboardPage() {
             styles={{ body: metricBodyStyle }}
             extra={<Link href="/contracts?status=active">{tStaff("dashboardViewDetails")}</Link>}
           >
-            <Statistic title={tStaff("dashboardKpiContracts")} value={contracts.data?.length ?? 0} />
+            <Statistic
+              title={tStaff("dashboardKpiContracts")}
+              value={contracts.data?.length ?? 0}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6} style={cardColumnStyle}>
@@ -216,17 +225,29 @@ export default function StaffDashboardPage() {
         </Col>
 
         <Col xs={24} lg={8} style={cardColumnStyle}>
-          <Card title="Maturidade das empresas" style={fullHeightCardStyle} styles={{ body: chartBodyStyle }}>
+          <Card
+            title="Maturidade das empresas"
+            style={fullHeightCardStyle}
+            styles={{ body: chartBodyStyle }}
+          >
             <DonutChart data={maturityData} centerLabel="empresas" />
           </Card>
         </Col>
         <Col xs={24} lg={8} style={cardColumnStyle}>
-          <Card title="Receita por setor" style={fullHeightCardStyle} styles={{ body: chartBodyStyle }}>
+          <Card
+            title="Receita por setor"
+            style={fullHeightCardStyle}
+            styles={{ body: chartBodyStyle }}
+          >
             <BarList data={sectorData} currency />
           </Card>
         </Col>
         <Col xs={24} lg={8} style={cardColumnStyle}>
-          <Card title="Reservas por dia" style={fullHeightCardStyle} styles={{ body: chartBodyStyle }}>
+          <Card
+            title="Reservas por dia"
+            style={fullHeightCardStyle}
+            styles={{ body: chartBodyStyle }}
+          >
             <TrendBars data={bookingTrendData} />
           </Card>
         </Col>
@@ -268,7 +289,11 @@ export default function StaffDashboardPage() {
           </Card>
         </Col>
         <Col xs={24} lg={8} style={cardColumnStyle}>
-          <Card title={tStaff("dashboardOpsFocus")} style={fullHeightCardStyle} styles={{ body: summaryBodyStyle }}>
+          <Card
+            title={tStaff("dashboardOpsFocus")}
+            style={fullHeightCardStyle}
+            styles={{ body: summaryBodyStyle }}
+          >
             <List
               size="small"
               dataSource={[

@@ -230,8 +230,20 @@ export default function FinancePage() {
       align: "right",
       render: formatCurrency,
     },
-    { title: tStaff("columnStatus"), dataIndex: "status", key: "status", width: 120, render: statusTag },
-    { title: tStaff("columnSource"), dataIndex: "source", key: "source", width: 110, render: renderSource },
+    {
+      title: tStaff("columnStatus"),
+      dataIndex: "status",
+      key: "status",
+      width: 120,
+      render: statusTag,
+    },
+    {
+      title: tStaff("columnSource"),
+      dataIndex: "source",
+      key: "source",
+      width: 110,
+      render: renderSource,
+    },
     {
       title: tStaff("columnPaymentType"),
       dataIndex: "payment_type",
@@ -326,7 +338,8 @@ export default function FinancePage() {
               Receita, cobranças e risco de atraso
             </Title>
             <Text type="secondary">
-              Acompanhe pagamentos por estado, origem, setor e evolução mensal sem expor IDs técnicos.
+              Acompanhe pagamentos por estado, origem, setor e evolução mensal sem expor IDs
+              técnicos.
             </Text>
           </Col>
           <Col xs={24} lg={9}>
@@ -380,12 +393,20 @@ export default function FinancePage() {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={8} style={cardColumnStyle}>
-          <Card title="Receita por setor" style={fullHeightCardStyle} styles={{ body: chartBodyStyle }}>
+          <Card
+            title="Receita por setor"
+            style={fullHeightCardStyle}
+            styles={{ body: chartBodyStyle }}
+          >
             <BarList data={sectorChartData} currency />
           </Card>
         </Col>
         <Col xs={24} lg={8} style={cardColumnStyle}>
-          <Card title="Receita por origem" style={fullHeightCardStyle} styles={{ body: chartBodyStyle }}>
+          <Card
+            title="Receita por origem"
+            style={fullHeightCardStyle}
+            styles={{ body: chartBodyStyle }}
+          >
             <DonutChart data={sourceChartData} centerLabel="origens" />
           </Card>
         </Col>

@@ -52,8 +52,6 @@ def _object_path(entity_type: str, entity_id: uuid.UUID, filename: str) -> str:
     return f"{entity_type}/{entity_id}/{uuid.uuid4()}-{filename}"
 
 
-
-
 def _demo_pdf(file_path: str) -> tuple[io.BytesIO, str] | None:
     """Return a deterministic placeholder for demo-seeded metadata rows.
 
@@ -73,8 +71,7 @@ def _demo_pdf(file_path: str) -> tuple[io.BytesIO, str] | None:
         b"4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n"
         b"4 0 obj<</Length 96>>stream\n"
         + (
-            "BT /F1 14 Tf 72 720 Td (Seeded ILB demo document) Tj "
-            f"0 -24 Td ({label}) Tj ET\n"
+            f"BT /F1 14 Tf 72 720 Td (Seeded ILB demo document) Tj 0 -24 Td ({label}) Tj ET\n"
         ).encode()
         + b"endstream endobj\n"
         b"5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n"
@@ -83,6 +80,7 @@ def _demo_pdf(file_path: str) -> tuple[io.BytesIO, str] | None:
     buffer = io.BytesIO(content)
     buffer.seek(0)
     return buffer, "application/pdf"
+
 
 # ---------------------------------------------------------------------------
 # Public API

@@ -336,7 +336,9 @@ export default function InventoryPage() {
                 {spaceId ? (spaceNames.get(spaceId) ?? spaceId) : tStaff("navBookings")}
               </Typography.Text>
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                {companyId ? (companyNames.get(companyId) ?? companyId) : formatDateTime(booking?.start_time)}
+                {companyId
+                  ? (companyNames.get(companyId) ?? companyId)
+                  : formatDateTime(booking?.start_time)}
               </Typography.Text>
             </Space>
           </Link>

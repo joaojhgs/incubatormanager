@@ -135,10 +135,7 @@ class PublicSpaceListView(generics.ListAPIView):
         return (
             Space.objects.filter(is_active=True, company_id__isnull=True)
             .exclude(status__in=[Space.Status.BLOCKED, Space.Status.MAINTENANCE])
-            .filter(
-                Q(status=Space.Status.AVAILABLE)
-                | Q(id__in=active_booking_space_ids)
-            )
+            .filter(Q(status=Space.Status.AVAILABLE) | Q(id__in=active_booking_space_ids))
             .order_by("name")
         )
 

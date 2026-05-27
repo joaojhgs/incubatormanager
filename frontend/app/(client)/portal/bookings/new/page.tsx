@@ -143,12 +143,8 @@ export default function ClientNewBookingPage() {
           rules={[{ required: true, message: tClient("fieldRequired") }]}
         >
           <DatePicker
-            disabledDate={(date) =>
-              disabledBookingDate(date, bookingWindows.data, selectedSpaceId)
-            }
-            disabledTime={(date) =>
-              disabledBookingTime(date, bookingWindows.data, selectedSpaceId)
-            }
+            disabledDate={(date) => disabledBookingDate(date, bookingWindows.data, selectedSpaceId)}
+            disabledTime={(date) => disabledBookingTime(date, bookingWindows.data, selectedSpaceId)}
             format="YYYY-MM-DD HH:mm"
             showTime={{ format: "HH:mm", minuteStep: 30 }}
             style={{ width: "100%" }}
@@ -175,12 +171,8 @@ export default function ClientNewBookingPage() {
           ]}
         >
           <DatePicker
-            disabledDate={(date) =>
-              disabledBookingDate(date, bookingWindows.data, selectedSpaceId)
-            }
-            disabledTime={(date) =>
-              disabledBookingTime(date, bookingWindows.data, selectedSpaceId)
-            }
+            disabledDate={(date) => disabledBookingDate(date, bookingWindows.data, selectedSpaceId)}
+            disabledTime={(date) => disabledBookingTime(date, bookingWindows.data, selectedSpaceId)}
             format="YYYY-MM-DD HH:mm"
             showTime={{ format: "HH:mm", minuteStep: 30 }}
             style={{ width: "100%" }}

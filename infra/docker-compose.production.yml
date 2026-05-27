@@ -6,7 +6,6 @@
 # The base compose file keeps build definitions for local development. This overlay
 # pins deployable services to images pushed by GitLab CI.
 
-
 services:
   auth-service:
     image: ${CI_REGISTRY_IMAGE}/auth-service:${IMAGE_TAG}
