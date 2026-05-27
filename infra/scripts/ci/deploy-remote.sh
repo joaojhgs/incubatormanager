@@ -6,11 +6,29 @@ set -euo pipefail
 DEPLOY_USER="${DEPLOY_USER:-a69603}"
 : "${DEPLOY_PATH:?Set DEPLOY_PATH or keep the CI default}"
 : "${DEPLOY_PASSWORD:?Set DEPLOY_PASSWORD as a protected GitLab CI variable}"
-: "${CI_REGISTRY_IMAGE:?CI_REGISTRY_IMAGE is required}"
-: "${CI_REGISTRY_USER:?CI_REGISTRY_USER is required}"
-: "${CI_REGISTRY_PASSWORD:?CI_REGISTRY_PASSWORD is required}"
+registry_image="${CI_REGISTRY_IMAGE:-}"
+if [[ -z "$registry_image" ]]; then
+  registry_host_fallback="${CI_REGISTRY:-${CI_SERVER_HOST:-}}"
+  if [[ -z "$registry_host_fallback" && -n "${CI_SERVER_URL:-}" ]]; then
+    registry_host_fallback="${CI_SERVER_URL#http://}"
+    registry_host_fallback="${registry_host_fallback#https://}"
+    registry_host_fallback="${registry_host_fallback%%/*}"
+  fi
+  project_path="${CI_PROJECT_PATH:-sdl/2025-2026/projects/sdl-project-group-20}"
+  if [[ -z "$registry_host_fallback" ]]; then
+    echo "CI_REGISTRY_IMAGE is missing and no CI_REGISTRY/CI_SERVER_HOST fallback is available." >&2
+    exit 2
+  fi
+  registry_image="${registry_host_fallback}/${project_path}"
+fi
+registry_user="${CI_REGISTRY_USER:-gitlab-ci-token}"
+registry_password="${CI_REGISTRY_PASSWORD:-${CI_JOB_TOKEN:-}}"
+if [[ -z "$registry_password" ]]; then
+  echo "No registry password is available; set CI_REGISTRY_PASSWORD or provide CI_JOB_TOKEN." >&2
+  exit 2
+fi
 
-registry_host="${CI_REGISTRY:-${CI_REGISTRY_IMAGE%%/*}}"
+registry_host="${CI_REGISTRY:-${registry_image%%/*}}"
 image_tag="${IMAGE_TAG:-${CI_COMMIT_SHA:-latest}}"
 compose_services="${DEPLOY_COMPOSE_SERVICES:-}"
 if [[ -z "$compose_services" ]]; then
@@ -54,10 +72,11 @@ else
     "test -f '${DEPLOY_PATH}/shared/.env' || cp '${remote_release}/.env.example' '${DEPLOY_PATH}/shared/.env'"
 fi
 
-registry_password_escaped="$(printf '%s' "$CI_REGISTRY_PASSWORD" | sed "s/'/'\\''/g")"
-"${ssh_cmd[@]}" "$ssh_target" "docker login '${registry_host}' -u '${CI_REGISTRY_USER}' -p '${registry_password_escaped}'"
+registry_password_escaped="$(printf '%s' "$registry_password" | sed "s/'/'\\''/g")"
+registry_user_escaped="$(printf '%s' "$registry_user" | sed "s/'/'\\''/g")"
+"${ssh_cmd[@]}" "$ssh_target" "docker login '${registry_host}' -u '${registry_user_escaped}' -p '${registry_password_escaped}'"
 
 "${ssh_cmd[@]}" "$ssh_target" \
-  "ln -sfn '${remote_release}' '${remote_current}' && cd '${remote_current}' && ln -sfn '${DEPLOY_PATH}/shared/.env' .env && IMAGE_TAG='${image_tag}' CI_REGISTRY_IMAGE='${CI_REGISTRY_IMAGE}' docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml pull ${compose_services} && IMAGE_TAG='${image_tag}' CI_REGISTRY_IMAGE='${CI_REGISTRY_IMAGE}' docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml up -d --no-build --remove-orphans ${compose_services} && docker image prune -f"
+  "ln -sfn '${remote_release}' '${remote_current}' && cd '${remote_current}' && ln -sfn '${DEPLOY_PATH}/shared/.env' .env && IMAGE_TAG='${image_tag}' CI_REGISTRY_IMAGE='${registry_image}' docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml pull ${compose_services} && IMAGE_TAG='${image_tag}' CI_REGISTRY_IMAGE='${registry_image}' docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml up -d --no-build --remove-orphans ${compose_services} && docker image prune -f"
 
 echo "Deployment finished for services: ${compose_services}"
