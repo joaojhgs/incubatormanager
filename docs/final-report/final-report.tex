@@ -1,26 +1,26 @@
 % ============================================================
-%  Business Incubator Management Platform -- Final Report
+%  Business Incubator Management Platform Final Report
 %  Software Development Laboratory | IPB-ESTIG | 2025/2026
 % ============================================================
 \documentclass[12pt,a4paper]{report}
 
-% --- Encoding & Language -------------------------------------
+% Encoding and language
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 
-% --- Typography ----------------------------------------------
+% Typography
 \usepackage{setspace}
 \onehalfspacing
 
-% --- Page Layout ---------------------------------------------
+% Page layout
 \usepackage[
   top=2.5cm, bottom=2.5cm,
   left=3cm, right=2.5cm,
   headheight=15pt
 ]{geometry}
 
-% --- Headers & Footers ---------------------------------------
+% Headers and footers
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
@@ -29,7 +29,7 @@
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
-% --- Colours -------------------------------------------------
+% Colours
 \usepackage[dvipsnames,svgnames,table]{xcolor}
 \definecolor{IPBblue}{RGB}{0,84,166}
 \definecolor{IPBgray}{RGB}{88,88,90}
@@ -38,15 +38,15 @@
 \definecolor{successgreen}{RGB}{39,130,67}
 \definecolor{warningorange}{RGB}{179,104,0}
 
-% --- Tables --------------------------------------------------
+% Tables
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{longtable}
 \usepackage{array}
 
-% --- Lists ---------------------------------------------------
+% Lists
 
-% --- Graphics and Captions -----------------------------------
+% Graphics and captions
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{caption}
@@ -54,7 +54,7 @@
 \captionsetup[figure]{name=Figure}
 \captionsetup[table]{name=Table}
 
-% --- Code blocks ---------------------------------------------
+% Code blocks
 \usepackage{listings}
 \lstset{
   backgroundcolor=\color{codegray},
@@ -70,22 +70,22 @@
   captionpos=b
 }
 
-% --- Boxes ---------------------------------------------------
+% Boxes
 \newenvironment{infobox}[1][]{\begin{quote}\noindent\textbf{#1}\par\smallskip}{\end{quote}}
 \newenvironment{resultbox}[1][]{\begin{quote}\noindent\textbf{#1}\par\smallskip}{\end{quote}}
 
-% --- Hyperlinks (keep last) ----------------------------------
+% Hyperlinks
 \usepackage[
   colorlinks=true,
   linkcolor=IPBblue,
   urlcolor=IPBblue,
   citecolor=IPBblue,
-  pdftitle={Business Incubator Management Platform - Final Implementation Report},
+  pdftitle={Business Incubator Management Platform: Final Implementation Report},
   pdfauthor={SDL Project Group 20},
   pdfsubject={Software Development Laboratory 2025/2026}
 ]{hyperref}
 
-% --- Utilities -----------------------------------------------
+% Utilities
 \usepackage{amsmath}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
@@ -126,8 +126,8 @@
       \textbf{Course Unit:}   & Software Development Laboratory \\[4pt]
       \textbf{Academic Year:} & 2025/2026 \\[4pt]
       \textbf{Project Group:} & Group 20 \\[4pt]
-      \textbf{Submission:}    & Final delivery -- May 2026 \\[4pt]
-      \textbf{Defense:}       & Week 15 -- June 2026
+      \textbf{Submission:}    & Final delivery, May 2026 \\[4pt]
+      \textbf{Defense:}       & Week 15, June 2026
     \end{tabular}
 
     \vspace{2cm}
@@ -827,9 +827,9 @@ Future work should prioritize the following improvements:
 \label{ch:conclusion}
 
 The final implementation converts the Phase 1 proposal into a functioning
-microservices platform. It preserves the original product intent---centralized,
+microservices platform. It preserves the original product intent: centralized,
 role-aware management of incubated companies, contracts, finance, spaces,
-bookings, inventory, tickets, documents, and dashboards---while meeting the
+bookings, inventory, tickets, documents, and dashboards, while meeting the
 technical constraints of Part 2: Django REST Framework services, PostgreSQL,
 RabbitMQ, Docker Compose, Nginx reverse proxy, authentication/authorization,
 GitLab CI/CD, and deployment automation.
