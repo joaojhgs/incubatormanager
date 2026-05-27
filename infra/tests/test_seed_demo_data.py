@@ -46,7 +46,7 @@ def test_seed_generates_representative_demo_counts() -> None:
     assert len(seed.ticket_rows()) == 10
     assert len(seed.document_rows()) == 10
     assert len(seed.payment_rows()) == 20
-    assert len(seed.employee_rows()) == 20
+    assert len(seed.employee_rows()) == 100
 
 
 def test_seed_company_ids_align_with_dev_auth_users() -> None:

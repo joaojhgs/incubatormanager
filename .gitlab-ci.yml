@@ -111,3 +111,24 @@ deploy:production:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
     - when: never
+
+seed:production:
+  stage: deploy
+  image: alpine:3.20
+  needs: []
+  before_script:
+    - apk add --no-cache bash openssh-client sshpass
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - if [ -n "${DEPLOY_KNOWN_HOSTS:-}" ]; then printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts; fi
+  script:
+    - bash infra/scripts/ci/seed-remote.sh
+  environment:
+    name: production
+    url: $PRODUCTION_URL
+  resource_group: production
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: false
+    - when: never

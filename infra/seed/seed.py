@@ -52,7 +52,7 @@ CONTRACT_IDS: tuple[uuid.UUID, ...] = tuple(demo_id("contract", index) for index
 BOOKING_IDS: tuple[uuid.UUID, ...] = tuple(demo_id("booking", index) for index in range(1, 11))
 EQUIPMENT_IDS: tuple[uuid.UUID, ...] = tuple(demo_id("equipment", index) for index in range(1, 11))
 PAYMENT_IDS: tuple[uuid.UUID, ...] = tuple(demo_id("payment", index) for index in range(1, 21))
-EMPLOYEE_IDS: tuple[uuid.UUID, ...] = tuple(demo_id("employee", index) for index in range(1, 21))
+EMPLOYEE_IDS: tuple[uuid.UUID, ...] = tuple(demo_id("employee", index) for index in range(1, 101))
 TICKET_IDS: tuple[uuid.UUID, ...] = tuple(demo_id("ticket", index) for index in range(1, 11))
 DOCUMENT_IDS: tuple[uuid.UUID, ...] = tuple(demo_id("document", index) for index in range(1, 11))
 STAFF_USER_ID = demo_id("auth-user", "staff")
@@ -194,15 +194,18 @@ def employee_rows() -> list[dict[str, Any]]:
     employee_types = ("Regular", "Intern", "PhD", "Designer", "Junior", "Senior")
     rows: list[dict[str, Any]] = []
     for index, employee_id in enumerate(EMPLOYEE_IDS, start=1):
-        company_id = COMPANY_IDS[(index - 1) % len(COMPANY_IDS)]
+        company_index = (index - 1) // 10
+        company_id = COMPANY_IDS[company_index]
+        company_name = company_rows()[company_index]["name"]
+        employee_number = (index - 1) % 10 + 1
         rows.append(
             {
                 "id": employee_id,
                 "company_id": company_id,
-                "name": f"Demo Employee {index:02d}",
-                "type": employee_types[(index - 1) % len(employee_types)],
-                "start_date": date(2025, 1, 1) + timedelta(days=index * 7),
-                "end_date": None,
+                "name": f"{company_name} Employee {employee_number:02d}",
+                "type": employee_types[(index + company_index - 1) % len(employee_types)],
+                "start_date": date(2024, 1, 1) + timedelta(days=index * 11),
+                "end_date": date(2026, 4, 30) if index % 10 == 0 else None,
                 "is_active": index % 10 != 0,
             }
         )

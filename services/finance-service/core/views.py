@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 
 from core.billing import generate_monthly_billing, parse_as_of
 from core.handlers import publish_payment_recorded
-from core.models import Payment
+from core.models import BillingContract, Payment
 from core.serializers import (
     BillingGenerateResultSerializer,
     BillingGenerateSerializer,
@@ -274,15 +274,34 @@ class FinanceReportsView(APIView):
             return Response({"type": report_type, "group_by": data["group_by"], "results": rows})
 
         if report_type == "revenue_by_maturity":
-            paid = qs.filter(status=Payment.Status.PAID)
-            row = {
-                "maturity_stage": "unknown",
-                "total": paid.count(),
-                "collected_amount": paid.aggregate(
-                    total=Coalesce(Sum("amount"), Decimal("0"), output_field=DecimalField())
-                )["total"],
+            paid = list(qs.filter(status=Payment.Status.PAID))
+            contract_ids = [payment.contract_id for payment in paid if payment.contract_id]
+            contract_rates = {
+                contract.contract_id: contract.rate_per_sqm
+                for contract in BillingContract.objects.filter(contract_id__in=contract_ids)
             }
-            return Response({"type": report_type, "results": [row]})
+            maturity_by_rate = {
+                Decimal("100.00"): "Incubated",
+                Decimal("250.00"): "Startup",
+                Decimal("500.00"): "Intermediate",
+                Decimal("900.00"): "Consolidated",
+            }
+            grouped: dict[str, dict[str, object]] = {}
+            for payment in paid:
+                rate = contract_rates.get(payment.contract_id) if payment.contract_id else None
+                maturity = maturity_by_rate.get(rate or Decimal("0"), "Booking/variable")
+                row = grouped.setdefault(
+                    maturity,
+                    {"maturity_stage": maturity, "total": 0, "collected_amount": Decimal("0")},
+                )
+                row["total"] = int(row["total"]) + 1
+                row["collected_amount"] = row["collected_amount"] + payment.amount
+            return Response(
+                {
+                    "type": report_type,
+                    "results": sorted(grouped.values(), key=lambda row: str(row["maturity_stage"])),
+                }
+            )
 
         rows = (
             qs.values("company_id")

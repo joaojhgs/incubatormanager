@@ -5,15 +5,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   archiveCompany,
   createCompany,
+  createCompanyEmployee,
+  deleteCompanyEmployee,
   getCompany,
   getCompanyStats,
   listCAECodes,
   listCompanies,
   listMaturityStages,
   updateCompany,
+  updateCompanyEmployee,
   type CompanyCreatePayload,
   type CompanyListParams,
   type CompanyUpdatePayload,
+  type EmployeePayload,
 } from "@/lib/api/companies";
 import { message } from "antd";
 import { tCompany } from "@/lib/i18n/companies";
@@ -139,4 +143,40 @@ export function useArchiveCompany() {
       message.error(tCompany("listArchiveError"));
     },
   });
+}
+
+export function useEmployeeActions(companyId: string) {
+  const queryClient = useQueryClient();
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: companyKeys.detail(companyId) });
+    void queryClient.invalidateQueries({ queryKey: companyKeys.all });
+  };
+
+  return {
+    create: useMutation({
+      mutationFn: (payload: EmployeePayload) => createCompanyEmployee(companyId, payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Colaborador guardado.");
+      },
+      onError: () => message.error("Não foi possível guardar o colaborador."),
+    }),
+    update: useMutation({
+      mutationFn: ({ employeeId, payload }: { employeeId: string; payload: EmployeePayload }) =>
+        updateCompanyEmployee(companyId, employeeId, payload),
+      onSuccess: () => {
+        invalidate();
+        message.success("Colaborador atualizado.");
+      },
+      onError: () => message.error("Não foi possível atualizar o colaborador."),
+    }),
+    remove: useMutation({
+      mutationFn: (employeeId: string) => deleteCompanyEmployee(companyId, employeeId),
+      onSuccess: () => {
+        invalidate();
+        message.success("Colaborador removido.");
+      },
+      onError: () => message.error("Não foi possível remover o colaborador."),
+    }),
+  };
 }

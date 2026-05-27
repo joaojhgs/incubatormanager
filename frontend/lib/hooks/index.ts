@@ -6,6 +6,7 @@ export {
   useCompany,
   useCompanyStats,
   useCreateCompany,
+  useEmployeeActions,
   useMaturityStages,
   useUpdateCompany,
 } from "./useCompanies";

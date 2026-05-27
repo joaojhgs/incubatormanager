@@ -393,6 +393,44 @@ def test_dashboard_and_reports_are_scoped() -> None:
 
 
 @pytest.mark.django_db
+def test_revenue_by_maturity_uses_contract_rate_snapshots() -> None:
+    company_id = uuid.uuid4()
+    contract_id = uuid.uuid4()
+    BillingContract.objects.create(
+        contract_id=contract_id,
+        company_id=company_id,
+        space_id=uuid.uuid4(),
+        area_sqm="10.00",
+        rate_per_sqm="250.00",
+        monthly_fee="2500.00",
+        start_date=dt.date(2026, 1, 1),
+        is_active=True,
+    )
+    _create_payment(
+        company_id=str(company_id),
+        contract_id=contract_id,
+        source=Payment.Source.CONTRACT,
+        amount="2500.00",
+        status=Payment.Status.PAID,
+    )
+    _create_payment(
+        company_id=str(company_id),
+        source=Payment.Source.BOOKING,
+        amount="75.00",
+        status=Payment.Status.PAID,
+    )
+
+    response = _api_client("Staff").get(
+        "/api/finance/reports/", data={"type": "revenue_by_maturity"}
+    )
+
+    assert response.status_code == 200
+    rows = {row["maturity_stage"]: row for row in response.json()["results"]}
+    assert rows["Startup"]["collected_amount"] == 2500.0
+    assert rows["Booking/variable"]["collected_amount"] == 75.0
+
+
+@pytest.mark.django_db
 def test_next_due_payment_is_client_scoped() -> None:
     mine = str(uuid.uuid4())
     other = str(uuid.uuid4())

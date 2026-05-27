@@ -1,70 +1,74 @@
 "use client";
 
 import { ArrowLeftOutlined, EditOutlined } from "@ant-design/icons";
-import {
-  Button,
-  Card,
-  Descriptions,
-  Flex,
-  Result,
-  Space,
-  Spin,
-  Table,
-  Tag,
-  Typography,
-} from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { Button, Card, Col, Descriptions, Flex, Result, Row, Space, Spin, Typography } from "antd";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useMemo } from "react";
 
-import { ArchivedBadge, MaturityStageTag } from "@/components/companies";
+import { ArchivedBadge, EmployeeManager, MaturityStageTag } from "@/components/companies";
 import { DocumentManager } from "@/components/documents";
-import type { Employee } from "@/lib/api/companies";
-import { useCompany } from "@/lib/hooks";
+import { BarList, DonutChart, TrendBars, type ChartDatum } from "@/components/visual/InsightCharts";
+import { useCompany, useCompanyContracts, useMaturityStages } from "@/lib/hooks";
 import { tCompany } from "@/lib/i18n/companies";
 
 function getParamId(value: string | string[] | undefined): string {
   return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 }
 
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("pt-PT");
+function stageOrder(stageName: string, stages: { name: string; display_order: number }[]): number {
+  return stages.find((stage) => stage.name === stageName)?.display_order ?? 0;
 }
 
 export default function CompanyDetailPage() {
   const params = useParams<{ id: string }>();
   const id = getParamId(params.id);
   const { data, isLoading, isError } = useCompany(id);
+  const contracts = useCompanyContracts(id);
+  const maturityStages = useMaturityStages();
 
-  const employeeColumns: ColumnsType<Employee> = [
-    { title: tCompany("detailEmployeeName"), dataIndex: "name", key: "name" },
-    { title: tCompany("detailEmployeeType"), dataIndex: "type", key: "type" },
-    {
-      title: tCompany("detailEmployeeStart"),
-      dataIndex: "start_date",
-      key: "start_date",
-      render: formatDate,
-    },
-    {
-      title: tCompany("detailEmployeeEnd"),
-      dataIndex: "end_date",
-      key: "end_date",
-      render: formatDate,
-    },
-    {
-      title: tCompany("detailEmployeeStatus"),
-      dataIndex: "is_active",
-      key: "is_active",
-      render: (active: boolean) => (
-        <Tag color={active ? "success" : "default"}>
-          {active ? tCompany("detailStatusActive") : tCompany("detailStatusInactive")}
-        </Tag>
-      ),
-    },
-  ];
+  const employeeRoleData = useMemo<ChartDatum[]>(() => {
+    const counts = new Map<string, number>();
+    for (const employee of data?.employees ?? []) {
+      counts.set(employee.type, (counts.get(employee.type) ?? 0) + 1);
+    }
+    return Array.from(counts, ([label, value]) => ({ label, value }));
+  }, [data?.employees]);
+
+  const maturityTrendData = useMemo<ChartDatum[]>(() => {
+    const stages = maturityStages.data ?? [];
+    const contractPoints = (contracts.data ?? [])
+      .map((contract) => {
+        const stage = stages.find(
+          (item) => Number(item.rate_per_sqm) === Number(contract.rate_per_sqm),
+        );
+        return {
+          label: new Date(contract.start_date).toLocaleDateString("pt-PT", {
+            month: "short",
+            year: "2-digit",
+          }),
+          value: stage?.display_order ?? stageOrder(data?.maturity_stage_name ?? "", stages),
+        };
+      })
+      .filter((item) => item.value > 0)
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    if (contractPoints.length > 0) return contractPoints;
+    const currentOrder = stageOrder(data?.maturity_stage_name ?? "", stages);
+    return currentOrder > 0 ? [{ label: "Atual", value: currentOrder }] : [];
+  }, [contracts.data, data?.maturity_stage_name, maturityStages.data]);
+
+  const contractRevenueData = useMemo<ChartDatum[]>(
+    () =>
+      (contracts.data ?? []).map((contract) => ({
+        label: new Date(contract.start_date).toLocaleDateString("pt-PT", {
+          month: "short",
+          year: "2-digit",
+        }),
+        value: Number(contract.monthly_fee),
+      })),
+    [contracts.data],
+  );
 
   if (isLoading) return <Spin size="large" tip={tCompany("formLoading")} />;
   if (isError || !data) {
@@ -128,14 +132,30 @@ export default function CompanyDetailPage() {
         </Descriptions>
       </Card>
 
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={8}>
+          <Card title="Distribuição de colaboradores" style={{ height: "100%" }}>
+            <DonutChart data={employeeRoleData} centerLabel="pessoas" />
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Evolução de maturidade" style={{ height: "100%" }}>
+            <TrendBars data={maturityTrendData} />
+            <Typography.Text type="secondary">
+              Escala por ordem dos estágios configurados; contratos históricos inferem o estágio
+              pela taxa aplicada.
+            </Typography.Text>
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Receita contratual no tempo" style={{ height: "100%" }}>
+            <BarList data={contractRevenueData} currency />
+          </Card>
+        </Col>
+      </Row>
+
       <Card title={tCompany("detailEmployeesTitle")}>
-        <Table<Employee>
-          rowKey="id"
-          columns={employeeColumns}
-          dataSource={data.employees ?? []}
-          locale={{ emptyText: tCompany("detailEmployeesEmpty") }}
-          pagination={false}
-        />
+        <EmployeeManager companyId={id} employees={data.employees ?? []} />
       </Card>
 
       <Card title={tCompany("detailDocumentsTitle")}>

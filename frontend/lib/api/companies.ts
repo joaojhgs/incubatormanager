@@ -43,6 +43,14 @@ export interface Employee {
   is_active: boolean;
 }
 
+export interface EmployeePayload {
+  name: string;
+  type: string;
+  start_date: string;
+  end_date?: string | null;
+  is_active: boolean;
+}
+
 export interface CompanyStats {
   total: number;
   active: number;
@@ -239,6 +247,38 @@ export async function listCompanyEmployees(companyId: string): Promise<Employee[
     `/companies/${encodeURIComponent(companyId)}/employees/`,
   );
   return data;
+}
+
+/** Add an employee to a company. */
+export async function createCompanyEmployee(
+  companyId: string,
+  payload: EmployeePayload,
+): Promise<Employee> {
+  const { data } = await api().post<Employee>(
+    `/companies/${encodeURIComponent(companyId)}/employees/`,
+    payload,
+  );
+  return data;
+}
+
+/** Update one company employee. */
+export async function updateCompanyEmployee(
+  companyId: string,
+  employeeId: string,
+  payload: EmployeePayload,
+): Promise<Employee> {
+  const { data } = await api().patch<Employee>(
+    `/companies/${encodeURIComponent(companyId)}/employees/${encodeURIComponent(employeeId)}/`,
+    payload,
+  );
+  return data;
+}
+
+/** Remove one company employee. */
+export async function deleteCompanyEmployee(companyId: string, employeeId: string): Promise<void> {
+  await api().delete(
+    `/companies/${encodeURIComponent(companyId)}/employees/${encodeURIComponent(employeeId)}/`,
+  );
 }
 
 /** Company-level aggregate statistics. */

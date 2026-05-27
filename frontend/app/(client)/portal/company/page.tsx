@@ -4,7 +4,7 @@ import { BankOutlined, IdcardOutlined, TeamOutlined } from "@ant-design/icons";
 import { Card, Col, Descriptions, Result, Row, Space, Spin, Statistic, Typography } from "antd";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { ArchivedBadge, MaturityStageTag } from "@/components/companies";
+import { ArchivedBadge, EmployeeManager, MaturityStageTag } from "@/components/companies";
 import { DocumentList } from "@/components/documents";
 import { useCompany } from "@/lib/hooks/useCompanies";
 import { tClient } from "@/lib/i18n/clientPortal";
@@ -114,6 +114,10 @@ export default function ClientCompanyPage() {
             {data.description || "—"}
           </Descriptions.Item>
         </Descriptions>
+      </Card>
+
+      <Card title="Colaboradores da empresa">
+        <EmployeeManager companyId={data.id} employees={data.employees ?? []} />
       </Card>
 
       <Card title={tClient("documentsTitle")}>

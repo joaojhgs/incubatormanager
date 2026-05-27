@@ -240,6 +240,46 @@ def test_company_employee_crud_scoped(
 
 
 @pytest.mark.django_db
+def test_client_can_manage_own_company_employees(
+    db,
+    cae_seed: CAE,
+    stage_startup: MaturityStage,
+) -> None:
+    company = Company.objects.create(
+        name="ClientManaged",
+        tax_id="PT111111119",
+        legal_representative="Client",
+        cae=cae_seed,
+        maturity_stage=stage_startup,
+    )
+    other = Company.objects.create(
+        name="OtherCompany",
+        tax_id="PT111111120",
+        legal_representative="Other",
+        cae=cae_seed,
+        maturity_stage=stage_startup,
+    )
+    client = _api_client("Client", str(company.id))
+    payload = {"name": "Client Worker", "type": Employee.Type.REGULAR, "start_date": "2026-01-01"}
+
+    response = client.post(f"/api/companies/{company.id}/employees/", data=payload, format="json")
+    assert response.status_code == 201
+    employee_id = response.json()["id"]
+
+    response = client.patch(
+        f"/api/companies/{company.id}/employees/{employee_id}/",
+        data={"type": Employee.Type.DESIGNER},
+        format="json",
+    )
+    assert response.status_code == 200
+    assert response.json()["type"] == Employee.Type.DESIGNER
+
+    response = client.get(f"/api/companies/{other.id}/employees/")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+@pytest.mark.django_db
 def test_company_employee_stats_for_company_scope(
     db,
     cae_seed: CAE,

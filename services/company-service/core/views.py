@@ -192,7 +192,7 @@ class CompanyMaturityStageChangeView(APIView):
 )
 class CompanyEmployeeListCreateView(generics.ListCreateAPIView):
     serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated, IsStaff]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):  # type: ignore[override]
         company_id = self.kwargs["company_id"]
@@ -219,7 +219,7 @@ class CompanyEmployeeListCreateView(generics.ListCreateAPIView):
 @extend_schema(description="Patch or delete an employee for a company.")
 class CompanyEmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated, IsStaff]
+    permission_classes = [IsAuthenticated]
     lookup_url_kwarg = "employee_id"
 
     def get_queryset(self):  # type: ignore[override]

@@ -290,6 +290,15 @@ export default function FinancePage() {
     },
   ];
 
+  const reportChartData = useMemo<ChartDatum[]>(
+    () =>
+      (report.data?.results ?? []).map((row) => ({
+        label: String(row.maturity_stage ?? row.company_id ?? row.status ?? row.period ?? "—"),
+        value: firstNumber(row, ["collected_amount", "amount", "total_amount", "total_revenue"]),
+      })),
+    [report.data?.results],
+  );
+
   const reportColumns = useMemo<ColumnsType<FinanceReportRow>>(() => {
     const rows = report.data?.results ?? [];
     const keys = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
@@ -523,6 +532,11 @@ export default function FinancePage() {
               onChange={(group_by) => setReportFilters((current) => ({ ...current, group_by }))}
             />
           </Space>
+          {reportFilters.type === "revenue_by_maturity" ? (
+            <Card size="small" title="Receita por maturidade">
+              <BarList data={reportChartData} currency />
+            </Card>
+          ) : null}
           <Table<FinanceReportRow>
             rowKey={reportRowKey}
             columns={reportColumns}
