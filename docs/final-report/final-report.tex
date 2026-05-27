@@ -1,0 +1,202 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+
+\geometry{margin=2.4cm}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!50!black
+}
+\lstset{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  framerule=0.3pt,
+  backgroundcolor=\color{gray!5}
+}
+
+\title{ILB Incubator Management Platform\\\large Final Assignment Report}
+\author{SDL Project Group 20}
+\date{May 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report summarises the final delivery of the ILB Incubator Management
+Platform: a Docker Compose deployable microservices system for managing
+incubated companies, contracts, finance, spaces, bookings, inventory, support
+tickets, and documents. The final branch consolidates strict service boundaries,
+role-aware frontend workflows, RabbitMQ event integration, operational
+runbooks, and a GitLab CI/CD path for variable-driven production deployment.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Project scope}
+The platform supports incubator staff, client-company users, and public booking
+requesters. Staff users operate the internal dashboard, companies, contracts,
+finance, spaces, bookings, inventory, tickets, users, and documents. Client
+users access company-scoped contracts, payments, bookings, tickets, and company
+profile information. Public users can submit booking requests without an
+authenticated session.
+
+The final objective was to deliver a production-shaped system that can be run
+locally with Docker Compose, explained during the defense, and promoted through
+GitLab CI/CD without committing environment-specific secrets.
+
+\section{Architecture overview}
+The repository is a monorepo, but the runtime model is deliberately
+microservice-oriented. Each bounded context is a separate Django application and
+owns its own PostgreSQL database. Services communicate through REST for
+request/response flows and RabbitMQ events for asynchronous consistency.
+
+\begin{longtable}{p{0.24\textwidth}p{0.36\textwidth}p{0.22\textwidth}p{0.12\textwidth}}
+\toprule
+\textbf{Compose service} & \textbf{Bounded context} & \textbf{Gateway prefix} & \textbf{Port} \\
+\midrule
+\endhead
+auth-service & Identity, sessions, JWT issuance and validation & /api/auth/ & 8001 \\
+company-service & Incubated company profiles, CAE, maturity and archive state & /api/companies/ & 8002 \\
+contract-service & Company contracts and lifecycle & /api/contracts/ & 8003 \\
+finance-service & Payments, billing, overdue processing, reports & /api/finance/ & 8004 \\
+space-service & Physical spaces, capacity and occupancy projections & /api/spaces/ & 8005 \\
+booking-service & Staff, client and public booking workflows & /api/bookings/ & 8006 \\
+inventory-service & Equipment catalogue, assignment and release & /api/inventory/ & 8007 \\
+ticket-service & Support queues and ticket threads & /api/tickets/ & 8008 \\
+dashboard-service & Cross-service operational aggregates & /api/dashboard/ & 8009 \\
+document-service & Document metadata and MinIO-backed object storage & /api/documents/ & 8010 \\
+\bottomrule
+\end{longtable}
+
+The Nginx gateway is the external HTTP boundary. It serves the Next.js frontend
+and routes API traffic by path prefix. Authentication uses gateway validation
+against the auth service and forwards trusted identity headers to downstream
+services. Internal Django service ports remain private to the Compose network.
+
+\section{Implemented capabilities}
+\subsection{Backend services}
+The final implementation covers the main demo path across all service domains:
+\begin{itemize}
+  \item Auth: login, JWT handling, user management, gateway verification and RBAC.
+  \item Company: company CRUD, maturity/status data, employees, statistics and events.
+  \item Contract: lifecycle endpoints, monthly fee snapshots, expiration handling and events.
+  \item Finance: payments, billing/overdue commands, event consumers and reports.
+  \item Space: type and space CRUD, occupancy, contract and booking projections.
+  \item Booking: staff/client/public booking flows and lifecycle events.
+  \item Inventory: equipment/type CRUD, assignment/release and booking event handlers.
+  \item Ticket: scoped tickets, message threads and staff metrics.
+  \item Dashboard: service health, ticket KPIs and aggregate snapshots.
+  \item Document: metadata plus MinIO-backed upload, download, list and delete flows.
+\end{itemize}
+
+\subsection{Frontend workflows}
+The frontend is a Next.js 14 App Router application with TypeScript and Ant
+Design. It separates staff routes from client portal routes and keeps the public
+booking request outside the authenticated shell. The delivered pages support the
+defense walkthrough: staff dashboard, company/contract/finance/spaces/bookings/
+inventory/tickets/users areas, client portal pages, and public booking request.
+
+\subsection{Event-driven integration}
+Cross-service consistency is implemented with the \texttt{incubator.events}
+RabbitMQ topic exchange and a shared envelope from \texttt{libs/py-common}.
+Events include \texttt{contract.activated}, \texttt{contract.terminated},
+\texttt{booking.approved}, \texttt{booking.cancelled},
+\texttt{booking.completed}, and \texttt{payment.recorded}. Consumers persist or
+check \texttt{event\_id} values so duplicate delivery can be retried safely.
+Recurring work is implemented with scheduler sidecar containers that run Django
+management commands from cron files; the design intentionally avoids Celery.
+
+\section{Runtime and deployment}
+\subsection{Docker Compose runtime}
+The production-shaped runtime is defined in \texttt{infra/docker-compose.yml}.
+It includes PostgreSQL, Redis, RabbitMQ, MinIO, one Django container per bounded
+context, scheduler/consumer sidecars where needed, the Next.js frontend, and the
+Nginx gateway. Environment variables are sourced from a root \texttt{.env} file;
+\texttt{.env.example} documents the required non-secret defaults and values to
+review before deployment.
+
+\subsection{GitLab CI/CD production deployment}
+The final branch includes a variable-driven production deployment path in
+\texttt{.gitlab-ci.yml} and \texttt{infra/scripts/ci/deploy-remote.sh}. The
+manual \texttt{deploy:production} job runs on \texttt{main}, uses protected
+GitLab variables for SSH access and the production environment file, archives
+the current commit to the server, validates the Compose configuration, and runs
+Docker Compose remotely.
+
+Changed-service selection is handled by
+\texttt{infra/scripts/ci/detect-changed-services.sh}. Service-local changes rebuild only
+the affected Compose services and sidecars. Shared library, Compose, deploy
+script, or environment-template changes trigger a full application rollout to
+avoid stale dependent images.
+
+\begin{lstlisting}[language=bash,caption={Production deploy command shape}]
+docker compose --env-file .env --project-directory . \
+  -f infra/docker-compose.yml config --quiet
+
+docker compose --env-file .env --project-directory . \
+  -f infra/docker-compose.yml up -d --build --remove-orphans \
+  <changed-services>
+\end{lstlisting}
+
+Required GitLab variables are \texttt{PRODUCTION\_DEPLOY\_HOST},
+\texttt{PRODUCTION\_DEPLOY\_USER}, \texttt{PRODUCTION\_DEPLOY\_PATH},
+\texttt{PRODUCTION\_DEPLOY\_SSH\_PRIVATE\_KEY}, and either
+\texttt{PRODUCTION\_ENV\_FILE\_BASE64} or \texttt{PRODUCTION\_ENV\_FILE}.
+No production hostnames, keys, or secrets are committed to the repository.
+
+\section{Quality evidence}
+The repository contains defense and release evidence under
+\texttt{docs/defense/}. The latest recorded release criteria require host-only
+quality gates, Docker-backed Compose evidence on a host with Docker socket
+access, frontend typecheck/unit/lint/build, browser smoke, and updated operator
+documentation.
+
+For this final delivery task, the following checks were rerun in the worker
+branch:
+\begin{itemize}
+  \item \texttt{bash -n infra/scripts/ci/*.sh}
+  \item \texttt{docker-compose -f infra/docker-compose.yml --project-directory . config --quiet}
+  \item GitLab YAML parse for \texttt{.gitlab-ci.yml} and child CI files.
+  \item Changed-service selector smoke tests in a temporary Git repository.
+  \item \texttt{npx prettier --check .gitlab-ci.yml docs/deploy.md}
+  \item \texttt{npm --prefix frontend run typecheck}
+  \item \texttt{python3 -m pytest infra/tests -q} with 15 passing tests.
+  \item \texttt{latexmk -pdf -interaction=nonstopmode -halt-on-error docs/final-report/final-report.tex}
+\end{itemize}
+
+\section{Known limitations and operational notes}
+\begin{itemize}
+  \item Live Compose and gateway Playwright evidence require a host that can
+  access the Docker socket. If unavailable, the blocker must be recorded as an
+  environment limitation rather than product evidence.
+  \item The production deploy job was validated structurally and by script
+  checks, but a live SSH deployment requires protected GitLab variables and a
+  prepared Docker host.
+  \item Dependency audit warnings are present in the existing frontend lockfile
+  and should be handled in a separate dependency/security maintenance lane.
+  \item Production secrets must stay in GitLab protected variables or a secrets
+  manager; the repository should never contain real \texttt{.env} values.
+\end{itemize}
+
+\section{Conclusion}
+The final assignment delivery provides a coherent, demonstrable incubator
+management platform with strict service ownership, event-driven integration,
+role-aware frontend workflows, Compose-based runtime operations, and a
+variable-driven GitLab production deployment route. The included documentation,
+defense scripts, CI/CD configuration, and compiled report support both technical
+review and operational handoff.
+
+\end{document}

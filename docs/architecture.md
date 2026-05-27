@@ -130,3 +130,71 @@ contracts and publisher notes are summarised in `docs/events.md`.
 
 Both use the standard envelope in §1.3. Naming is stable: new subscribers **must
 not** infer different semantics for the same `event_type`.
+
+---
+
+## 3. Frontend application
+
+The browser application lives in `frontend/` and uses the Next.js 14 App Router.
+It is deployed behind the gateway on `/` and calls backend APIs through the
+`/api/...` gateway prefixes. The current route groups are:
+
+| Area          | Routes                                                                                                           | Purpose                                                           |
+| ------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Auth          | `/login`                                                                                                         | Sign-in and post-login role redirect.                             |
+| Staff portal  | `/dashboard`, `/companies`, `/contracts`, `/finance`, `/spaces`, `/bookings`, `/inventory`, `/tickets`, `/users` | Operational management for incubator staff.                       |
+| Client portal | `/portal` and company, contract, payments, bookings, tickets subpages                                            | Company-scoped self-service views for authenticated client users. |
+| Public        | `/booking-request`                                                                                               | Unauthenticated booking enquiry form.                             |
+
+`frontend/middleware.ts` applies route gating from session claims. Shared API
+clients live in `frontend/lib/api/`, authentication helpers in
+`frontend/lib/auth/`, React Query wiring in `frontend/lib/query/`, and
+user-facing text in `frontend/lib/i18n/`. Components are grouped under
+`frontend/components/` by feature area (`staff`, `client`, `companies`,
+`documents`, `operations`, and shared UI). New frontend strings should continue
+to use the i18n dictionaries so staff/client/public pages remain localizable.
+
+Client isolation is enforced end-to-end by the authenticated `company_id` claim:
+the gateway forwards it as `X-Company-Id`, downstream services scope client
+queries by that value, and the client portal shows a no-company support state
+instead of another company's data when the claim is absent.
+
+---
+
+## 4. Background processing and operational commands
+
+Recurring work is implemented as Django management commands invoked by
+scheduler sidecars. Cron definitions live in `infra/cron/` and are executed by
+`infra/scripts/cron-runner.py`, which has dedicated dry-run coverage in
+`infra/tests/`. Current commands include:
+
+| Service             | Command                                                                       | Purpose                                                                            |
+| ------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `auth-service`      | `seed_dev_users`                                                              | Create local development/demo users.                                               |
+| `contract-service`  | `expire_contracts`                                                            | Expire active contracts after their end date and publish `contract.expired`.       |
+| `finance-service`   | `generate_monthly_billing`, `mark_overdue_payments`, `consume_finance_events` | Generate billing rows, mark overdue payments, and consume contract/booking events. |
+| `booking-service`   | `complete_bookings`                                                           | Complete approved bookings after their end time and publish `booking.completed`.   |
+| `space-service`     | `consume_space_events`                                                        | Maintain space projections from contract and booking events.                       |
+| `inventory-service` | `consume_inventory_events`                                                    | Maintain equipment projections from booking events.                                |
+| `dashboard-service` | `consume_dashboard_events`, `dashboard_rebuild`                               | Rebuild dashboard snapshots from downstream metrics and events.                    |
+
+All scheduled commands should be safe to rerun. Commands that consume events or
+mutate projections must preserve idempotency using the shared `event_id`
+contract described in §1.3.
+
+---
+
+## 5. Runtime and verification boundaries
+
+The platform is intended to run locally and on a single compose-managed host.
+`infra/docker-compose.yml` defines PostgreSQL, Redis, RabbitMQ, MinIO, gateway,
+frontend, backend services, health checks, and named volumes. Development
+overrides are in `infra/docker-compose.dev.yml`; Tilt loads the compose files for
+live reload without changing the production-shaped service boundaries.
+
+Local verification is the project merge gate. Use targeted service checks for
+small changes and `make local-gate-host` when dependencies are available. For
+demo readiness on a machine with Docker socket access, run `make demo`,
+`make seed`, then the gateway Playwright suite in `e2e/`. Docker access failures
+are environment blockers and should be recorded separately from application
+regressions.
