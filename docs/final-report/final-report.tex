@@ -667,18 +667,34 @@ The most important UX decisions were:
 \section{Local Runtime}
 \label{sec:local-runtime}
 
-The project can be started locally with Docker Compose through the repository
-Makefile. The main Compose file includes all required infrastructure: PostgreSQL,
-RabbitMQ, Redis, MinIO, backend services, sidecars, frontend, and gateway.
-Health checks and entrypoint scripts prepare migrations and service readiness.
+The project can be started locally either through the repository Makefile or
+through Tilt. Both paths use the same Docker Compose topology: PostgreSQL,
+RabbitMQ, Redis, MinIO, backend services, scheduler/consumer sidecars, frontend,
+and gateway. Health checks and entrypoint scripts prepare migrations and service
+readiness.
 
-\begin{lstlisting}[language=bash,caption={Local runtime commands}]
+The Makefile path is useful for a compact full-stack run and for final demo
+validation:
+
+\begin{lstlisting}[language=bash,caption={Make-based local runtime commands}]
 cp .env.example .env
 make up
 make seed
 make demo
 make logs
 make down
+\end{lstlisting}
+
+Tilt is useful during development because it watches service-specific folders and
+rebuilds or restarts only the affected resources instead of restarting the whole
+stack for unrelated file changes. This is especially important in the monorepo,
+where documentation, frontend, and backend files are edited frequently.
+
+\begin{lstlisting}[language=bash,caption={Tilt-based local development commands}]
+cp .env.example .env
+tilt up
+# open the Tilt web UI, inspect resource logs, and trigger targeted rebuilds
+tilt down
 \end{lstlisting}
 
 \section{Production Deployment Workflow}
@@ -767,22 +783,6 @@ SSH smoke to course VM & Confirm VM login and host identity. & Pass \\
 Docker/Compose VM check & Confirm remote Docker Engine and Compose availability. & Pass \\
 \bottomrule
 \end{longtable}
-
-\section{Defense Artifacts}
-\label{sec:defense-artifacts}
-
-The repository contains the following defense artifacts:
-\begin{itemize}
-  \item \texttt{docs/final-report/final-report.tex}: source for this report.
-  \item \texttt{docs/final-report/final-report.pdf}: compiled report.
-  \item \texttt{docs/defense/ilb-incubator-defense-deck.pptx}: presentation
-  slide deck.
-  \item \texttt{docs/defense/generate\_powerpoint\_deck.py}: reproducible deck
-  generator.
-  \item \texttt{docs/defense/release-evidence.md}: release criteria and evidence
-  checklist.
-  \item \texttt{docs/defense/demo-script.md}: guided defense demonstration path.
-\end{itemize}
 
 % ============================================================
 \chapter{Limitations and Future Work}
