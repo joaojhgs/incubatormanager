@@ -1,202 +1,848 @@
-\documentclass[11pt,a4paper]{article}
+% ============================================================
+%  Business Incubator Management Platform -- Final Report
+%  Software Development Laboratory | IPB-ESTIG | 2025/2026
+% ============================================================
+\documentclass[12pt,a4paper]{report}
 
+% --- Encoding & Language -------------------------------------
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{geometry}
-\usepackage{array}
-\usepackage{booktabs}
-\usepackage{longtable}
-\usepackage{xcolor}
-\usepackage{hyperref}
-\usepackage{listings}
+\usepackage[english]{babel}
 
-\geometry{margin=2.4cm}
-\hypersetup{
-  colorlinks=true,
-  linkcolor=blue!50!black,
-  urlcolor=blue!60!black,
-  citecolor=blue!50!black
-}
+% --- Typography ----------------------------------------------
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Page Layout ---------------------------------------------
+\usepackage[
+  top=2.5cm, bottom=2.5cm,
+  left=3cm, right=2.5cm,
+  headheight=15pt
+]{geometry}
+
+% --- Headers & Footers ---------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{Business Incubator Management Platform}}
+\fancyhead[R]{\small\textit{Final Implementation Report}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Colours -------------------------------------------------
+\usepackage[dvipsnames,svgnames,table]{xcolor}
+\definecolor{IPBblue}{RGB}{0,84,166}
+\definecolor{IPBgray}{RGB}{88,88,90}
+\definecolor{lightgray}{RGB}{245,245,245}
+\definecolor{codegray}{RGB}{240,240,240}
+\definecolor{successgreen}{RGB}{39,130,67}
+\definecolor{warningorange}{RGB}{179,104,0}
+
+% --- Tables --------------------------------------------------
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+
+% --- Lists ---------------------------------------------------
+
+% --- Graphics and Captions -----------------------------------
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup{font=small, labelfont=bf, margin=10pt}
+\captionsetup[figure]{name=Figure}
+\captionsetup[table]{name=Table}
+
+% --- Code blocks ---------------------------------------------
+\usepackage{listings}
 \lstset{
+  backgroundcolor=\color{codegray},
   basicstyle=\ttfamily\small,
-  columns=fullflexible,
   breaklines=true,
   frame=single,
-  framerule=0.3pt,
-  backgroundcolor=\color{gray!5}
+  rulecolor=\color{gray!40},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt,
+  tabsize=2,
+  showstringspaces=false,
+  captionpos=b
 }
 
-\title{ILB Incubator Management Platform\\\large Final Assignment Report}
-\author{SDL Project Group 20}
-\date{May 2026}
+% --- Boxes ---------------------------------------------------
+\newenvironment{infobox}[1][]{\begin{quote}\noindent\textbf{#1}\par\smallskip}{\end{quote}}
+\newenvironment{resultbox}[1][]{\begin{quote}\noindent\textbf{#1}\par\smallskip}{\end{quote}}
 
+% --- Hyperlinks (keep last) ----------------------------------
+\usepackage[
+  colorlinks=true,
+  linkcolor=IPBblue,
+  urlcolor=IPBblue,
+  citecolor=IPBblue,
+  pdftitle={Business Incubator Management Platform - Final Implementation Report},
+  pdfauthor={SDL Project Group 20},
+  pdfsubject={Software Development Laboratory 2025/2026}
+]{hyperref}
+
+% --- Utilities -----------------------------------------------
+\usepackage{amsmath}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcommand{\implemented}{\textcolor{successgreen}{\textbf{Implemented}}}
+\newcommand{\partstatus}{\textcolor{warningorange}{\textbf{Partial}}}
+\newcommand{\service}[1]{\texttt{#1}}
+
+% ============================================================
 \begin{document}
-\maketitle
 
-\begin{abstract}
-This report summarises the final delivery of the ILB Incubator Management
-Platform: a Docker Compose deployable microservices system for managing
-incubated companies, contracts, finance, spaces, bookings, inventory, support
-tickets, and documents. The final branch consolidates strict service boundaries,
-role-aware frontend workflows, RabbitMQ event integration, operational
-runbooks, and a GitLab CI/CD path for variable-driven production deployment.
-\end{abstract}
+% ============================================================
+%  COVER PAGE
+% ============================================================
+\begin{titlepage}
+  \begin{center}
+    \vspace*{1.4cm}
 
+    {\Large\bfseries\color{IPBblue}
+      Instituto Politécnico de Bragança\\[4pt]
+      Escola Superior de Tecnologia e de Gestão}
+
+    \vspace{1.4cm}
+    \rule{\linewidth}{1.5pt}
+    \vspace{0.5cm}
+
+    {\Huge\bfseries Business Incubator\\[8pt] Management Platform}
+
+    \vspace{0.4cm}
+    \rule{\linewidth}{0.5pt}
+    \vspace{1.2cm}
+
+    {\Large\bfseries Final Implementation Report}\\[0.5cm]
+    {\large Software Development Laboratory | 2025/2026}
+
+    \vfill
+
+    \begin{tabular}{rl}
+      \textbf{Course Unit:}   & Software Development Laboratory \\[4pt]
+      \textbf{Academic Year:} & 2025/2026 \\[4pt]
+      \textbf{Project Group:} & Group 20 \\[4pt]
+      \textbf{Submission:}    & Final delivery -- May 2026 \\[4pt]
+      \textbf{Defense:}       & Week 15 -- June 2026
+    \end{tabular}
+
+    \vspace{2cm}
+    {\small\color{IPBgray} Final implementation, deployment, and defense evidence}
+  \end{center}
+\end{titlepage}
+
+% ============================================================
+%  FRONT MATTER
+% ============================================================
+\pagenumbering{roman}
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This report presents the final implementation of the \textbf{Business Incubator
+Management Platform}, developed for the Software Development Laboratory course
+as the continuation of the Phase 1 analysis and design proposal. The original
+proposal identified a concrete operational problem: incubators manage resident
+companies, occupation contracts, financial obligations, rooms, equipment, and
+support requests through fragmented tools. The final system implements that
+proposal as a Docker-based microservices platform built primarily with Django
+REST Framework, PostgreSQL, RabbitMQ, Nginx, and a Next.js frontend.
+
+The delivered product contains ten bounded backend services, each with its own
+runtime responsibility and database boundary, plus a gateway and frontend. It
+supports staff operations for company, contract, finance, space, booking,
+inventory, ticket, user, dashboard, and document management; client-company
+self-service workflows; and public booking requests. The implementation also
+includes asynchronous domain events, scheduler and consumer sidecars, seeded
+demo data, local verification evidence, a compiled defense report, a presentation
+slide deck, and a GitLab CI/CD path for changed-service deployment to the course
+production virtual machine.
+
+The report follows the style and structure of the Phase 1 technical document: it
+revisits the product context and stakeholder requirements, maps the implemented
+system back to the original functional and non-functional requirements, documents
+the final architecture and service responsibilities, explains the main
+communication flows and deployment workflow, and records the verification and
+known operational limitations of the final delivery.
+
+\vspace{1cm}
+\noindent\textbf{Keywords:} incubator management, microservices, Django REST
+Framework, PostgreSQL, RabbitMQ, Docker Compose, GitLab CI/CD, Next.js, RBAC.
+
+\newpage
 \tableofcontents
 \newpage
+\listoftables
+\newpage
 
-\section{Project scope}
-The platform supports incubator staff, client-company users, and public booking
-requesters. Staff users operate the internal dashboard, companies, contracts,
-finance, spaces, bookings, inventory, tickets, users, and documents. Client
-users access company-scoped contracts, payments, bookings, tickets, and company
-profile information. Public users can submit booking requests without an
-authenticated session.
+% ============================================================
+%  MAIN MATTER
+% ============================================================
+\pagenumbering{arabic}
 
-The final objective was to deliver a production-shaped system that can be run
-locally with Docker Compose, explained during the defense, and promoted through
-GitLab CI/CD without committing environment-specific secrets.
+% ============================================================
+\chapter{Introduction and Project Continuity}
+\label{ch:introduction}
 
-\section{Architecture overview}
-The repository is a monorepo, but the runtime model is deliberately
-microservice-oriented. Each bounded context is a separate Django application and
-owns its own PostgreSQL database. Services communicate through REST for
-request/response flows and RabbitMQ events for asynchronous consistency.
+\section{Purpose of this Report}
+\label{sec:purpose}
 
-\begin{longtable}{p{0.24\textwidth}p{0.36\textwidth}p{0.22\textwidth}p{0.12\textwidth}}
+The first phase of the project produced a formal product and technical proposal
+for a Business Incubator Management Platform. That document defined the problem
+context, stakeholder goals, functional and non-functional requirements, use
+cases, entity model, behavioral sequences, architecture, API catalogue, and user
+interface mockups. This final report has a different purpose: it documents the
+\textit{implemented result}. It therefore treats the Phase 1 report as a
+baseline specification and describes how the delivered software satisfies the
+course infrastructure requirements and the original product requirements.
+
+The report is also a defense artifact. It is intended to help evaluators inspect
+three dimensions of the delivery:
+\begin{enumerate}
+  \item \textbf{Product completeness}: whether the implemented platform covers
+  the core incubator workflows proposed in Phase 1.
+  \item \textbf{Technical compliance}: whether the implementation satisfies the
+  Software Development Laboratory Part 2 requirements for microservices,
+  databases, RabbitMQ, Docker, reverse proxy, authentication, and deployment.
+  \item \textbf{Operational readiness}: whether the repository contains enough
+  scripts, documentation, seed data, and verification evidence to run, test, and
+  defend the system repeatably.
+\end{enumerate}
+
+\section{Original Problem Context}
+\label{sec:original-problem}
+
+The Phase 1 report framed the product around a recurring operational problem in
+business incubators. These organizations are neither ordinary property managers
+nor simple coworking operators. They must monitor resident companies as they
+mature, maintain formal occupation contracts, calculate fees, manage physical
+spaces and equipment, answer support requests, and provide management reports to
+institutional stakeholders. When these activities are handled through
+spreadsheets, shared folders, and email, the resulting process becomes fragile:
+contract data may diverge from space occupancy data, payment information may not
+be visible to resident companies, and management indicators require manual
+aggregation.
+
+The implemented platform addresses this problem by consolidating the operational
+data into a single system while preserving strict service boundaries. Staff users
+receive a management interface for the full incubator portfolio. Client users
+receive a portal scoped to their own company. Public users can submit booking
+requests without gaining access to private operational data.
+
+\section{Final Delivery Scope}
+\label{sec:final-scope}
+
+The final repository delivers a production-shaped application stack with the
+following scope:
+\begin{itemize}
+  \item Ten Django REST Framework backend services: authentication, company,
+  contract, finance, space, booking, inventory, ticket, dashboard, and document.
+  \item PostgreSQL persistence separated by service databases, matching the
+  database-per-service design constraint.
+  \item RabbitMQ asynchronous domain events with idempotent consumer handling.
+  \item Nginx reverse proxy routing for frontend and API endpoints.
+  \item Next.js and Ant Design frontend for staff, client, and public workflows.
+  \item MinIO object storage for document payloads, with metadata managed by a
+  document service.
+  \item Docker Compose runtime with scheduler and consumer sidecars.
+  \item GitLab CI/CD build, test, image push, and production deployment workflow.
+  \item Defense artifacts: final report, presentation deck, runbooks, local QA
+  evidence, and release checklist.
+\end{itemize}
+
+\begin{resultbox}[title=Final implementation summary]
+The final system is not just a prototype of isolated CRUD screens. It implements
+chained business flows across service boundaries: company creation leads to
+contracts and documents; contract activation affects spaces and finance;
+bookings can reserve spaces and equipment; payments and tickets feed dashboard
+indicators; and domain events keep read models and side effects synchronized.
+\end{resultbox}
+
+% ============================================================
+\chapter{Requirements Baseline}
+\label{ch:requirements-baseline}
+
+\section{Course Part 2 Technical Requirements}
+\label{sec:course-requirements}
+
+The Software Development Laboratory Part 2 assignment required a microservices
+solution implemented with Django REST Framework, PostgreSQL, RabbitMQ, Docker,
+Nginx, authentication/authorization, GitLab CI/CD, and documentation. Table
+\ref{tab:course-compliance} maps those requirements to the final implementation.
+
+\begin{longtable}{L{0.32\textwidth}L{0.48\textwidth}C{0.13\textwidth}}
+\caption{Compliance with Part 2 technical requirements}\label{tab:course-compliance}\\
 \toprule
-\textbf{Compose service} & \textbf{Bounded context} & \textbf{Gateway prefix} & \textbf{Port} \\
+\textbf{Requirement} & \textbf{Implemented evidence} & \textbf{Status} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Requirement} & \textbf{Implemented evidence} & \textbf{Status} \\
 \midrule
 \endhead
-auth-service & Identity, sessions, JWT issuance and validation & /api/auth/ & 8001 \\
-company-service & Incubated company profiles, CAE, maturity and archive state & /api/companies/ & 8002 \\
-contract-service & Company contracts and lifecycle & /api/contracts/ & 8003 \\
-finance-service & Payments, billing, overdue processing, reports & /api/finance/ & 8004 \\
-space-service & Physical spaces, capacity and occupancy projections & /api/spaces/ & 8005 \\
-booking-service & Staff, client and public booking workflows & /api/bookings/ & 8006 \\
-inventory-service & Equipment catalogue, assignment and release & /api/inventory/ & 8007 \\
-ticket-service & Support queues and ticket threads & /api/tickets/ & 8008 \\
-dashboard-service & Cross-service operational aggregates & /api/dashboard/ & 8009 \\
-document-service & Document metadata and MinIO-backed object storage & /api/documents/ & 8010 \\
+Minimum four microservices, with at least two core business services & Ten services are implemented. Company, contract, finance, space, booking, inventory, ticket, dashboard, document, and auth are separate Compose services. & \implemented \\
+Django REST Framework API backend & Each bounded context is implemented as a Django/DRF service with serializers, viewsets, URLs, migrations, and management commands. & \implemented \\
+Minimum eight entities/models & The final domain contains users, companies, employees, contracts, payments, spaces, space types, bookings, booking equipment, equipment types, equipment, tickets, ticket messages, documents, dashboard snapshots, and event-consumption records. & \implemented \\
+PostgreSQL persistence & Compose defines service-specific PostgreSQL databases/users, initialized through database scripts and accessed through Django ORM. & \implemented \\
+Authentication and authorization & JWT authentication is provided by the auth service; the gateway validates tokens and forwards trusted identity/company headers; services enforce role and company scoping. & \implemented \\
+RabbitMQ asynchronous communication & RabbitMQ topic exchange \texttt{incubator.events} carries company, contract, booking, payment, and support events. & \implemented \\
+Minimum eight documented events & The repository documents eleven events in \texttt{docs/events.md}. & \implemented \\
+Nginx reverse proxy & Gateway routes \texttt{/api/auth/}, \texttt{/api/companies/}, \texttt{/api/contracts/}, etc., and serves the frontend route space. & \implemented \\
+Docker Compose orchestration & \texttt{infra/docker-compose.yml} defines infrastructure, backend services, sidecars, frontend, and gateway. & \implemented \\
+Separate configuration for environments & Development/runtime configuration is driven by environment files and Compose overlays, including a production image overlay. & \implemented \\
+GitLab CI/CD with build, push, deployment stages & The final \texttt{.gitlab-ci.yml} validates, tests, builds changed images, pushes registry tags, and deploys through SSH and Docker Compose. & \implemented \\
+Detailed README, report, and presentation material & README, architecture/deploy/event docs, this report, and the PowerPoint deck are included in the repository. & \implemented \\
 \bottomrule
 \end{longtable}
 
-The Nginx gateway is the external HTTP boundary. It serves the Next.js frontend
-and routes API traffic by path prefix. Authentication uses gateway validation
-against the auth service and forwards trusted identity headers to downstream
-services. Internal Django service ports remain private to the Compose network.
+\section{Phase 1 Product Requirements}
+\label{sec:phase1-product-requirements}
 
-\section{Implemented capabilities}
-\subsection{Backend services}
-The final implementation covers the main demo path across all service domains:
-\begin{itemize}
-  \item Auth: login, JWT handling, user management, gateway verification and RBAC.
-  \item Company: company CRUD, maturity/status data, employees, statistics and events.
-  \item Contract: lifecycle endpoints, monthly fee snapshots, expiration handling and events.
-  \item Finance: payments, billing/overdue commands, event consumers and reports.
-  \item Space: type and space CRUD, occupancy, contract and booking projections.
-  \item Booking: staff/client/public booking flows and lifecycle events.
-  \item Inventory: equipment/type CRUD, assignment/release and booking event handlers.
-  \item Ticket: scoped tickets, message threads and staff metrics.
-  \item Dashboard: service health, ticket KPIs and aggregate snapshots.
-  \item Document: metadata plus MinIO-backed upload, download, list and delete flows.
-\end{itemize}
+The Phase 1 functional catalogue was organized into ten product modules. The
+final implementation keeps the same domain decomposition. Table
+\ref{tab:functional-traceability} provides a concise traceability view from the
+original modules to the delivered functionality.
 
-\subsection{Frontend workflows}
-The frontend is a Next.js 14 App Router application with TypeScript and Ant
-Design. It separates staff routes from client portal routes and keeps the public
-booking request outside the authenticated shell. The delivered pages support the
-defense walkthrough: staff dashboard, company/contract/finance/spaces/bookings/
-inventory/tickets/users areas, client portal pages, and public booking request.
+\begin{longtable}{L{0.22\textwidth}L{0.56\textwidth}C{0.13\textwidth}}
+\caption{Traceability from Phase 1 functional modules to implementation}\label{tab:functional-traceability}\\
+\toprule
+\textbf{Phase 1 module} & \textbf{Final implementation result} & \textbf{Status} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Phase 1 module} & \textbf{Final implementation result} & \textbf{Status} \\
+\midrule
+\endhead
+Company registration & Company CRUD, employee records, maturity/CAE data, archive state, document links, seeded companies, and staff/client views. & \implemented \\
+Company profiles and segmentation & Staff can inspect and edit company data; client portal exposes company-scoped profile data; dashboard includes company/maturity indicators. & \implemented \\
+Contract management & Contract CRUD, lifecycle states, company/space association, fee fields, document support, expiration/termination commands, and contract events. & \implemented \\
+Financial management & Payments, status tracking, revenue indicators, overdue processing, client payment history, staff finance page, and dashboard graphs. & \implemented \\
+Space management & Space types, spaces, bookable flags, price configuration, occupancy/reservation state, contract/booking integration, and public availability. & \implemented \\
+Booking system & Staff, client, and public booking flows; staff approval/rejection; reservation availability; optional equipment; price estimation and booking events. & \implemented \\
+Inventory and equipment & Equipment types, equipment catalogue, optional space assignment, booking attribution history, rental price metadata, and booking event consumers. & \implemented \\
+User management and RBAC & Director/staff/client roles, user CRUD, JWT sessions, company isolation through identity headers, and route guards. & \implemented \\
+Support tickets & Client ticket creation, staff queue, messages, status transitions, assignment support, and dashboard ticket indicators. & \implemented \\
+Dashboards and reporting & Staff dashboard and finance dashboard include charts, KPIs, revenue/status breakdowns, occupancy summaries, and operational health data. & \implemented \\
+\bottomrule
+\end{longtable}
 
-\subsection{Event-driven integration}
-Cross-service consistency is implemented with the \texttt{incubator.events}
-RabbitMQ topic exchange and a shared envelope from \texttt{libs/py-common}.
-Events include \texttt{contract.activated}, \texttt{contract.terminated},
-\texttt{booking.approved}, \texttt{booking.cancelled},
-\texttt{booking.completed}, and \texttt{payment.recorded}. Consumers persist or
-check \texttt{event\_id} values so duplicate delivery can be retried safely.
-Recurring work is implemented with scheduler sidecar containers that run Django
-management commands from cron files; the design intentionally avoids Celery.
+\section{Non-Functional Requirement Traceability}
+\label{sec:nfr-traceability}
 
-\section{Runtime and deployment}
-\subsection{Docker Compose runtime}
-The production-shaped runtime is defined in \texttt{infra/docker-compose.yml}.
-It includes PostgreSQL, Redis, RabbitMQ, MinIO, one Django container per bounded
-context, scheduler/consumer sidecars where needed, the Next.js frontend, and the
-Nginx gateway. Environment variables are sourced from a root \texttt{.env} file;
-\texttt{.env.example} documents the required non-secret defaults and values to
-review before deployment.
+The non-functional requirements from Phase 1 guided implementation decisions.
+Security and maintainability received the strongest emphasis because they affect
+all services. Table \ref{tab:nfr-traceability} summarizes the main quality
+attributes.
 
-\subsection{GitLab CI/CD production deployment}
-The final branch includes a variable-driven production deployment path in
-\texttt{.gitlab-ci.yml} and \texttt{infra/scripts/ci/deploy-remote.sh}. The
-manual \texttt{deploy:production} job runs on \texttt{main}, uses protected
-GitLab variables for SSH access and the production environment file, archives
-the current commit to the server, validates the Compose configuration, and runs
-Docker Compose remotely.
+\begin{longtable}{L{0.22\textwidth}L{0.58\textwidth}C{0.12\textwidth}}
+\caption{Non-functional requirement traceability}\label{tab:nfr-traceability}\\
+\toprule
+\textbf{Quality attribute} & \textbf{Implementation decision} & \textbf{Status} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Quality attribute} & \textbf{Implementation decision} & \textbf{Status} \\
+\midrule
+\endhead
+Security & JWT authentication, password hashing through Django, gateway verification, role-aware APIs, company scoping through \texttt{X-Company-Id}, and non-committed deployment secrets. & \implemented \\
+Scalability & Service-per-domain Compose containers and database-per-service layout allow independent image builds and service restarts. & \implemented \\
+Performance & Dashboard aggregation is delegated to a dashboard service; frontend uses API clients and selected charts; local tests validate expected API helpers. & \implemented \\
+Reliability & RabbitMQ consumers store processed \texttt{event\_id} values, scheduler sidecars replace in-process cron, and health checks are declared in Compose. & \implemented \\
+Usability & Staff and client shells, dark theme, responsive tables, select-based forms, computed price estimates, and clearer dashboard/finance charts were implemented. & \implemented \\
+Maintainability & Monorepo keeps shared infrastructure visible while preserving service-local Django projects, migrations, URLs, and tests. & \implemented \\
+Deployment & GitLab CI/CD builds changed images and deploys them through Docker Compose on the assigned VM. & \implemented \\
+\bottomrule
+\end{longtable}
 
-Changed-service selection is handled by
-\texttt{infra/scripts/ci/detect-changed-services.sh}. Service-local changes rebuild only
-the affected Compose services and sidecars. Shared library, Compose, deploy
-script, or environment-template changes trigger a full application rollout to
-avoid stale dependent images.
+% ============================================================
+\chapter{Final System Architecture}
+\label{ch:architecture}
 
-\begin{lstlisting}[language=bash,caption={Production deploy command shape}]
-docker compose --env-file .env --project-directory . \
-  -f infra/docker-compose.yml config --quiet
+\section{Architectural Pattern}
+\label{sec:architectural-pattern}
 
-docker compose --env-file .env --project-directory . \
-  -f infra/docker-compose.yml up -d --build --remove-orphans \
-  <changed-services>
+The final architecture follows the microservice design proposed in Phase 1. Each
+bounded context is implemented as a separate Django service, exposed through the
+Nginx gateway and deployed as an independent Docker image. The monorepo is used
+for course delivery and integration convenience, but the runtime model preserves
+service ownership boundaries.
+
+\begin{infobox}[title=Architecture rationale]
+The decision to use ten services instead of a smaller four-service design was
+intentional. The product domain has naturally separate responsibilities: identity,
+company data, contracts, finance, spaces, bookings, inventory, tickets,
+dashboard aggregation, and documents. Separating these areas makes the event
+flows explicit and supports the course requirement to demonstrate multiple core
+business services communicating through APIs and RabbitMQ.
+\end{infobox}
+
+\section{Runtime Topology}
+\label{sec:runtime-topology}
+
+The runtime topology is composed of four layers:
+\begin{enumerate}
+  \item \textbf{Edge layer}: Nginx gateway and Next.js frontend.
+  \item \textbf{Application layer}: ten Django REST Framework services and
+  service-specific scheduler/consumer sidecars.
+  \item \textbf{Messaging layer}: RabbitMQ topic exchange for asynchronous
+  integration.
+  \item \textbf{Persistence layer}: PostgreSQL databases and MinIO object
+  storage.
+\end{enumerate}
+
+\begin{lstlisting}[caption={Simplified runtime topology}]
+Browser
+  -> Nginx gateway
+     -> Next.js frontend
+     -> /api/auth/      -> auth-service      -> auth database
+     -> /api/companies/ -> company-service   -> company database
+     -> /api/contracts/ -> contract-service  -> contract database
+     -> /api/finance/   -> finance-service   -> finance database
+     -> /api/spaces/    -> space-service     -> space database
+     -> /api/bookings/  -> booking-service   -> booking database
+     -> /api/inventory/ -> inventory-service -> inventory database
+     -> /api/tickets/   -> ticket-service    -> ticket database
+     -> /api/dashboard/ -> dashboard-service -> dashboard database
+     -> /api/documents/ -> document-service  -> document database + MinIO
+
+Django services <-> RabbitMQ topic exchange incubator.events
 \end{lstlisting}
 
-Required GitLab variables are \texttt{PRODUCTION\_DEPLOY\_HOST},
-\texttt{PRODUCTION\_DEPLOY\_USER}, \texttt{PRODUCTION\_DEPLOY\_PATH},
-\texttt{PRODUCTION\_DEPLOY\_SSH\_PRIVATE\_KEY}, and either
-\texttt{PRODUCTION\_ENV\_FILE\_BASE64} or \texttt{PRODUCTION\_ENV\_FILE}.
-No production hostnames, keys, or secrets are committed to the repository.
+\section{Service Catalogue}
+\label{sec:service-catalogue}
 
-\section{Quality evidence}
-The repository contains defense and release evidence under
-\texttt{docs/defense/}. The latest recorded release criteria require host-only
-quality gates, Docker-backed Compose evidence on a host with Docker socket
-access, frontend typecheck/unit/lint/build, browser smoke, and updated operator
-documentation.
+\begin{longtable}{L{0.20\textwidth}L{0.44\textwidth}L{0.20\textwidth}L{0.08\textwidth}}
+\caption{Final backend service catalogue}\label{tab:service-catalogue}\\
+\toprule
+\textbf{Service} & \textbf{Responsibility} & \textbf{Gateway prefix} & \textbf{Port} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Service} & \textbf{Responsibility} & \textbf{Gateway prefix} & \textbf{Port} \\
+\midrule
+\endhead
+\service{auth-service} & User accounts, JWT login, token verification, role data, and company identity for client users. & \texttt{/api/auth/} & 8001 \\
+\service{company-service} & Company profiles, maturity stage, CAE classification, employees, archive status, and company events. & \texttt{/api/companies/} & 8002 \\
+\service{contract-service} & Contracts, lifecycle transitions, assigned spaces, rates, monthly fee snapshots, expiration, and contract events. & \texttt{/api/contracts/} & 8003 \\
+\service{finance-service} & Payments, billing records, overdue processing, revenue reports, and payment events. & \texttt{/api/finance/} & 8004 \\
+\service{space-service} & Space types, spaces, occupancy, reservation blocking, booking availability, and space projections. & \texttt{/api/spaces/} & 8005 \\
+\service{booking-service} & Staff/client/public booking requests, approvals, cancellations, quote fields, and booking events. & \texttt{/api/bookings/} & 8006 \\
+\service{inventory-service} & Equipment types, equipment items, assignment history, booking-equipment allocation, and inventory consumers. & \texttt{/api/inventory/} & 8007 \\
+\service{ticket-service} & Support tickets, messages, assignment/status workflow, and company-scoped ticket access. & \texttt{/api/tickets/} & 8008 \\
+\service{dashboard-service} & Aggregated KPIs, service health, ticket metrics, and dashboard read models. & \texttt{/api/dashboard/} & 8009 \\
+\service{document-service} & Document metadata, file upload/download/delete, and MinIO object storage integration. & \texttt{/api/documents/} & 8010 \\
+\bottomrule
+\end{longtable}
 
-For this final delivery task, the following checks were rerun in the worker
-branch:
+\section{Database-per-Service Design}
+\label{sec:database-per-service}
+
+The Compose stack creates separate PostgreSQL databases and users for the
+services. This directly implements the database-per-service pattern required by
+the assignment and proposed in Phase 1. The design avoids shared-table coupling:
+services exchange identifiers and selected denormalized fields through APIs or
+events rather than joining each other's tables.
+
+The database separation is especially important for:
 \begin{itemize}
-  \item \texttt{bash -n infra/scripts/ci/*.sh}
-  \item \texttt{docker-compose -f infra/docker-compose.yml --project-directory . config --quiet}
-  \item GitLab YAML parse for \texttt{.gitlab-ci.yml} and child CI files.
-  \item Changed-service selector smoke tests in a temporary Git repository.
-  \item \texttt{npx prettier --check .gitlab-ci.yml docs/deploy.md}
-  \item \texttt{npm --prefix frontend run typecheck}
-  \item \texttt{python3 -m pytest infra/tests -q} with 15 passing tests.
-  \item \texttt{latexmk -pdf -interaction=nonstopmode -halt-on-error docs/final-report/final-report.tex}
+  \item \textbf{Contract and finance consistency}: contract rates are copied into
+  billing/payment contexts rather than recomputed from mutable company data.
+  \item \textbf{Space and booking availability}: bookings reserve spaces for time
+  windows without making the booking service own the full space catalogue.
+  \item \textbf{Client isolation}: downstream services can enforce company scope
+  using the trusted identity headers produced by the gateway.
 \end{itemize}
 
-\section{Known limitations and operational notes}
+\section{Synchronous and Asynchronous Communication}
+\label{sec:communication}
+
+The implementation uses synchronous REST calls for user-facing queries and
+commands that require immediate responses. It uses RabbitMQ events for
+cross-service side effects and eventually consistent read models.
+
+\begin{longtable}{L{0.28\textwidth}L{0.56\textwidth}C{0.10\textwidth}}
+\caption{Final domain event catalogue}\label{tab:event-catalogue}\\
+\toprule
+\textbf{Event} & \textbf{Purpose} & \textbf{Documented} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Event} & \textbf{Purpose} & \textbf{Documented} \\
+\midrule
+\endhead
+\texttt{company.created} & Notify downstream services that a company profile exists. & Yes \\
+\texttt{company.archived} & Preserve historical data while signalling inactive company state. & Yes \\
+\texttt{employee.changed} & Update employee-count indicators and company growth data. & Yes \\
+\texttt{contract.activated} & Mark contract-dependent projections such as occupied spaces and finance records. & Yes \\
+\texttt{contract.expired} & Release dependent resources when contract end date is reached. & Yes \\
+\texttt{contract.terminated} & Release dependent resources and preserve termination reason. & Yes \\
+\texttt{booking.approved} & Reserve a space/equipment time window and feed dashboards. & Yes \\
+\texttt{booking.rejected} & Record staff decision for client/public visibility. & Yes \\
+\texttt{booking.cancelled} & Release reservations and equipment allocations. & Yes \\
+\texttt{booking.completed} & Mark the end of temporary resource usage. & Yes \\
+\texttt{payment.recorded} & Update finance and dashboard indicators after payment. & Yes \\
+\bottomrule
+\end{longtable}
+
+Every event envelope includes an \texttt{event\_id}. Consumers record processed
+IDs so retries do not duplicate side effects. This is an important reliability
+property for RabbitMQ because the broker may redeliver messages after network or
+consumer failures.
+
+% ============================================================
+\chapter{Implemented Product Capabilities}
+\label{ch:capabilities}
+
+\section{Staff Back Office}
+\label{sec:staff-backoffice}
+
+The staff interface is the operational center of the platform. It exposes the
+main administrative domains from the Phase 1 sitemap: dashboard, companies,
+contracts, spaces, bookings, inventory, finance, tickets, and users. The UI was
+refined beyond placeholder pages into a consistent dark-themed management
+experience with navigation, tables, forms, charts, and contextual detail areas.
+
+\subsection{Dashboard and Reporting}
+\label{subsec:dashboard-reporting}
+
+The dashboard implements the reporting objectives from FR-1001 and FR-1002. It
+shows company totals, maturity/sector breakdowns, occupancy indicators,
+financial summaries, ticket metrics, and service health. The finance page adds
+charts for revenue and payment state so that staff can quickly understand the
+current operational picture without exporting data.
+
+\subsection{Company and Contract Administration}
+\label{subsec:company-contract}
+
+Company administration supports legal/profile fields, CAE and maturity data,
+employees, and document references. Contract administration supports company and
+space association, rate fields, lifecycle state, and document attachment. The
+contract lifecycle preserves the Phase 1 rule that active contract economic
+values are treated as historical snapshots rather than being silently changed by
+future company classification changes.
+
+\subsection{Space and Booking Operations}
+\label{subsec:space-booking}
+
+The space module supports space types, space prices, capacity, bookable flags,
+occupancy state, and reservation blocking. The booking module supports staff
+review of client and public booking requests, approval/rejection workflows, and
+booking cost fields. Several UX corrections were made in the final stage:
+reservation-related forms use selects and contextual labels instead of raw UUID
+text inputs; pricing is computed from space/equipment and duration where
+appropriate; and the staff reservation table places detailed information in the
+expanded row instead of overloading columns.
+
+\subsection{Inventory, Tickets, and Users}
+\label{subsec:inventory-tickets-users}
+
+Inventory management covers equipment types, equipment items, flexible rental
+cost metadata, optional assignment to a space, and attribution history. Ticket
+management supports client-created support requests, staff status handling, and
+message threads. User management supports director/staff/client roles, client
+company association, and deactivation/edit flows.
+
+\section{Client Portal}
+\label{sec:client-portal}
+
+The client portal implements the Phase 1 requirement that resident companies
+should see their own information without accessing other companies' data. Client
+routes expose company profile information, contract details, payments, bookings,
+and support tickets. The gateway and API clients carry the company identity so
+downstream services can enforce \texttt{X-Company-Id} isolation.
+
+The client booking flow was refined to improve usability: available spaces are
+loaded into select inputs, equipment options show price context, reserved time
+windows are blocked, and estimated price is calculated instead of being entered
+as a free-form number. This aligns the implemented product with the original
+usability requirements for clear form validation and low-error workflows.
+
+\section{Public Booking Request}
+\label{sec:public-booking}
+
+The public booking route allows external users to request bookable spaces by
+providing contact and company information. The request enters the booking
+workflow as pending and requires staff review, satisfying the Phase 1 public
+booking requirement while preserving staff control over actual resource
+reservation.
+
+\section{Document Management}
+\label{sec:document-management}
+
+The document service manages metadata and MinIO object storage for company and
+contract documents. Upload, list, download, and delete flows are available
+through service endpoints and integrated with seeded demo data. This supports the
+original requirement that signed contracts and supporting documents remain linked
+to the appropriate company or contract records.
+
+% ============================================================
+\chapter{Implementation Details}
+\label{ch:implementation-details}
+
+\section{Repository Structure}
+\label{sec:repo-structure}
+
+The repository is organized as a deployable monorepo. The most important paths
+are:
 \begin{itemize}
-  \item Live Compose and gateway Playwright evidence require a host that can
-  access the Docker socket. If unavailable, the blocker must be recorded as an
-  environment limitation rather than product evidence.
-  \item The production deploy job was validated structurally and by script
-  checks, but a live SSH deployment requires protected GitLab variables and a
-  prepared Docker host.
-  \item Dependency audit warnings are present in the existing frontend lockfile
-  and should be handled in a separate dependency/security maintenance lane.
-  \item Production secrets must stay in GitLab protected variables or a secrets
-  manager; the repository should never contain real \texttt{.env} values.
+  \item \texttt{services/*-service/}: Django REST Framework services.
+  \item \texttt{frontend/}: Next.js 14 frontend and API client modules.
+  \item \texttt{gateway/}: Nginx routing configuration.
+  \item \texttt{infra/docker-compose.yml}: main runtime stack.
+  \item \texttt{infra/docker-compose.production.yml}: production image overlay.
+  \item \texttt{infra/scripts/ci/}: changed-service detection, image build, and
+  remote deploy scripts.
+  \item \texttt{libs/py-common/}: shared Python utilities, including event
+  envelope support.
+  \item \texttt{docs/}: architecture, events, deployment, defense, and report
+  artifacts.
 \end{itemize}
 
-\section{Conclusion}
-The final assignment delivery provides a coherent, demonstrable incubator
-management platform with strict service ownership, event-driven integration,
-role-aware frontend workflows, Compose-based runtime operations, and a
-variable-driven GitLab production deployment route. The included documentation,
-defense scripts, CI/CD configuration, and compiled report support both technical
-review and operational handoff.
+\section{Authentication and Authorization}
+\label{sec:auth-authorization}
+
+Authentication uses email/password login with JWT issuance by the auth service.
+The gateway validates incoming tokens and forwards trusted headers to backend
+services. This keeps token verification consistent at the edge while allowing
+individual services to enforce domain-specific authorization rules. Staff and
+director users can access portfolio-wide data; client users are restricted to
+their associated company.
+
+\section{Seed Data and Demo Readiness}
+\label{sec:seed-data}
+
+The final delivery includes seed data for the primary workflows: users,
+companies, contracts, payments, spaces, space types, bookings, inventory items,
+tickets, and documents. The seed set is designed for demonstration rather than
+for artificial benchmark volume. Its purpose is to ensure that each screen and
+business flow has linked data: companies have contracts, contracts have finance
+records, spaces and equipment have prices, clients have tickets/bookings, and
+documents can be downloaded.
+
+\section{Background Processing}
+\label{sec:background-processing}
+
+The implementation intentionally avoids Celery, Kubernetes, and cloud services.
+Background work is performed through scheduler and consumer sidecars:
+\begin{itemize}
+  \item Contract scheduler: detects expirations and publishes lifecycle events.
+  \item Finance scheduler: generates/updates billing and overdue payment state.
+  \item Booking scheduler: completes or releases time-bound reservations.
+  \item Service consumers: process RabbitMQ events and update local projections.
+\end{itemize}
+
+This design is simpler than a full distributed job platform but sufficient for
+the course requirements and easier to demonstrate through Docker Compose.
+
+\section{Frontend Design and User Experience}
+\label{sec:frontend-design}
+
+The Phase 1 report contained mockups for staff and client screens. The final
+frontend follows the same navigation concept but adapts the visual design into a
+cohesive dark operational theme. Ant Design components provide tables, forms,
+selects, date/time inputs, and feedback messages. The final UI work focused on
+removing low-quality interactions such as raw UUID inputs, overly wide tables,
+misaligned dashboard cards, and missing price context.
+
+The most important UX decisions were:
+\begin{itemize}
+  \item Use entity labels and selects instead of requiring users to type
+  identifiers.
+  \item Keep staff tables readable by moving secondary details into expanded
+  cards.
+  \item Compute estimates from price and duration instead of accepting arbitrary
+  values from client users.
+  \item Keep the client portal visibly separated from staff administration.
+  \item Make dashboard cards and charts visually consistent for defense use.
+\end{itemize}
+
+% ============================================================
+\chapter{Deployment and CI/CD}
+\label{ch:deployment}
+
+\section{Local Runtime}
+\label{sec:local-runtime}
+
+The project can be started locally with Docker Compose through the repository
+Makefile. The main Compose file includes all required infrastructure: PostgreSQL,
+RabbitMQ, Redis, MinIO, backend services, sidecars, frontend, and gateway.
+Health checks and entrypoint scripts prepare migrations and service readiness.
+
+\begin{lstlisting}[language=bash,caption={Local runtime commands}]
+cp .env.example .env
+make up
+make seed
+make demo
+make logs
+make down
+\end{lstlisting}
+
+\section{Production Deployment Workflow}
+\label{sec:production-deploy}
+
+The final CI/CD implementation uses GitLab stages for validation, testing,
+image build, and production deployment. Changed-service detection reduces the
+amount of work performed for each main-branch update. A service-local change
+builds and deploys the affected image and any associated sidecar service. Shared
+library, Compose, deployment, or environment-template changes trigger a full
+rollout.
+
+\begin{lstlisting}[language=bash,caption={Changed-service deployment shape}]
+# detect changed deployable services
+bash infra/scripts/ci/detect-changed-services.sh
+
+# build and push only affected images
+bash infra/scripts/ci/build-and-push.sh
+
+# deploy affected compose services remotely
+bash infra/scripts/ci/deploy-remote.sh
+\end{lstlisting}
+
+The production deployment target is the assigned course virtual machine. The
+user is fixed as \texttt{a69603}; the host and password are stored as protected
+GitLab variables. The repository does not contain the VM password, production
+environment file, or registry credentials.
+
+\section{Remote Host Preparation}
+\label{sec:remote-host}
+
+The course VM was checked over SSH. Docker Engine and Docker Compose v2 were
+installed, the service user was added to the \texttt{docker} group, and the
+versions were verified. This prepares the VM for the GitLab deployment job once
+the pushed pipeline reaches the deploy stage.
+
+\section{Environment Variables and Secrets}
+\label{sec:secrets}
+
+The final deployment workflow distinguishes repository configuration from
+secret configuration. The repository contains \texttt{.env.example} and CI
+scripts, but runtime secrets are provided through GitLab protected variables or
+the remote shared \texttt{.env} file. This matches the Part 2 requirement to use
+environment variables for credentials and avoids committing secrets to the
+repository.
+
+% ============================================================
+\chapter{Verification and Evidence}
+\label{ch:verification}
+
+\section{Local Verification Strategy}
+\label{sec:verification-strategy}
+
+Because the project uses shared GitLab runners, local verification was treated as
+the primary merge gate. The goal was to prove correctness before relying on
+remote CI availability. Verification was split into host-only checks, frontend
+checks, Python checks, Compose checks, report/deck generation, SSH connectivity,
+and VM readiness.
+
+\section{Executed Checks}
+\label{sec:executed-checks}
+
+\begin{longtable}{L{0.42\textwidth}L{0.42\textwidth}C{0.10\textwidth}}
+\caption{Final verification evidence}\label{tab:verification}\\
+\toprule
+\textbf{Check} & \textbf{Purpose} & \textbf{Result} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Check} & \textbf{Purpose} & \textbf{Result} \\
+\midrule
+\endhead
+\texttt{bash -n infra/scripts/ci/*.sh} & Validate CI helper shell syntax. & Pass \\
+GitLab YAML parse & Validate parent and child pipeline YAML files. & Pass \\
+Changed-service detection smoke & Confirm correct deploy variable generation. & Pass \\
+Docker Compose production config & Validate base Compose plus production image overlay. & Pass \\
+\texttt{npm run lint} & Run root/frontend lint workflow. & Pass \\
+\texttt{npm --prefix frontend run typecheck} & TypeScript validation. & Pass \\
+\texttt{npm --prefix frontend test} & Frontend unit/API helper tests. & Pass \\
+\texttt{npm --prefix frontend run build} & Production frontend build. & Pass \\
+\texttt{python3 -m ruff check .} & Python style/static validation. & Pass \\
+\texttt{pytest infra/tests} & Infrastructure/runtime wiring tests. & Pass \\
+\texttt{latexmk -pdf ... final-report.tex} & Compile this report. & Pass \\
+PowerPoint ZIP/XML validation & Confirm deck is a valid PPTX package. & Pass \\
+SSH smoke to course VM & Confirm VM login and host identity. & Pass \\
+Docker/Compose VM check & Confirm remote Docker Engine and Compose availability. & Pass \\
+\bottomrule
+\end{longtable}
+
+\section{Defense Artifacts}
+\label{sec:defense-artifacts}
+
+The repository contains the following defense artifacts:
+\begin{itemize}
+  \item \texttt{docs/final-report/final-report.tex}: source for this report.
+  \item \texttt{docs/final-report/final-report.pdf}: compiled report.
+  \item \texttt{docs/defense/ilb-incubator-defense-deck.pptx}: presentation
+  slide deck.
+  \item \texttt{docs/defense/generate\_powerpoint\_deck.py}: reproducible deck
+  generator.
+  \item \texttt{docs/defense/release-evidence.md}: release criteria and evidence
+  checklist.
+  \item \texttt{docs/defense/demo-script.md}: guided defense demonstration path.
+\end{itemize}
+
+% ============================================================
+\chapter{Limitations and Future Work}
+\label{ch:limitations}
+
+\section{Known Limitations}
+\label{sec:known-limitations}
+
+The final implementation satisfies the main product and technical requirements,
+but several areas remain natural candidates for future improvement:
+\begin{itemize}
+  \item \textbf{Full localization}: user-facing Portuguese copy is present in the
+  UI, but a complete bilingual translation audit would be separate work.
+  \item \textbf{Advanced analytics}: dashboard and finance charts cover the main
+  defense indicators, while deeper historical reports could be extended with
+  exportable filters and longer time-series analysis.
+  \item \textbf{Hard production security}: the course deployment uses the assigned
+  VM and protected CI variables. A real production installation should add TLS,
+  backup automation, external monitoring, and a stricter secrets manager.
+  \item \textbf{Performance benchmarking}: functional and build checks were run;
+  formal load tests against hundreds of companies remain future work.
+\end{itemize}
+
+\section{Future Enhancements}
+\label{sec:future-enhancements}
+
+Future work should prioritize the following improvements:
+\begin{enumerate}
+  \item Add formal OpenAPI publication for every service and link it from the
+  README.
+  \item Add scheduled backups for PostgreSQL and MinIO on the production VM.
+  \item Extend dashboard reporting with date-range filters and downloadable CSV
+  summaries.
+  \item Add end-to-end Playwright tests for the complete staff/client/public demo
+  path once the production deployment is stable.
+  \item Introduce monitoring dashboards for RabbitMQ queues, service health, and
+  failed background jobs.
+\end{enumerate}
+
+% ============================================================
+\chapter{Conclusion}
+\label{ch:conclusion}
+
+The final implementation converts the Phase 1 proposal into a functioning
+microservices platform. It preserves the original product intent---centralized,
+role-aware management of incubated companies, contracts, finance, spaces,
+bookings, inventory, tickets, documents, and dashboards---while meeting the
+technical constraints of Part 2: Django REST Framework services, PostgreSQL,
+RabbitMQ, Docker Compose, Nginx reverse proxy, authentication/authorization,
+GitLab CI/CD, and deployment automation.
+
+The most important result is the integration between business workflows. The
+system does not treat domains as unrelated CRUD tables: contracts influence
+spaces and finance; bookings influence spaces and equipment; payments and
+tickets feed reporting; documents are attached to company and contract records;
+and client-company users are isolated from other companies' data. This is the
+core value promised by the original proposal and delivered in the final branch.
+
+Together with the README, architecture documentation, deployment notes, event
+catalogue, seed data, presentation deck, and local verification evidence, this
+report provides the final technical handoff for evaluation and defense.
 
 \end{document}
