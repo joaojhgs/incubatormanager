@@ -3,7 +3,10 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 COMPOSE_ENV_FILE := $(if $(wildcard .env),.env,.env.example)
-COMPOSE := docker compose --env-file $(COMPOSE_ENV_FILE) --project-directory . -f infra/docker-compose.yml
+# The apparmor layer skips the daemon's docker-default profile check on hosts that
+# cannot read /sys/kernel/security/apparmor/profiles (see that file's header). It is a
+# no-op where AppArmor works normally, so it is safe in the base COMPOSE invocation.
+COMPOSE := docker compose --env-file $(COMPOSE_ENV_FILE) --project-directory . -f infra/docker-compose.yml -f infra/docker-compose.apparmor.yml
 COMPOSE_DEV := $(COMPOSE) -f infra/docker-compose.dev.yml
 BACKEND_SERVICES := auth-service company-service contract-service finance-service space-service booking-service inventory-service ticket-service dashboard-service document-service
 CRON_FILES := infra/cron/booking.crontab infra/cron/contract.crontab infra/cron/finance.crontab

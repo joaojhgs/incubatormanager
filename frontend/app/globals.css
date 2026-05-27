@@ -81,3 +81,8 @@ a {
   border-radius: 999px;
   font-weight: 600;
 }
+
+.booking-row-highlight > td {
+  background: rgba(56, 189, 248, 0.16) !important;
+  box-shadow: inset 3px 0 0 #38bdf8;
+}

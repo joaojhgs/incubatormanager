@@ -1,0 +1,53 @@
+# Tilt-only healthcheck layer (loaded last by infra/Tiltfile).
+#
+# Why this exists:
+# On hosts where the Docker daemon cannot read /sys/kernel/security/apparmor/profiles
+# (nested/userns Docker, restricted sandboxes), `security_opt: apparmor=unconfined`
+# lets a container be *created* (see docker-compose.apparmor.yml), but Docker's
+# HEALTHCHECK runs as an exec task that does NOT inherit the unconfined setting in
+# Docker 29.x — it falls back to the docker-default profile and fails the same check:
+#   "Could not check if docker-default AppArmor profile was loaded:
+#    open /sys/kernel/security/apparmor/profiles: permission denied"
+# The apps themselves are fine; only the health *probes* cannot run, so containers
+# flip to "unhealthy" and Tilt shows red.
+#
+# Tilt drives compose per-service with `--no-deps` and tracks readiness itself, so it
+# does NOT rely on compose's `depends_on: condition: service_healthy`. Disabling the
+# probes here makes Tilt treat "running" as "ready" (green) without changing ordering.
+#
+# This is intentionally NOT included in the Makefile's COMPOSE invocation, so plain
+# `docker compose` / `make` runs keep their real healthchecks and dependency gating.
+
+services:
+  postgres:
+    healthcheck: { disable: true }
+  redis:
+    healthcheck: { disable: true }
+  rabbitmq:
+    healthcheck: { disable: true }
+  minio:
+    healthcheck: { disable: true }
+  auth-service:
+    healthcheck: { disable: true }
+  company-service:
+    healthcheck: { disable: true }
+  contract-service:
+    healthcheck: { disable: true }
+  finance-service:
+    healthcheck: { disable: true }
+  space-service:
+    healthcheck: { disable: true }
+  booking-service:
+    healthcheck: { disable: true }
+  inventory-service:
+    healthcheck: { disable: true }
+  ticket-service:
+    healthcheck: { disable: true }
+  dashboard-service:
+    healthcheck: { disable: true }
+  document-service:
+    healthcheck: { disable: true }
+  frontend:
+    healthcheck: { disable: true }
+  gateway:
+    healthcheck: { disable: true }

@@ -82,6 +82,15 @@ class TicketListCreateView(ListCreateAPIView):
             return TicketCreateSerializer
         return TicketSerializer
 
+    def create(self, request: Request, *args, **kwargs) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        ticket = serializer.instance
+        output = TicketSerializer(ticket, context=self.get_serializer_context())
+        headers = self.get_success_headers(output.data)
+        return Response(output.data, status=status.HTTP_201_CREATED, headers=headers)
+
     def perform_create(self, serializer: TicketCreateSerializer) -> None:
         user = self.request.user
         role = getattr(user, "role", None)

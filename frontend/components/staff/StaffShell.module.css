@@ -3,6 +3,11 @@
   background: transparent;
 }
 
+.sider {
+  overflow: hidden;
+  background: #06101d !important;
+}
+
 .siderBrand {
   margin: 16px;
   padding: 12px 10px;
@@ -16,6 +21,13 @@
   letter-spacing: 0.02em;
   line-height: 1.3;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.siderMenu {
+  background: #06101d !important;
 }
 
 .headerBar {

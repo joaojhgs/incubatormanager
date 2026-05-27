@@ -90,6 +90,18 @@ class EquipmentListCreateView(generics.ListCreateAPIView):
         return [IsAuthenticated()]
 
 
+class PublicEquipmentListView(generics.ListAPIView):
+    authentication_classes = ()
+    permission_classes = ()
+    serializer_class = EquipmentSerializer
+
+    def get_queryset(self):  # type: ignore[override]
+        return Equipment.objects.filter(
+            is_active=True,
+            status=Equipment.Status.AVAILABLE,
+        ).order_by("name")
+
+
 class EquipmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = EquipmentSerializer
     queryset = Equipment.objects.all()

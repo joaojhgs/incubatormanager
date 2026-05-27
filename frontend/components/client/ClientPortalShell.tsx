@@ -192,20 +192,20 @@ export function ClientPortalShell({ children }: { children: ReactNode }) {
   return (
     <Layout className={styles.clientLayout} hasSider>
       <Sider
+        className={styles.sider}
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
         theme="dark"
         breakpoint="lg"
-        style={{ background: "#00474F" }}
       >
-        <div className={styles.siderBrand}>{tClient("siderBrand")}</div>
+        <div className={styles.siderBrand}>{collapsed ? "ILB" : tClient("siderBrand")}</div>
         <Menu
+          className={styles.siderMenu}
           theme="dark"
           mode="inline"
           selectedKeys={[selectedKey]}
           items={menuItems}
-          style={{ background: "#00474F" }}
         />
       </Sider>
       <Layout>

@@ -47,6 +47,14 @@ export interface BookingCalendarEvent {
   end_time: string;
 }
 
+export interface PublicBookingWindow {
+  id: string;
+  space_id: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+}
+
 const api = getDefaultApiClient;
 
 export async function listBookings(): Promise<Booking[]> {
@@ -61,6 +69,11 @@ export async function listMyBookings(): Promise<Booking[]> {
 
 export async function listBookingCalendar(): Promise<BookingCalendarEvent[]> {
   const { data } = await api().get<BookingCalendarEvent[]>("/bookings/calendar/");
+  return data;
+}
+
+export async function listPublicBookingWindows(): Promise<PublicBookingWindow[]> {
+  const { data } = await api().get<PublicBookingWindow[]>("/bookings/public-calendar/");
   return data;
 }
 

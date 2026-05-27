@@ -2,24 +2,95 @@
 # Run from repo root: `tilt up` (uses ./Tiltfile → this file).
 
 ROOT = config.main_dir
+PROJECT_NAME = os.path.basename(ROOT)
 COMPOSE_ANCHOR = os.path.join(ROOT, 'docker-compose.tilt.yml')
 COMPOSE_MAIN = os.path.join(ROOT, 'infra', 'docker-compose.yml')
 COMPOSE_DEV = os.path.join(ROOT, 'infra', 'docker-compose.dev.yml')
+COMPOSE_APPARMOR = os.path.join(ROOT, 'infra', 'docker-compose.apparmor.yml')
+COMPOSE_TILT_HEALTH = os.path.join(ROOT, 'infra', 'docker-compose.tilt-health.yml')
 
 # Anchor must be first so Tilt sets the Compose project directory to the monorepo root
 # (see docker-compose.tilt.yml). Otherwise paths like ./services/... resolve under infra/.
-docker_compose([COMPOSE_ANCHOR, COMPOSE_MAIN, COMPOSE_DEV])
+# The apparmor layer sidesteps the daemon's docker-default profile check on hosts that
+# cannot read /sys/kernel/security/apparmor/profiles; the tilt-health layer disables the
+# healthcheck exec probes that the same restriction breaks (see those files' headers).
+docker_compose([COMPOSE_ANCHOR, COMPOSE_MAIN, COMPOSE_DEV, COMPOSE_APPARMOR, COMPOSE_TILT_HEALTH])
+
+# Compose builds use the monorepo root as Docker context because Python service images
+# install libs/py-common. Without explicit `only` filters, Tilt watches that whole context
+# for every image, so unrelated edits (for example .omx state files) rebuild/restart the
+# entire stack. These image definitions keep each service scoped to its own source tree;
+# libs/py-common intentionally remains shared because all Django services import it.
+def compose_ref(service):
+    return '%s_%s' % (PROJECT_NAME, service)
+
+def service_docker_build(service, service_dir, dockerfile = None, extra_only = []):
+    docker_build(
+        compose_ref(service),
+        ROOT,
+        dockerfile = dockerfile or os.path.join(ROOT, service_dir, 'Dockerfile'),
+        only = [service_dir, 'libs/py-common'] + extra_only,
+    )
+
+PY_BACKEND_IMAGE_SERVICES = {
+    'auth-service': 'services/auth-service',
+    'company-service': 'services/company-service',
+    'contract-service': 'services/contract-service',
+    'contract-scheduler': 'services/contract-service',
+    'finance-service': 'services/finance-service',
+    'finance-consumer': 'services/finance-service',
+    'finance-scheduler': 'services/finance-service',
+    'space-service': 'services/space-service',
+    'space-consumer': 'services/space-service',
+    'booking-service': 'services/booking-service',
+    'booking-scheduler': 'services/booking-service',
+    'inventory-service': 'services/inventory-service',
+    'inventory-consumer': 'services/inventory-service',
+    'ticket-service': 'services/ticket-service',
+    'dashboard-service': 'services/dashboard-service',
+    'dashboard-consumer': 'services/dashboard-service',
+    'document-service': ('services/document-service', ['infra/scripts/minio-init.sh']),
+}
+
+
+for svc, spec in PY_BACKEND_IMAGE_SERVICES.items():
+    if type(spec) == 'tuple':
+        service_docker_build(svc, spec[0], extra_only = spec[1])
+    else:
+        service_docker_build(svc, spec)
+
+docker_build(
+    compose_ref('frontend'),
+    ROOT,
+    dockerfile = os.path.join(ROOT, 'frontend', 'Dockerfile'),
+    only = ['frontend'],
+    ignore = ['frontend/tsconfig.tsbuildinfo', 'frontend/.next'],
+)
+
+docker_build(
+    compose_ref('gateway'),
+    ROOT,
+    dockerfile = os.path.join(ROOT, 'gateway', 'Dockerfile'),
+    only = ['gateway'],
+)
 
 BACKEND_SERVICES = [
     'auth-service',
     'company-service',
     'contract-service',
+    'contract-scheduler',
     'finance-service',
+    'finance-consumer',
+    'finance-scheduler',
     'space-service',
+    'space-consumer',
     'booking-service',
+    'booking-scheduler',
     'inventory-service',
+    'inventory-consumer',
     'ticket-service',
     'dashboard-service',
+    'dashboard-consumer',
     'document-service',
 ]
 

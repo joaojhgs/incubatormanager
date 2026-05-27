@@ -228,6 +228,8 @@ def space_rows() -> list[dict[str, Any]]:
             "name": f"Demo Space {index:02d}",
             "space_type_id": SPACE_TYPE_ROWS[(index - 1) % len(SPACE_TYPE_ROWS)][0],
             "capacity": 2 + (index % 8),
+            "rental_cost": Decimal(18 + index * 4).quantize(Decimal("0.01")),
+            "rental_cost_unit": "day" if index in (2, 5, 8) else "hour",
             "status": statuses[index - 1],
             "company_id": COMPANY_IDS[index - 1] if statuses[index - 1] == "Occupied" else None,
             "is_active": True,
@@ -332,6 +334,9 @@ def equipment_rows() -> list[dict[str, Any]]:
             "serial_number": f"ILB-DEMO-{index:04d}",
             "assigned_space_id": SPACE_IDS[index - 1] if statuses[index - 1] == "In use" else None,
             "rental_cost": Decimal(12 + index * 3).quantize(Decimal("0.01")),
+            "rental_cost_unit": (
+                "fixed" if index in (4, 9) else ("day" if index in (2, 6) else "hour")
+            ),
             "status": statuses[index - 1],
             "notes": f"Seeded demo inventory item {index:02d}.",
             "is_active": True,
@@ -679,12 +684,15 @@ def seed_space(cursor: Any) -> None:
         cursor,
         """
         INSERT INTO core_space (
-            id, name, space_type_id, capacity, status, company_id, is_active, created_at, updated_at
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            id, name, space_type_id, capacity, rental_cost, rental_cost_unit, status,
+            company_id, is_active, created_at, updated_at
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
         ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name,
             space_type_id = EXCLUDED.space_type_id,
             capacity = EXCLUDED.capacity,
+            rental_cost = EXCLUDED.rental_cost,
+            rental_cost_unit = EXCLUDED.rental_cost_unit,
             status = EXCLUDED.status,
             company_id = EXCLUDED.company_id,
             is_active = EXCLUDED.is_active,
@@ -696,11 +704,29 @@ def seed_space(cursor: Any) -> None:
                 row["name"],
                 row["space_type_id"],
                 row["capacity"],
+                row["rental_cost"],
+                row["rental_cost_unit"],
                 row["status"],
                 row["company_id"],
                 row["is_active"],
             )
             for row in space_rows()
+        ),
+    )
+    count += run_many(
+        cursor,
+        """
+        UPDATE core_space
+        SET rental_cost = %s,
+            rental_cost_unit = %s,
+            updated_at = NOW()
+        WHERE id = %s
+          AND (rental_cost IS NULL OR rental_cost_unit IS NULL)
+        """,
+        (
+            (Decimal("18.00"), "hour", "22222222-2222-4222-8222-222222222201"),
+            (Decimal("95.00"), "day", "22222222-2222-4222-8222-222222222202"),
+            (Decimal("30.00"), "hour", "22222222-2222-4222-8222-222222222203"),
         ),
     )
     count += run_many(
@@ -880,14 +906,16 @@ def seed_inventory(cursor: Any) -> None:
         """
         INSERT INTO core_equipment (
             id, name, equipment_type_id, serial_number, assigned_space_id, rental_cost,
+            rental_cost_unit,
             status, notes, is_active, created_at, updated_at
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
         ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name,
             equipment_type_id = EXCLUDED.equipment_type_id,
             serial_number = EXCLUDED.serial_number,
             assigned_space_id = EXCLUDED.assigned_space_id,
             rental_cost = EXCLUDED.rental_cost,
+            rental_cost_unit = EXCLUDED.rental_cost_unit,
             status = EXCLUDED.status,
             notes = EXCLUDED.notes,
             is_active = EXCLUDED.is_active,
@@ -901,6 +929,7 @@ def seed_inventory(cursor: Any) -> None:
                 row["serial_number"],
                 row["assigned_space_id"],
                 row["rental_cost"],
+                row["rental_cost_unit"],
                 row["status"],
                 row["notes"],
                 row["is_active"],

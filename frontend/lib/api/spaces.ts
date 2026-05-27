@@ -5,6 +5,8 @@ export interface Space {
   name: string;
   space_type: string | null;
   capacity: number;
+  rental_cost: string | null;
+  rental_cost_unit: "hour" | "day" | "fixed";
   status: string;
   company_id: string | null;
   is_active: boolean;
@@ -24,6 +26,8 @@ export interface SpaceCreatePayload {
   name: string;
   space_type?: string | null;
   capacity: number;
+  rental_cost?: string | null;
+  rental_cost_unit?: "hour" | "day" | "fixed";
   status?: string;
   company_id?: string | null;
   is_active?: boolean;
@@ -60,6 +64,11 @@ const api = getDefaultApiClient;
 
 export async function listSpaces(): Promise<Space[]> {
   const { data } = await api().get<Space[]>("/spaces/");
+  return data;
+}
+
+export async function listPublicSpaces(): Promise<Space[]> {
+  const { data } = await api().get<Space[]>("/public/spaces/");
   return data;
 }
 

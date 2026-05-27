@@ -76,52 +76,69 @@ export default function LoginForm() {
   }
 
   return (
-    <Space direction="vertical" size="large" style={{ padding: 48, width: "100%", maxWidth: 440 }}>
-      <div>
-        <Title level={2} style={{ marginBottom: 8 }}>
-          {tAuth("loginTitle")}
-        </Title>
-        <Text type="secondary">{tAuth("loginSubtitle")}</Text>
-      </div>
-      <Card>
-        {bannerError ? (
-          <Alert
-            type="error"
-            showIcon
-            message={bannerError}
-            style={{ marginBottom: 16 }}
-            role="alert"
-          />
-        ) : null}
-        <Form layout="vertical" onFinish={onFinish} requiredMark="optional">
-          <Form.Item
-            name="email"
-            label={tAuth("loginEmailLabel")}
-            hasFeedback
-            validateTrigger="onBlur"
-            rules={[
-              { required: true, message: tAuth("fieldEmailRequired") },
-              { type: "email", message: tAuth("fieldEmailInvalid") },
-            ]}
-          >
-            <Input autoComplete="email" inputMode="email" />
-          </Form.Item>
-          <Form.Item
-            name="password"
-            label={tAuth("loginPasswordLabel")}
-            hasFeedback
-            validateTrigger="onBlur"
-            rules={[{ required: true, message: tAuth("fieldPasswordRequired") }]}
-          >
-            <Input.Password autoComplete="current-password" />
-          </Form.Item>
-          <Form.Item style={{ marginBottom: 0 }}>
-            <Button type="primary" htmlType="submit" loading={submitting} block size="large">
-              {tAuth("loginSubmit")}
-            </Button>
-          </Form.Item>
-        </Form>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        padding: 24,
+      }}
+    >
+      <Card
+        style={{
+          width: "100%",
+          maxWidth: 460,
+          borderRadius: 24,
+          boxShadow: "0 28px 90px rgba(0, 0, 0, 0.38)",
+        }}
+        styles={{ body: { padding: 32 } }}
+      >
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
+          <div style={{ textAlign: "center" }}>
+            <Title level={2} style={{ marginBottom: 8 }}>
+              {tAuth("loginTitle")}
+            </Title>
+            <Text type="secondary">{tAuth("loginSubtitle")}</Text>
+          </div>
+          {bannerError ? (
+            <Alert
+              type="error"
+              showIcon
+              message={bannerError}
+              style={{ marginBottom: 4 }}
+              role="alert"
+            />
+          ) : null}
+          <Form layout="vertical" onFinish={onFinish} requiredMark="optional">
+            <Form.Item
+              name="email"
+              label={tAuth("loginEmailLabel")}
+              hasFeedback
+              validateTrigger="onBlur"
+              rules={[
+                { required: true, message: tAuth("fieldEmailRequired") },
+                { type: "email", message: tAuth("fieldEmailInvalid") },
+              ]}
+            >
+              <Input size="large" autoComplete="email" inputMode="email" />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              label={tAuth("loginPasswordLabel")}
+              hasFeedback
+              validateTrigger="onBlur"
+              rules={[{ required: true, message: tAuth("fieldPasswordRequired") }]}
+            >
+              <Input.Password size="large" autoComplete="current-password" />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button type="primary" htmlType="submit" loading={submitting} block size="large">
+                {tAuth("loginSubmit")}
+              </Button>
+            </Form.Item>
+          </Form>
+        </Space>
       </Card>
-    </Space>
+    </div>
   );
 }

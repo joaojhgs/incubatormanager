@@ -16,6 +16,7 @@ from core.views import (
     InventoryBookingEventView,
     InventoryMyAssignmentsView,
     MetricsView,
+    PublicEquipmentListView,
 )
 
 urlpatterns = [
@@ -23,6 +24,11 @@ urlpatterns = [
     path("api/inventory/metrics/", MetricsView.as_view(), name="metrics-inventory"),
     path("health/", HealthView.as_view(), name="health-root"),
     path("api/inventory/health/", HealthView.as_view(), name="health-inventory"),
+    path(
+        "api/public/inventory/equipment/",
+        PublicEquipmentListView.as_view(),
+        name="public-equipment-list",
+    ),
     path(
         "api/inventory/equipment-types/",
         EquipmentTypeListCreateView.as_view(),

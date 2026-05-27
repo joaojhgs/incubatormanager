@@ -24,3 +24,12 @@ services/dashboard-service/db.sqlite3
 services/dashboard-service/staticfiles
 services/ticket-service/db.sqlite3
 services/ticket-service/staticfiles
+.omx
+.omx/**
+.omc
+.omc/**
+.codex
+.codex/**
+
+frontend/tsconfig.tsbuildinfo
+*.tsbuildinfo

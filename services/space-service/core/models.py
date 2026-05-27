@@ -36,6 +36,11 @@ class Space(models.Model):
         MAINTENANCE = "Maintenance", "Maintenance"
         BLOCKED = "Blocked", "Blocked"
 
+    class RentalCostUnit(models.TextChoices):
+        HOUR = "hour", "Per hour"
+        DAY = "day", "Per day"
+        FIXED = "fixed", "Fixed per booking"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     space_type = models.ForeignKey(
@@ -46,6 +51,10 @@ class Space(models.Model):
         related_name="spaces",
     )
     capacity = models.PositiveIntegerField(default=1)
+    rental_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    rental_cost_unit = models.CharField(
+        max_length=16, choices=RentalCostUnit.choices, default=RentalCostUnit.HOUR
+    )
     status = models.CharField(
         max_length=24,
         choices=Status.choices,

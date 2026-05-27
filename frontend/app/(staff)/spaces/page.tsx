@@ -25,6 +25,7 @@ import { useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { formatDateTime, statusTag } from "@/components/operations/format";
+import { rateLabel } from "@/lib/pricing";
 import {
   useCompanies,
   useSpaceActions,
@@ -104,7 +105,12 @@ export default function SpacesPage() {
       spaceForm.setFieldsValue(space);
     } else {
       spaceForm.resetFields();
-      spaceForm.setFieldsValue({ status: "Available", capacity: 1, is_active: true });
+      spaceForm.setFieldsValue({
+        status: "Available",
+        capacity: 1,
+        rental_cost_unit: "hour",
+        is_active: true,
+      });
     }
     setSpaceModalOpen(true);
   };
@@ -156,7 +162,13 @@ export default function SpacesPage() {
       width: 170,
       render: (value: string | null) => (value ? (spaceTypeNames.get(value) ?? value) : "—"),
     },
-    { title: tStaff("columnCapacity"), dataIndex: "capacity", key: "capacity", width: 120 },
+    { title: tStaff("columnCapacity"), dataIndex: "capacity", key: "capacity", width: 110 },
+    {
+      title: "Tarifa",
+      key: "rental_cost",
+      width: 140,
+      render: (_: unknown, row) => rateLabel(row),
+    },
     {
       title: tStaff("columnStatus"),
       dataIndex: "status",
@@ -363,6 +375,8 @@ export default function SpacesPage() {
               ...values,
               company_id: values.company_id || null,
               space_type: values.space_type || null,
+              rental_cost: values.rental_cost ?? null,
+              rental_cost_unit: values.rental_cost_unit || "hour",
             };
             if (editingSpace) {
               actions.update.mutate(
@@ -389,6 +403,20 @@ export default function SpacesPage() {
           <Form.Item name="capacity" label={tStaff("columnCapacity")} rules={[{ required: true }]}>
             <InputNumber min={1} precision={0} style={{ width: "100%" }} />
           </Form.Item>
+          <Space.Compact style={{ width: "100%" }}>
+            <Form.Item name="rental_cost" label="Valor de reserva" style={{ width: "65%" }}>
+              <InputNumber min={0} precision={2} addonBefore="€" style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item name="rental_cost_unit" label="Unidade" style={{ width: "35%" }}>
+              <Select
+                options={[
+                  { label: "Por hora", value: "hour" },
+                  { label: "Por dia", value: "day" },
+                  { label: "Por reserva", value: "fixed" },
+                ]}
+              />
+            </Form.Item>
+          </Space.Compact>
           <Form.Item name="status" label={tStaff("columnStatus")} rules={[{ required: true }]}>
             <Select
               options={["Available", "Reserved", "Occupied", "Maintenance", "Blocked"].map(

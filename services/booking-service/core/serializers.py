@@ -61,6 +61,16 @@ class BookingCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs["start_time"] >= attrs["end_time"]:
             raise serializers.ValidationError("start_time must be before end_time")
+        overlaps = Booking.objects.filter(
+            space_id=attrs["space_id"],
+            status__in=[Booking.Status.PENDING, Booking.Status.APPROVED],
+            start_time__lt=attrs["end_time"],
+            end_time__gt=attrs["start_time"],
+        )
+        if overlaps.exists():
+            raise serializers.ValidationError(
+                "The selected space is already reserved for that time period"
+            )
         return attrs
 
 

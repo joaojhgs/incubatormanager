@@ -22,8 +22,10 @@ import {
   Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import Link from "next/link";
 
-import { formatCurrency, formatDateTime, statusTag } from "@/components/operations/format";
+import { formatDateTime, statusTag } from "@/components/operations/format";
+import { rateLabel } from "@/lib/pricing";
 import {
   useEquipment,
   useEquipmentActions,
@@ -80,7 +82,11 @@ export default function InventoryPage() {
       equipmentForm.setFieldsValue(item);
     } else {
       equipmentForm.resetFields();
-      equipmentForm.setFieldsValue({ status: "Available", is_active: true });
+      equipmentForm.setFieldsValue({
+        status: "Available",
+        rental_cost_unit: "hour",
+        is_active: true,
+      });
     }
     setEquipmentModalOpen(true);
   };
@@ -133,6 +139,10 @@ export default function InventoryPage() {
           value: record.id,
         })),
     [bookingRecords, companyNames, spaceNames],
+  );
+  const bookingById = useMemo(
+    () => new Map(bookingRecords.map((record) => [record.id, record])),
+    [bookingRecords],
   );
   const releaseBookingOptions = useMemo(
     () =>
@@ -204,10 +214,9 @@ export default function InventoryPage() {
     },
     {
       title: tStaff("inventoryRentalCost"),
-      dataIndex: "rental_cost",
       key: "rental_cost",
       align: "right",
-      render: formatCurrency,
+      render: (_: unknown, row) => rateLabel(row),
     },
     { title: tStaff("columnStatus"), dataIndex: "status", key: "status", render: statusTag },
     {
@@ -307,12 +316,6 @@ export default function InventoryPage() {
         value || equipmentNames.get(row.equipment_id) || row.equipment_id,
     },
     {
-      title: tStaff("columnSpace"),
-      dataIndex: "assigned_space_id",
-      key: "assigned_space_id",
-      render: (value: string | null) => (value ? (spaceNames.get(value) ?? value) : "—"),
-    },
-    {
       title: tStaff("columnStatus"),
       dataIndex: "status",
       key: "status",
@@ -322,7 +325,23 @@ export default function InventoryPage() {
       title: tStaff("inventoryBookingReference"),
       dataIndex: "booking_id",
       key: "booking_id",
-      render: (value: string) => <Typography.Text code>{value}</Typography.Text>,
+      render: (value: string, row) => {
+        const booking = bookingById.get(value);
+        const spaceId = row.assigned_space_id ?? booking?.space_id ?? null;
+        const companyId = row.company_id || booking?.company_id || null;
+        return (
+          <Link href={`/bookings?booking=${encodeURIComponent(value)}`} prefetch={false}>
+            <Space direction="vertical" size={0}>
+              <Typography.Text>
+                {spaceId ? (spaceNames.get(spaceId) ?? spaceId) : tStaff("navBookings")}
+              </Typography.Text>
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                {companyId ? (companyNames.get(companyId) ?? companyId) : formatDateTime(booking?.start_time)}
+              </Typography.Text>
+            </Space>
+          </Link>
+        );
+      },
     },
     {
       title: tStaff("columnUpdatedAt"),
@@ -384,63 +403,52 @@ export default function InventoryPage() {
         description={tStaff("inventoryHistoryHint")}
       />
 
-      <Card title={tStaff("inventorySpaceBookingTitle")}>
-        <Table<SpaceInventoryRow>
-          rowKey="spaceId"
-          columns={spaceInventoryColumns}
-          dataSource={spaceInventoryRows}
+      <Card
+        title={tStaff("navInventory")}
+        extra={
+          <Button type="primary" onClick={() => openEquipmentModal()}>
+            Novo equipamento
+          </Button>
+        }
+      >
+        <Table<Equipment>
+          rowKey="id"
+          columns={equipmentColumns}
+          dataSource={equipmentData}
           locale={{ emptyText: tStaff("emptyData") }}
-          pagination={false}
-          scroll={{ x: 900 }}
+          scroll={{ x: 1120 }}
+          expandable={{
+            expandedRowRender: (row) => (
+              <Descriptions size="small" column={1} bordered>
+                <Descriptions.Item label={tStaff("inventoryAssignmentHistory")}>
+                  <Space direction="vertical" size={0}>
+                    <Typography.Text>
+                      {row.assigned_space_id
+                        ? `${tStaff("inventoryAssignedToSpace")} ${
+                            spaceNames.get(row.assigned_space_id) ?? row.assigned_space_id
+                          }`
+                        : tStaff("inventoryNoAssignment")}
+                    </Typography.Text>
+                    <Typography.Text type="secondary">
+                      {tStaff("columnUpdatedAt")}: {formatDateTime(row.updated_at)}
+                    </Typography.Text>
+                  </Space>
+                </Descriptions.Item>
+                <Descriptions.Item label={tStaff("bookingNotes")}>
+                  {row.notes || "—"}
+                </Descriptions.Item>
+              </Descriptions>
+            ),
+          }}
         />
       </Card>
 
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={16}>
-          <Card
-            title={tStaff("navInventory")}
-            extra={
-              <Button type="primary" onClick={() => openEquipmentModal()}>
-                Novo equipamento
-              </Button>
-            }
-          >
-            <Table<Equipment>
-              rowKey="id"
-              columns={equipmentColumns}
-              dataSource={equipmentData}
-              locale={{ emptyText: tStaff("emptyData") }}
-              scroll={{ x: 1000 }}
-              expandable={{
-                expandedRowRender: (row) => (
-                  <Descriptions size="small" column={1} bordered>
-                    <Descriptions.Item label={tStaff("inventoryAssignmentHistory")}>
-                      <Space direction="vertical" size={0}>
-                        <Typography.Text>
-                          {row.assigned_space_id
-                            ? `${tStaff("inventoryAssignedToSpace")} ${
-                                spaceNames.get(row.assigned_space_id) ?? row.assigned_space_id
-                              }`
-                            : tStaff("inventoryNoAssignment")}
-                        </Typography.Text>
-                        <Typography.Text type="secondary">
-                          {tStaff("columnUpdatedAt")}: {formatDateTime(row.updated_at)}
-                        </Typography.Text>
-                      </Space>
-                    </Descriptions.Item>
-                    <Descriptions.Item label={tStaff("bookingNotes")}>
-                      {row.notes || "—"}
-                    </Descriptions.Item>
-                  </Descriptions>
-                ),
-              }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} lg={8}>
+      <Row gutter={[16, 16]} align="stretch">
+        <Col xs={24} lg={9}>
           <Card
             title={tStaff("inventoryTypesTitle")}
             extra={<Button onClick={() => setTypeModalOpen(true)}>Novo tipo</Button>}
+            style={{ height: "100%" }}
           >
             <Table<EquipmentType>
               rowKey="id"
@@ -452,21 +460,33 @@ export default function InventoryPage() {
             />
           </Card>
         </Col>
+        <Col xs={24} lg={15}>
+          <div ref={assignmentsRef}>
+            <Card title={tStaff("inventoryRecentAssignmentsTitle")} style={{ height: "100%" }}>
+              <Table<EquipmentAssignment>
+                rowKey="id"
+                columns={assignmentColumns}
+                dataSource={recentAssignments}
+                locale={{ emptyText: tStaff("emptyData") }}
+                pagination={{ pageSize: 6, hideOnSinglePage: true }}
+                scroll={{ x: 820 }}
+                size="small"
+              />
+            </Card>
+          </div>
+        </Col>
       </Row>
 
-      <div ref={assignmentsRef}>
-        <Card title={tStaff("inventoryRecentAssignmentsTitle")}>
-          <Table<EquipmentAssignment>
-            rowKey="id"
-            columns={assignmentColumns}
-            dataSource={recentAssignments}
-            locale={{ emptyText: tStaff("emptyData") }}
-            pagination={{ pageSize: 6, hideOnSinglePage: true }}
-            scroll={{ x: 1000 }}
-            size="small"
-          />
-        </Card>
-      </div>
+      <Card title={tStaff("inventorySpaceBookingTitle")}>
+        <Table<SpaceInventoryRow>
+          rowKey="spaceId"
+          columns={spaceInventoryColumns}
+          dataSource={spaceInventoryRows}
+          locale={{ emptyText: tStaff("emptyData") }}
+          pagination={false}
+          scroll={{ x: 900 }}
+        />
+      </Card>
       <Modal
         title={editingEquipment ? "Editar equipamento" : "Novo equipamento"}
         open={equipmentModalOpen}
@@ -482,7 +502,8 @@ export default function InventoryPage() {
             const payload = {
               ...values,
               assigned_space_id: values.assigned_space_id || null,
-              rental_cost: values.rental_cost || null,
+              rental_cost: values.rental_cost ?? null,
+              rental_cost_unit: values.rental_cost_unit || "hour",
             };
             if (editingEquipment) {
               actions.update.mutate(
@@ -509,17 +530,37 @@ export default function InventoryPage() {
           <Form.Item name="serial_number" label={tStaff("columnSerial")}>
             <Input />
           </Form.Item>
-          <Form.Item name="assigned_space_id" label={tStaff("inventoryAssignedSpace")}>
+          <Form.Item
+            name="assigned_space_id"
+            label={tStaff("inventoryAssignedSpace")}
+            help="Opcional: deixe vazio para equipamento móvel utilizável em qualquer espaço."
+          >
             <Select
               allowClear
               showSearch
               optionFilterProp="label"
+              placeholder="Sem espaço fixo"
               options={(spaces.data ?? []).map((space) => ({ label: space.name, value: space.id }))}
             />
           </Form.Item>
-          <Form.Item name="rental_cost" label={tStaff("inventoryRentalCost")}>
-            <InputNumber min={0} precision={2} style={{ width: "100%" }} />
-          </Form.Item>
+          <Space.Compact style={{ width: "100%" }}>
+            <Form.Item
+              name="rental_cost"
+              label={tStaff("inventoryRentalCost")}
+              style={{ width: "65%" }}
+            >
+              <InputNumber min={0} precision={2} addonBefore="€" style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item name="rental_cost_unit" label="Unidade" style={{ width: "35%" }}>
+              <Select
+                options={[
+                  { label: "Por hora", value: "hour" },
+                  { label: "Por dia", value: "day" },
+                  { label: "Por reserva", value: "fixed" },
+                ]}
+              />
+            </Form.Item>
+          </Space.Compact>
           <Form.Item name="status" label={tStaff("columnStatus")} rules={[{ required: true }]}>
             <Select
               options={["Available", "In use", "Maintenance"].map((value) => ({
@@ -581,7 +622,7 @@ export default function InventoryPage() {
               {
                 id: assigningEquipment.id,
                 payload: {
-                  assigned_space_id: values.assigned_space_id,
+                  assigned_space_id: values.assigned_space_id || null,
                   booking_id: values.booking_id || undefined,
                   company_id: values.company_id || undefined,
                 },
@@ -593,11 +634,13 @@ export default function InventoryPage() {
           <Form.Item
             name="assigned_space_id"
             label={tStaff("columnSpace")}
-            rules={[{ required: true }]}
+            help="Opcional: vazio mantém o equipamento móvel, sem espaço fixo."
           >
             <Select
+              allowClear
               showSearch
               optionFilterProp="label"
+              placeholder="Sem espaço fixo"
               options={(spaces.data ?? []).map((space) => ({ label: space.name, value: space.id }))}
             />
           </Form.Item>

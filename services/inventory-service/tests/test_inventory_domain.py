@@ -33,6 +33,7 @@ def test_equipment_crud_assign_release_and_client_assignment_scope() -> None:
             "equipment_type": type_response.json()["id"],
             "assigned_space_id": str(uuid.uuid4()),
             "rental_cost": "15.50",
+            "rental_cost_unit": "day",
         },
         format="json",
     )
@@ -54,6 +55,7 @@ def test_equipment_crud_assign_release_and_client_assignment_scope() -> None:
     assert assign.json()["status"] == Equipment.Status.IN_USE
     assert assign.json()["assigned_space_id"] == str(assigned_space_id)
     assert assign.json()["rental_cost"] == "15.50"
+    assert assign.json()["rental_cost_unit"] == "day"
     assert _client("Client", uuid.uuid4()).get("/api/inventory/my-assignments/").json() == []
     assert len(_client("Client", company_id).get("/api/inventory/my-assignments/").json()) == 1
     history = _client("Client", company_id).get(
@@ -113,6 +115,53 @@ def test_equipment_crud_assign_release_and_client_assignment_scope() -> None:
     assert final_release.status_code == 200
     assert final_release.json()["assigned_space_id"] is None
     assert final_release.json()["status"] == Equipment.Status.AVAILABLE
+
+
+@pytest.mark.django_db
+def test_equipment_can_be_mobile_without_fixed_space() -> None:
+    equipment_type = EquipmentType.objects.create(name="Camera")
+    equipment_response = _client().post(
+        "/api/inventory/equipment/",
+        data={
+            "name": "Mobile Camera",
+            "equipment_type": str(equipment_type.id),
+            "assigned_space_id": None,
+            "rental_cost": "8.00",
+            "rental_cost_unit": "fixed",
+        },
+        format="json",
+    )
+    assert equipment_response.status_code == 201
+    assert equipment_response.json()["assigned_space_id"] is None
+    assert equipment_response.json()["rental_cost_unit"] == "fixed"
+
+
+@pytest.mark.django_db
+def test_public_equipment_lists_only_active_available_items() -> None:
+    equipment_type = EquipmentType.objects.create(name="Display")
+    available = Equipment.objects.create(
+        name="Available display",
+        equipment_type=equipment_type,
+        status=Equipment.Status.AVAILABLE,
+        is_active=True,
+    )
+    Equipment.objects.create(
+        name="Inactive display",
+        equipment_type=equipment_type,
+        status=Equipment.Status.AVAILABLE,
+        is_active=False,
+    )
+    Equipment.objects.create(
+        name="In-use display",
+        equipment_type=equipment_type,
+        status=Equipment.Status.IN_USE,
+        is_active=True,
+    )
+
+    response = APIClient().get("/api/public/inventory/equipment/")
+
+    assert response.status_code == 200
+    assert [row["id"] for row in response.json()] == [str(available.id)]
 
 
 @pytest.mark.django_db

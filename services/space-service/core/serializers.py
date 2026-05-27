@@ -28,6 +28,8 @@ class SpaceSerializer(serializers.ModelSerializer):
             "name",
             "space_type",
             "capacity",
+            "rental_cost",
+            "rental_cost_unit",
             "status",
             "company_id",
             "is_active",

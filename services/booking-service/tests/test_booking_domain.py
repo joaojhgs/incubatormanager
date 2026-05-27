@@ -141,6 +141,86 @@ def test_public_external_booking_requires_requester_fields() -> None:
 
 
 @pytest.mark.django_db
+def test_public_external_booking_rejects_overlapping_space_windows() -> None:
+    space_id = uuid.uuid4()
+    start = timezone.now() + timedelta(days=3)
+    Booking.objects.create(
+        company_id=uuid.uuid4(),
+        space_id=space_id,
+        requester_name="Existing requester",
+        requester_email="existing@example.test",
+        requester_phone="+351 900 000 000",
+        start_time=start,
+        end_time=start + timedelta(hours=2),
+        status=Booking.Status.APPROVED,
+    )
+
+    response = APIClient().post(
+        "/api/bookings/external/",
+        data={
+            "space_id": str(space_id),
+            "start_time": (start + timedelta(minutes=30)).isoformat(),
+            "end_time": (start + timedelta(hours=3)).isoformat(),
+            "quoted_price": "25.00",
+            "requester_name": "Public user",
+            "requester_email": "public@example.test",
+            "requester_phone": "+351 900 000 000",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "reserved" in str(response.json()).lower()
+
+
+@pytest.mark.django_db
+def test_public_booking_calendar_exposes_pending_and_approved_windows() -> None:
+    space_id = uuid.uuid4()
+    other_space_id = uuid.uuid4()
+    start = timezone.now() + timedelta(days=4)
+    pending = Booking.objects.create(
+        company_id=None,
+        space_id=space_id,
+        start_time=start,
+        end_time=start + timedelta(hours=1),
+        status=Booking.Status.PENDING,
+    )
+    approved = Booking.objects.create(
+        company_id=uuid.uuid4(),
+        space_id=space_id,
+        start_time=start + timedelta(hours=2),
+        end_time=start + timedelta(hours=3),
+        status=Booking.Status.APPROVED,
+    )
+    Booking.objects.create(
+        company_id=uuid.uuid4(),
+        space_id=space_id,
+        start_time=start + timedelta(hours=4),
+        end_time=start + timedelta(hours=5),
+        status=Booking.Status.CANCELLED,
+    )
+    Booking.objects.create(
+        company_id=uuid.uuid4(),
+        space_id=other_space_id,
+        start_time=start,
+        end_time=start + timedelta(hours=1),
+        status=Booking.Status.APPROVED,
+    )
+
+    response = APIClient().get(
+        "/api/bookings/public-calendar/",
+        {
+            "space_id": str(space_id),
+            "start": (start - timedelta(minutes=15)).isoformat(),
+            "end": (start + timedelta(hours=3, minutes=15)).isoformat(),
+        },
+    )
+
+    assert response.status_code == 200
+    assert [row["id"] for row in response.json()] == [str(pending.id), str(approved.id)]
+
+
+@pytest.mark.django_db
 def test_booking_calendar_filters_by_space_and_overlapping_window() -> None:
     company_id = uuid.uuid4()
     space_id = uuid.uuid4()

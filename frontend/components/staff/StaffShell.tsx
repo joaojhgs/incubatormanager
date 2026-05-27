@@ -240,14 +240,21 @@ export function StaffShell({ children }: { children: ReactNode }) {
   return (
     <Layout className={styles.staffLayout} hasSider>
       <Sider
+        className={styles.sider}
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
         theme="dark"
         breakpoint="lg"
       >
-        <div className={styles.siderBrand}>{tStaff("siderBrand")}</div>
-        <Menu theme="dark" mode="inline" selectedKeys={[selectedKey]} items={menuItems} />
+        <div className={styles.siderBrand}>{collapsed ? "ILB" : tStaff("siderBrand")}</div>
+        <Menu
+          className={styles.siderMenu}
+          theme="dark"
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          items={menuItems}
+        />
       </Sider>
       <Layout>
         <Header className={styles.headerBar}>

@@ -52,6 +52,38 @@ def _object_path(entity_type: str, entity_id: uuid.UUID, filename: str) -> str:
     return f"{entity_type}/{entity_id}/{uuid.uuid4()}-{filename}"
 
 
+
+
+def _demo_pdf(file_path: str) -> tuple[io.BytesIO, str] | None:
+    """Return a deterministic placeholder for demo-seeded metadata rows.
+
+    The seed script creates metadata in the document database. Local MinIO
+    volumes may be empty after resets, so demo objects under ``demo/`` are
+    reconstructed as small PDFs instead of surfacing a storage failure.
+    Uploaded user files still require a real MinIO object.
+    """
+    if not file_path.startswith("demo/") or not file_path.endswith(".pdf"):
+        return None
+    label = file_path.replace("\\", "/")
+    content = (
+        b"%PDF-1.4\n"
+        b"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+        b"2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n"
+        b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents "
+        b"4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n"
+        b"4 0 obj<</Length 96>>stream\n"
+        + (
+            "BT /F1 14 Tf 72 720 Td (Seeded ILB demo document) Tj "
+            f"0 -24 Td ({label}) Tj ET\n"
+        ).encode()
+        + b"endstream endobj\n"
+        b"5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n"
+        b"xref\n0 6\n0000000000 65535 f \ntrailer<</Root 1 0 R/Size 6>>\nstartxref\n0\n%%EOF\n"
+    )
+    buffer = io.BytesIO(content)
+    buffer.seek(0)
+    return buffer, "application/pdf"
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -156,6 +188,10 @@ def safe_download(file_path: str) -> tuple[io.BytesIO, str]:
     try:
         return download(file_path)
     except S3Error as exc:
+        placeholder = _demo_pdf(file_path)
+        if placeholder is not None and getattr(exc, "code", "") in {"NoSuchKey", "NoSuchBucket"}:
+            logger.info("storage: reconstructed seeded demo object %s", file_path)
+            return placeholder
         raise StorageError(f"MinIO download failed: {exc}") from exc
 
 

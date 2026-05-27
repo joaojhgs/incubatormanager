@@ -181,6 +181,29 @@ def test_upload_client_booking_entity_forbidden() -> None:
 
 
 @pytest.mark.django_db
+def test_download_seeded_demo_document_reconstructs_missing_object() -> None:
+    from minio.error import S3Error
+
+    company_id = uuid.uuid4()
+    doc = Document.objects.create(
+        entity_type=Document.EntityType.COMPANY,
+        entity_id=company_id,
+        file_name="seed.pdf",
+        file_path="demo/company/01.pdf",
+        file_size=2048,
+        mime_type="application/pdf",
+    )
+    missing = S3Error("NoSuchKey", "missing", "resource", "request", "host", None)
+    with patch("core.storage.download", side_effect=missing):
+        client = APIClient()
+        resp = client.get(f"/api/documents/{doc.id}/download/", **_auth_headers())
+    assert resp.status_code == 200
+    body = b"".join(resp.streaming_content)
+    assert body.startswith(b"%PDF")
+    assert b"demo/company/01.pdf" in body
+
+
+@pytest.mark.django_db
 def test_download_staff_streams_file() -> None:
     company_id = uuid.uuid4()
     doc = Document.objects.create(

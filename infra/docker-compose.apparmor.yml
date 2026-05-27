@@ -1,0 +1,64 @@
+# AppArmor workaround layer.
+#
+# On hosts where the Docker daemon cannot read /sys/kernel/security/apparmor/profiles
+# (nested/containerized Docker, restricted sandboxes), container start fails with:
+#   "Could not check if docker-default AppArmor profile was loaded:
+#    open /sys/kernel/security/apparmor/profiles: permission denied"
+#
+# Setting apparmor=unconfined makes Docker skip applying/checking the docker-default
+# profile for that container, sidestepping the broken check. This is a dev-environment
+# workaround; it does not change behaviour on hosts where AppArmor works normally.
+#
+# Loaded by both Tilt (infra/Tiltfile) and Make (COMPOSE var in Makefile).
+
+x-aa: &aa ['apparmor=unconfined']
+
+services:
+  postgres:
+    security_opt: *aa
+  redis:
+    security_opt: *aa
+  rabbitmq:
+    security_opt: *aa
+  minio:
+    security_opt: *aa
+  minio-init:
+    security_opt: *aa
+  auth-service:
+    security_opt: *aa
+  company-service:
+    security_opt: *aa
+  contract-service:
+    security_opt: *aa
+  contract-scheduler:
+    security_opt: *aa
+  finance-service:
+    security_opt: *aa
+  finance-consumer:
+    security_opt: *aa
+  finance-scheduler:
+    security_opt: *aa
+  space-service:
+    security_opt: *aa
+  space-consumer:
+    security_opt: *aa
+  booking-service:
+    security_opt: *aa
+  booking-scheduler:
+    security_opt: *aa
+  inventory-service:
+    security_opt: *aa
+  inventory-consumer:
+    security_opt: *aa
+  ticket-service:
+    security_opt: *aa
+  dashboard-service:
+    security_opt: *aa
+  dashboard-consumer:
+    security_opt: *aa
+  document-service:
+    security_opt: *aa
+  frontend:
+    security_opt: *aa
+  gateway:
+    security_opt: *aa

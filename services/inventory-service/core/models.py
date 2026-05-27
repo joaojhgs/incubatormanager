@@ -28,6 +28,11 @@ class Equipment(models.Model):
         IN_USE = "In use", "In use"
         MAINTENANCE = "Maintenance", "Maintenance"
 
+    class RentalCostUnit(models.TextChoices):
+        HOUR = "hour", "Per hour"
+        DAY = "day", "Per day"
+        FIXED = "fixed", "Fixed per booking"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     equipment_type = models.ForeignKey(
@@ -38,6 +43,9 @@ class Equipment(models.Model):
     serial_number = models.CharField(max_length=128, blank=True, default="")
     assigned_space_id = models.UUIDField(null=True, blank=True, db_index=True)
     rental_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    rental_cost_unit = models.CharField(
+        max_length=16, choices=RentalCostUnit.choices, default=RentalCostUnit.HOUR
+    )
     status = models.CharField(
         max_length=24,
         choices=Status.choices,

@@ -242,6 +242,42 @@ class BookingCalendarView(APIView):
         return Response(payload)
 
 
+class PublicBookingCalendarView(APIView):
+    authentication_classes = ()
+    permission_classes = ()
+
+    @extend_schema(responses={200: list[dict]})
+    def get(self, request: Request) -> Response:
+        queryset = Booking.objects.filter(
+            status__in=[Booking.Status.PENDING, Booking.Status.APPROVED],
+        )
+        space_id = _validated_uuid_param(request, "space_id") or _validated_uuid_param(
+            request, "spaceId"
+        )
+        if space_id:
+            queryset = queryset.filter(space_id=space_id)
+
+        starts_before = _validated_datetime_param(request, "end", "end_time", "to")
+        ends_after = _validated_datetime_param(request, "start", "start_time", "from")
+        if starts_before:
+            queryset = queryset.filter(start_time__lt=starts_before)
+        if ends_after:
+            queryset = queryset.filter(end_time__gt=ends_after)
+
+        return Response(
+            [
+                {
+                    "id": str(booking.id),
+                    "space_id": str(booking.space_id),
+                    "start_time": booking.start_time,
+                    "end_time": booking.end_time,
+                    "status": booking.status,
+                }
+                for booking in queryset.order_by("start_time")
+            ]
+        )
+
+
 class MyBookingsView(generics.ListAPIView):
     serializer_class = BookingSerializer
     permission_classes = [IsAuthenticated, IsClientOwner]

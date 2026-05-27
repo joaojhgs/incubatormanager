@@ -15,6 +15,7 @@ export interface Equipment {
   serial_number: string;
   assigned_space_id: string | null;
   rental_cost: string | null;
+  rental_cost_unit: "hour" | "day" | "fixed";
   status: string;
   notes: string;
   is_active: boolean;
@@ -50,6 +51,7 @@ export interface EquipmentCreatePayload {
   serial_number?: string;
   assigned_space_id?: string | null;
   rental_cost?: string | null;
+  rental_cost_unit?: "hour" | "day" | "fixed";
   status?: string;
   notes?: string;
   is_active?: boolean;
@@ -60,7 +62,7 @@ export type EquipmentUpdatePayload = Partial<EquipmentCreatePayload>;
 export interface EquipmentAssignPayload {
   booking_id?: string;
   company_id?: string;
-  assigned_space_id?: string;
+  assigned_space_id?: string | null;
 }
 
 export interface EquipmentReleasePayload {
@@ -71,6 +73,11 @@ const api = getDefaultApiClient;
 
 export async function listEquipment(): Promise<Equipment[]> {
   const { data } = await api().get<Equipment[]>("/inventory/equipment/");
+  return data;
+}
+
+export async function listPublicEquipment(): Promise<Equipment[]> {
+  const { data } = await api().get<Equipment[]>("/public/inventory/equipment/");
   return data;
 }
 

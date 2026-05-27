@@ -11,6 +11,7 @@ import {
   listBookingCalendar,
   listBookings,
   listMyBookings,
+  listPublicBookingWindows,
   rejectBooking,
   type BookingApprovePayload,
   type BookingCreatePayload,
@@ -48,6 +49,7 @@ import {
   listEquipmentAssignments,
   listEquipmentTypes,
   listMyAssignedEquipment,
+  listPublicEquipment,
   releaseEquipment,
   updateEquipment,
   updateEquipmentType,
@@ -65,6 +67,7 @@ import {
   deleteSpaceType,
   listSpaceBookingRecords,
   listSpaceOccupancy,
+  listPublicSpaces,
   listSpaces,
   listSpaceTypes,
   updateSpace,
@@ -87,6 +90,7 @@ export type QueryControls = {
 const operationalKeys = {
   bookings: ["bookings"] as const,
   bookingCalendar: ["bookings", "calendar"] as const,
+  publicBookingWindows: ["bookings", "publicWindows"] as const,
   myBookings: ["bookings", "mine"] as const,
   contracts: ["contracts"] as const,
   companyContracts: (companyId: string) => ["contracts", "company", companyId] as const,
@@ -96,11 +100,13 @@ const operationalKeys = {
   financeReport: (filters?: FinanceReportFilters) => ["finance", "reports", filters ?? {}] as const,
   nextDuePayment: ["finance", "payments", "nextDue"] as const,
   equipment: ["inventory", "equipment"] as const,
+  publicEquipment: ["inventory", "publicEquipment"] as const,
   equipmentTypes: ["inventory", "equipmentTypes"] as const,
   equipmentAssignments: (filters?: EquipmentAssignmentFilters) =>
     ["inventory", "assignments", filters?.bookingId ?? null, filters?.equipmentId ?? null] as const,
   myAssignedEquipment: (bookingId?: string) => ["inventory", "myAssignments", bookingId] as const,
   spaces: ["spaces"] as const,
+  publicSpaces: ["spaces", "public"] as const,
   spaceTypes: ["spaces", "types"] as const,
   occupancy: ["spaces", "occupancy"] as const,
   spaceBookingRecords: ["spaces", "bookings", "records"] as const,
@@ -114,6 +120,14 @@ export function useBookingCalendar() {
   return useQuery({
     queryKey: operationalKeys.bookingCalendar,
     queryFn: listBookingCalendar,
+    staleTime: 30_000,
+  });
+}
+
+export function usePublicBookingWindows() {
+  return useQuery({
+    queryKey: operationalKeys.publicBookingWindows,
+    queryFn: listPublicBookingWindows,
     staleTime: 30_000,
   });
 }
@@ -319,6 +333,14 @@ export function useEquipment() {
   });
 }
 
+export function usePublicEquipment() {
+  return useQuery({
+    queryKey: operationalKeys.publicEquipment,
+    queryFn: listPublicEquipment,
+    staleTime: 30_000,
+  });
+}
+
 export function useEquipmentTypes() {
   return useQuery({
     queryKey: operationalKeys.equipmentTypes,
@@ -428,6 +450,15 @@ export function useSpaces(options: QueryControls = {}) {
   return useQuery({
     queryKey: operationalKeys.spaces,
     queryFn: listSpaces,
+    staleTime: 30_000,
+    ...options,
+  });
+}
+
+export function usePublicSpaces(options: QueryControls = {}) {
+  return useQuery({
+    queryKey: operationalKeys.publicSpaces,
+    queryFn: listPublicSpaces,
     staleTime: 30_000,
     ...options,
   });

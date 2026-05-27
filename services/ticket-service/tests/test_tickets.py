@@ -168,9 +168,11 @@ def test_ticket_create_client_defaults_to_own_company_and_staff_can_create_for_a
     response = client.post(LIST_URL, data=payload, format="json")
     assert response.status_code == 201
     data = response.data
+    assert data["id"]
     assert data["company_id"] == company_id
     assert data["subject"] == "New issue"
     assert data["status"] == Ticket.Status.OPEN
+    assert data["messages"] == []
 
     staff = _api_client("Staff")
     response_staff = staff.post(
@@ -180,6 +182,7 @@ def test_ticket_create_client_defaults_to_own_company_and_staff_can_create_for_a
     )
     assert response_staff.status_code == 201
     staff_data = response_staff.data
+    assert staff_data["id"]
     assert staff_data["company_id"] == company_id
 
     response_bad_staff = staff.post(

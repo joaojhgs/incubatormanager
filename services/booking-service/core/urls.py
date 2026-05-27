@@ -15,6 +15,7 @@ from core.views import (
     HealthView,
     MetricsView,
     MyBookingsView,
+    PublicBookingCalendarView,
     PublicBookingCreateView,
 )
 
@@ -25,6 +26,11 @@ urlpatterns = [
     path("api/bookings/health/", HealthView.as_view(), name="health-bookings"),
     path("api/bookings/", BookingListCreateView.as_view(), name="booking-list-create"),
     path("api/bookings/external/", PublicBookingCreateView.as_view(), name="booking-public-create"),
+    path(
+        "api/bookings/public-calendar/",
+        PublicBookingCalendarView.as_view(),
+        name="booking-public-calendar",
+    ),
     path(
         "api/bookings/<uuid:booking_id>/",
         BookingDetailView.as_view(),

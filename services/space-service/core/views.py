@@ -6,7 +6,8 @@ from hashlib import sha256
 from uuid import uuid4
 
 from django.core.cache import cache
-from django.db.models import Count, Max
+from django.db.models import Count, Max, Q
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from ilb_common.permissions import IsStaff
 from rest_framework import generics
@@ -43,7 +44,12 @@ def scoped_spaces(request: Request):
     if role in {"Staff", "Director"}:
         return qs
     if role == "Client" and _company_id(request):
-        return qs.filter(company_id=_company_id(request))
+        # Clients need their contracted spaces plus unassigned reservable spaces for
+        # the portal booking flow. Keep occupied spaces from other companies hidden.
+        return qs.filter(
+            Q(company_id=_company_id(request))
+            | Q(company_id__isnull=True, status=Space.Status.AVAILABLE, is_active=True)
+        )
     return qs.none()
 
 
@@ -114,6 +120,27 @@ class SpaceListCreateView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return [IsAuthenticated(), IsStaff()]
         return [IsAuthenticated()]
+
+
+class PublicSpaceListView(generics.ListAPIView):
+    authentication_classes = ()
+    permission_classes = ()
+    serializer_class = SpaceSerializer
+
+    def get_queryset(self):  # type: ignore[override]
+        active_booking_space_ids = SpaceBookingRecord.objects.filter(
+            status=SpaceBookingRecord.Status.APPROVED,
+            end_time__gt=timezone.now(),
+        ).values("space_id")
+        return (
+            Space.objects.filter(is_active=True, company_id__isnull=True)
+            .exclude(status__in=[Space.Status.BLOCKED, Space.Status.MAINTENANCE])
+            .filter(
+                Q(status=Space.Status.AVAILABLE)
+                | Q(id__in=active_booking_space_ids)
+            )
+            .order_by("name")
+        )
 
 
 class SpaceDetailView(generics.RetrieveUpdateDestroyAPIView):

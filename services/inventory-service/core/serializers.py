@@ -24,6 +24,7 @@ class EquipmentSerializer(serializers.ModelSerializer):
             "serial_number",
             "assigned_space_id",
             "rental_cost",
+            "rental_cost_unit",
             "status",
             "notes",
             "is_active",

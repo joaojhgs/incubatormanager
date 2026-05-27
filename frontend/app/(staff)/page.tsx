@@ -1,5 +1,5 @@
-import { StaffWorkspaceHome } from "@/components/staff/StaffWorkspaceHome";
+import { redirect } from "next/navigation";
 
 export default function StaffRootPage() {
-  return <StaffWorkspaceHome />;
+  redirect("/dashboard");
 }
