@@ -141,7 +141,6 @@ Record environment blockers, such as missing Docker socket access, separately
 from product failures. Current release and defense evidence is maintained in
 `docs/defense/release-evidence.md` and `docs/defense/local-qa-evidence.md`.
 
-
 ## CI/CD and production deployment
 
 GitLab CI validates compose configuration, runs path-filtered backend/frontend
@@ -150,9 +149,10 @@ them to the GitLab container registry, and deploys `main` automatically to the
 production Docker host using SSH and Docker Compose.
 
 Production deployment is configured with protected GitLab variables instead of
-committed secrets: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_PRIVATE_KEY`,
-`DEPLOY_PATH`, and either `DEPLOY_ENV_FILE_BASE64` or `DEPLOY_ENV_FILE`. See
-`docs/deploy.md` for the full rollout flow and host prerequisites.
+committed secrets. The course VM user is fixed as `a69603`; configure
+`DEPLOY_HOST`, `DEPLOY_PASSWORD`, and either `DEPLOY_ENV_FILE_BASE64` or
+`DEPLOY_ENV_FILE`. See `docs/deploy.md` for the full rollout flow and host
+prerequisites.
 
 ## Contributing
 

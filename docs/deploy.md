@@ -100,9 +100,8 @@ Required protected GitLab CI/CD variables for automatic production deployment
 from `main`:
 
 - `DEPLOY_HOST` — SSH host/IP of the production Docker machine.
-- `DEPLOY_USER` — SSH user with permission to run Docker Compose.
-- `DEPLOY_SSH_PRIVATE_KEY` — private key for that user.
-- `DEPLOY_PATH` — release root on the host, for example `/opt/ilb`.
+- `DEPLOY_PASSWORD` — SSH password for the fixed course VM user `a69603`.
+- `DEPLOY_PATH` — release root on the host; CI defaults to `/home/a69603/ilb`.
 - `DEPLOY_ENV_FILE_BASE64` or `DEPLOY_ENV_FILE` — production `.env` content.
 
 Optional variables:
@@ -110,7 +109,9 @@ Optional variables:
 - `DEPLOY_KNOWN_HOSTS` — pinned SSH known-hosts entry.
 - `PRODUCTION_URL` — GitLab environment URL shown in the Environments page.
 
-The remote host must already have Docker Engine and the Docker Compose plugin.
+The deployment user is fixed in CI as `a69603`, matching the assigned course VM
+login. The remote host must already have Docker Engine and the Docker Compose
+plugin.
 The first deployment creates `${DEPLOY_PATH}/current`, `${DEPLOY_PATH}/releases`,
 and `${DEPLOY_PATH}/shared/.env`. Later deployments reuse the shared `.env` unless
 one of the `DEPLOY_ENV_*` variables is supplied again.
