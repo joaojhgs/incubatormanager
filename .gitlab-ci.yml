@@ -1,5 +1,5 @@
-# Monorepo GitLab CI — parent pipeline that includes path-filtered child configs.
-# Default tag `shared` is required for IPB shared runners; untagged jobs are never scheduled.
+# Monorepo GitLab CI — validates the stack, tests changed code, builds changed
+# images, pushes them to the GitLab container registry, and deploys production.
 
 workflow:
   rules:
@@ -12,6 +12,7 @@ stages:
   - test
   - build
   - e2e
+  - deploy
 
 default:
   interruptible: true
@@ -21,13 +22,11 @@ default:
 variables:
   PIP_ROOT_USER_ACTION: ignore
   DJANGO_SECRET_KEY: ci-not-secret-change-in-real-envs
-  # Pin standalone Compose; avoids docker:cli which needs a running engine/socket.
   DOCKER_COMPOSE_V2_VERSION: '2.31.0'
+  DOCKER_TLS_CERTDIR: ''
+  IMAGE_TAG: $CI_COMMIT_SHA
+  DEPLOY_PATH: /opt/ilb
 
-# ---------------------------------------------------------------------------
-# Compose validation — runs on every pipeline because infra changes are common
-# and the check is fast (< 30 s).
-# ---------------------------------------------------------------------------
 compose:validate:
   stage: validate
   image: debian:12-slim
@@ -46,11 +45,71 @@ compose:validate:
   script:
     - cp .env.example .env
     - docker-compose -f infra/docker-compose.yml --project-directory . config --quiet
+    - CI_REGISTRY_IMAGE=registry.example.invalid/ilb IMAGE_TAG=test docker-compose -f infra/docker-compose.yml -f infra/docker-compose.production.yml --project-directory . config --quiet
 
-# ---------------------------------------------------------------------------
-# Path-filtered child pipelines
-# ---------------------------------------------------------------------------
+changed:services:
+  stage: validate
+  image: alpine:3.20
+  before_script:
+    - apk add --no-cache bash git
+  script:
+    - bash infra/scripts/ci/detect-changed-services.sh
+  artifacts:
+    reports:
+      dotenv: changed-services.env
+    paths:
+      - changed-services.env
+    expire_in: 1 day
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
 include:
   - local: '.gitlab/ci/backend.yml'
   - local: '.gitlab/ci/frontend.yml'
   - local: '.gitlab/ci/e2e.yml'
+
+build:changed-images:
+  stage: build
+  image: docker:27.3.1-cli
+  services:
+    - name: docker:27.3.1-dind
+      alias: docker
+  needs:
+    - job: changed:services
+      artifacts: true
+  before_script:
+    - apk add --no-cache bash
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+  script:
+    - bash infra/scripts/ci/build-and-push.sh
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - when: never
+
+# Automatic production rollout from main. The SSH host, user, private key, and
+# production .env are injected as protected GitLab CI/CD variables.
+deploy:production:
+  stage: deploy
+  image: alpine:3.20
+  needs:
+    - job: changed:services
+      artifacts: true
+    - job: build:changed-images
+      optional: true
+  before_script:
+    - apk add --no-cache bash git openssh-client tar
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - printf '%s\n' "$DEPLOY_SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+    - chmod 600 ~/.ssh/deploy_key
+    - if [ -n "${DEPLOY_KNOWN_HOSTS:-}" ]; then printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts; fi
+  script:
+    - bash infra/scripts/ci/deploy-remote.sh
+  environment:
+    name: production
+    url: $PRODUCTION_URL
+  resource_group: production
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - when: never

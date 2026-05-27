@@ -1,0 +1,48 @@
+# Production image overlay.
+# Use with:
+#   IMAGE_TAG=<commit-sha> CI_REGISTRY_IMAGE=<registry/project> \
+#   docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml up -d --no-build
+#
+# The base compose file keeps build definitions for local development. This overlay
+# pins deployable services to images pushed by GitLab CI.
+
+
+services:
+  auth-service:
+    image: ${CI_REGISTRY_IMAGE}/auth-service:${IMAGE_TAG}
+  company-service:
+    image: ${CI_REGISTRY_IMAGE}/company-service:${IMAGE_TAG}
+  contract-service:
+    image: ${CI_REGISTRY_IMAGE}/contract-service:${IMAGE_TAG}
+  contract-scheduler:
+    image: ${CI_REGISTRY_IMAGE}/contract-service:${IMAGE_TAG}
+  finance-service:
+    image: ${CI_REGISTRY_IMAGE}/finance-service:${IMAGE_TAG}
+  finance-consumer:
+    image: ${CI_REGISTRY_IMAGE}/finance-service:${IMAGE_TAG}
+  finance-scheduler:
+    image: ${CI_REGISTRY_IMAGE}/finance-service:${IMAGE_TAG}
+  space-service:
+    image: ${CI_REGISTRY_IMAGE}/space-service:${IMAGE_TAG}
+  space-consumer:
+    image: ${CI_REGISTRY_IMAGE}/space-service:${IMAGE_TAG}
+  booking-service:
+    image: ${CI_REGISTRY_IMAGE}/booking-service:${IMAGE_TAG}
+  booking-scheduler:
+    image: ${CI_REGISTRY_IMAGE}/booking-service:${IMAGE_TAG}
+  inventory-service:
+    image: ${CI_REGISTRY_IMAGE}/inventory-service:${IMAGE_TAG}
+  inventory-consumer:
+    image: ${CI_REGISTRY_IMAGE}/inventory-service:${IMAGE_TAG}
+  ticket-service:
+    image: ${CI_REGISTRY_IMAGE}/ticket-service:${IMAGE_TAG}
+  dashboard-service:
+    image: ${CI_REGISTRY_IMAGE}/dashboard-service:${IMAGE_TAG}
+  dashboard-consumer:
+    image: ${CI_REGISTRY_IMAGE}/dashboard-service:${IMAGE_TAG}
+  document-service:
+    image: ${CI_REGISTRY_IMAGE}/document-service:${IMAGE_TAG}
+  frontend:
+    image: ${CI_REGISTRY_IMAGE}/frontend:${IMAGE_TAG}
+  gateway:
+    image: ${CI_REGISTRY_IMAGE}/gateway:${IMAGE_TAG}

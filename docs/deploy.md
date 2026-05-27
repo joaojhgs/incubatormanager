@@ -80,3 +80,37 @@ Replace `localhost` with your hostname when deployed remotely.
 GitLab CI (`.gitlab-ci.yml` and `.gitlab/ci/`) builds and tests on push/MR; keep
 compose definitions aligned with what CI validates when you change images or
 health endpoints.
+
+## GitLab production deployment
+
+### Registry-based changed-service rollout
+
+The production pipeline now separates changed-service detection, image build/push,
+and remote deployment:
+
+1. `changed:services` writes `DEPLOY_IMAGES` and `DEPLOY_COMPOSE_SERVICES` from
+   the Git diff.
+2. `build:changed-images` builds only `DEPLOY_IMAGES` and pushes them to the
+   GitLab container registry as `${CI_REGISTRY_IMAGE}/<service>:${CI_COMMIT_SHA}`.
+3. `deploy:production` SSHes to the Docker host, copies the release compose
+   files, logs in to the registry, pulls the changed compose services, and runs
+   `docker compose up -d --no-build` for only those services.
+
+Required protected GitLab CI/CD variables for automatic production deployment
+from `main`:
+
+- `DEPLOY_HOST` — SSH host/IP of the production Docker machine.
+- `DEPLOY_USER` — SSH user with permission to run Docker Compose.
+- `DEPLOY_SSH_PRIVATE_KEY` — private key for that user.
+- `DEPLOY_PATH` — release root on the host, for example `/opt/ilb`.
+- `DEPLOY_ENV_FILE_BASE64` or `DEPLOY_ENV_FILE` — production `.env` content.
+
+Optional variables:
+
+- `DEPLOY_KNOWN_HOSTS` — pinned SSH known-hosts entry.
+- `PRODUCTION_URL` — GitLab environment URL shown in the Environments page.
+
+The remote host must already have Docker Engine and the Docker Compose plugin.
+The first deployment creates `${DEPLOY_PATH}/current`, `${DEPLOY_PATH}/releases`,
+and `${DEPLOY_PATH}/shared/.env`. Later deployments reuse the shared `.env` unless
+one of the `DEPLOY_ENV_*` variables is supplied again.
