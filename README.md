@@ -81,8 +81,8 @@ cp .env.example .env
 
 Edit `.env` for your machine at minimum: `POSTGRES_PASSWORD`,
 `DJANGO_SECRET_KEY`, per-service `*_DB_PASSWORD` values, MinIO credentials, and
-`NEXT_PUBLIC_API_URL` if the browser should call a gateway origin other than
-`http://localhost`.
+`NEXT_PUBLIC_API_URL` if the browser should call a gateway origin other than the
+default same-origin `/api` path.
 
 Run the full stack in the background:
 

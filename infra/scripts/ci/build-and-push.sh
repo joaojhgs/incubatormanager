@@ -37,6 +37,9 @@ if [[ -z "$registry_password" ]]; then
 fi
 registry_host="${CI_REGISTRY:-${registry_image%%/*}}"
 echo "$registry_password" | docker login "$registry_host" -u "$registry_user" --password-stdin
+require_registry_push="${CI_REQUIRE_REGISTRY_PUSH:-false}"
+skip_remaining_pushes="${CI_SKIP_REMAINING_PUSHES_AFTER_FAILURE:-true}"
+push_failed=0
 
 for svc in $services_string; do
   dockerfile="$(dockerfile_for "$svc")"
@@ -44,6 +47,22 @@ for svc in $services_string; do
   latest="${registry_image}/${svc}:${CI_COMMIT_REF_SLUG:-latest}"
   echo "Building ${image} from ${dockerfile}"
   docker build --pull -f "$dockerfile" -t "$image" -t "$latest" .
-  docker push "$image"
-  docker push "$latest"
+  if [[ "$push_failed" == "1" && "$skip_remaining_pushes" == "true" ]]; then
+    echo "Skipping registry push for ${image} after an earlier push failure; remote deploy can still build on the target host." >&2
+    continue
+  fi
+  if ! docker push "$image"; then
+    echo "WARNING: could not push ${image}; remote deploy can still build on the target host." >&2
+    push_failed=1
+    continue
+  fi
+  if ! docker push "$latest"; then
+    echo "WARNING: could not push ${latest}; remote deploy can still build on the target host." >&2
+    push_failed=1
+  fi
 done
+
+if [[ "$push_failed" == "1" && "$require_registry_push" == "true" ]]; then
+  echo "At least one registry push failed and CI_REQUIRE_REGISTRY_PUSH=true." >&2
+  exit 1
+fi

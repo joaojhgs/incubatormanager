@@ -22,6 +22,7 @@ if [[ -z "$registry_image" ]]; then
 fi
 
 image_tag="${IMAGE_TAG:-${CI_COMMIT_SHA:-latest}}"
+remote_build="${DEPLOY_REMOTE_BUILD:-true}"
 ssh_target="${DEPLOY_USER}@${DEPLOY_HOST}"
 ssh_opts=(-o ConnectTimeout=20 -o PreferredAuthentications=password -o PubkeyAuthentication=no)
 mkdir -p ~/.ssh
@@ -42,7 +43,13 @@ if [[ -n "$registry_image" ]]; then
 fi
 
 printf -v env_prefix '%q ' "${remote_env[@]}"
+if [[ "$remote_build" == "true" || "$remote_build" == "1" || "$remote_build" == "yes" ]]; then
+  compose_files="-f infra/docker-compose.yml"
+else
+  compose_files="-f infra/docker-compose.yml -f infra/docker-compose.production.yml"
+fi
+
 "${ssh_cmd[@]}" "$ssh_target" \
-  "cd '${remote_current}' && ${env_prefix} docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml exec -T auth-service python /app/infra/seed/seed.py"
+  "cd '${remote_current}' && ${env_prefix} docker compose --env-file .env ${compose_files} exec -T auth-service sh -lc 'PYTHONPATH=/app /opt/venv/bin/python /app/infra/seed/seed.py'"
 
 echo "Remote seed finished."

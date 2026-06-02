@@ -31,6 +31,7 @@ fi
 registry_host="${CI_REGISTRY:-${registry_image%%/*}}"
 image_tag="${IMAGE_TAG:-${CI_COMMIT_SHA:-latest}}"
 compose_services="${DEPLOY_COMPOSE_SERVICES:-}"
+remote_build="${DEPLOY_REMOTE_BUILD:-true}"
 if [[ -z "$compose_services" ]]; then
   echo "No changed compose services to deploy."
   exit 0
@@ -60,7 +61,7 @@ tar \
   --exclude='frontend/node_modules' \
   --exclude='frontend/.next' \
   -czf - \
-  .env.example infra gateway docker-compose.tilt.yml Tiltfile README.md docs \
+  .env.example infra gateway services frontend libs docker-compose.tilt.yml Tiltfile README.md docs pyproject.toml package.json package-lock.json \
   | "${ssh_cmd[@]}" "$ssh_target" "tar -xzf - -C '${remote_release}'"
 
 if [[ -n "${DEPLOY_ENV_FILE_BASE64:-}" ]]; then
@@ -74,9 +75,13 @@ fi
 
 registry_password_escaped="$(printf '%s' "$registry_password" | sed "s/'/'\\''/g")"
 registry_user_escaped="$(printf '%s' "$registry_user" | sed "s/'/'\\''/g")"
-"${ssh_cmd[@]}" "$ssh_target" "docker login '${registry_host}' -u '${registry_user_escaped}' -p '${registry_password_escaped}'"
-
-"${ssh_cmd[@]}" "$ssh_target" \
-  "ln -sfn '${remote_release}' '${remote_current}' && cd '${remote_current}' && ln -sfn '${DEPLOY_PATH}/shared/.env' .env && IMAGE_TAG='${image_tag}' CI_REGISTRY_IMAGE='${registry_image}' docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml pull ${compose_services} && IMAGE_TAG='${image_tag}' CI_REGISTRY_IMAGE='${registry_image}' docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml up -d --no-build --remove-orphans ${compose_services} && docker image prune -f"
+if [[ "$remote_build" == "true" || "$remote_build" == "1" || "$remote_build" == "yes" ]]; then
+  "${ssh_cmd[@]}" "$ssh_target" \
+    "ln -sfn '${remote_release}' '${remote_current}' && cd '${remote_current}' && ln -sfn '${DEPLOY_PATH}/shared/.env' .env && COMPOSE_REPO_ROOT='${remote_current}' docker compose --env-file .env -f infra/docker-compose.yml up -d --build --remove-orphans ${compose_services} && docker image prune -f"
+else
+  "${ssh_cmd[@]}" "$ssh_target" "docker login '${registry_host}' -u '${registry_user_escaped}' -p '${registry_password_escaped}'"
+  "${ssh_cmd[@]}" "$ssh_target" \
+    "ln -sfn '${remote_release}' '${remote_current}' && cd '${remote_current}' && ln -sfn '${DEPLOY_PATH}/shared/.env' .env && IMAGE_TAG='${image_tag}' CI_REGISTRY_IMAGE='${registry_image}' docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml pull ${compose_services} && IMAGE_TAG='${image_tag}' CI_REGISTRY_IMAGE='${registry_image}' docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.production.yml up -d --no-build --remove-orphans ${compose_services} && docker image prune -f"
+fi
 
 echo "Deployment finished for services: ${compose_services}"
