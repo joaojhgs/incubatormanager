@@ -23,8 +23,9 @@ import type { Space } from "@/lib/api/spaces";
 import {
   bookingRangeOverlaps,
   disabledBookingDate,
+  disabledBookingEndDate,
+  disabledBookingEndTime,
   disabledBookingTime,
-  spaceHasOverlap,
 } from "@/lib/bookingAvailability";
 import {
   calculateRentalEstimate,
@@ -71,10 +72,9 @@ export default function ClientNewBookingPage() {
         (space) =>
           space.is_active &&
           !space.company_id &&
-          !["Blocked", "Maintenance"].includes(space.status) &&
-          !spaceHasOverlap(bookingWindows.data, space.id, startTime, endTime),
+          !["Blocked", "Maintenance"].includes(space.status),
       ),
-    [bookingWindows.data, endTime, spaces.data, startTime],
+    [spaces.data],
   );
   const availableEquipment = useMemo(
     () => (equipment.data ?? []).filter((item) => item.is_active && item.status === "Available"),
@@ -171,8 +171,12 @@ export default function ClientNewBookingPage() {
           ]}
         >
           <DatePicker
-            disabledDate={(date) => disabledBookingDate(date, bookingWindows.data, selectedSpaceId)}
-            disabledTime={(date) => disabledBookingTime(date, bookingWindows.data, selectedSpaceId)}
+            disabledDate={(date) =>
+              disabledBookingEndDate(date, bookingWindows.data, selectedSpaceId, startTime)
+            }
+            disabledTime={(date) =>
+              disabledBookingEndTime(date, bookingWindows.data, selectedSpaceId, startTime)
+            }
             format="YYYY-MM-DD HH:mm"
             showTime={{ format: "HH:mm", minuteStep: 30 }}
             style={{ width: "100%" }}

@@ -100,3 +100,67 @@ export function disabledBookingTime(
 
   return { disabledHours, disabledMinutes };
 }
+
+function isValidBookingEnd(
+  candidateEnd: Dayjs,
+  windows: BookingWindow[] | undefined,
+  spaceId: string | undefined,
+  start: Dayjs | undefined,
+): boolean {
+  if (!start || !candidateEnd.isAfter(start)) return false;
+  return !bookingRangeOverlaps(windows, spaceId, start, candidateEnd);
+}
+
+export function disabledBookingEndDate(
+  date: Dayjs,
+  windows: BookingWindow[] | undefined,
+  spaceId: string | undefined,
+  start: Dayjs | undefined,
+): boolean {
+  if (!start) return disabledBookingDate(date, windows, spaceId);
+  const now = dayjs();
+  const dayStart = date.startOf("day");
+  if (dayStart.isBefore(now.startOf("day"))) return true;
+  const dayEnd = dayStart.add(1, "day");
+  for (
+    let cursor = dayStart;
+    cursor.isBefore(dayEnd);
+    cursor = cursor.add(SLOT_MINUTES, "minute")
+  ) {
+    if (cursor.isAfter(now) && isValidBookingEnd(cursor, windows, spaceId, start)) return false;
+  }
+  return true;
+}
+
+export function disabledBookingEndTime(
+  date: Dayjs | null,
+  windows: BookingWindow[] | undefined,
+  spaceId: string | undefined,
+  start: Dayjs | undefined,
+) {
+  if (!start) return disabledBookingTime(date, windows, spaceId);
+  const now = dayjs();
+  if (!date) return {};
+
+  const disabledHours = () =>
+    Array.from({ length: 24 }, (_, hour) => hour).filter((hour) =>
+      [0, 30].every((minute) => {
+        const candidateEnd = date.hour(hour).minute(minute).second(0).millisecond(0);
+        return (
+          !candidateEnd.isAfter(now) || !isValidBookingEnd(candidateEnd, windows, spaceId, start)
+        );
+      }),
+    );
+
+  const disabledMinutes = (selectedHour?: number) => {
+    if (typeof selectedHour !== "number") return [];
+    return [0, 30].filter((minute) => {
+      const candidateEnd = date.hour(selectedHour).minute(minute).second(0).millisecond(0);
+      return (
+        !candidateEnd.isAfter(now) || !isValidBookingEnd(candidateEnd, windows, spaceId, start)
+      );
+    });
+  };
+
+  return { disabledHours, disabledMinutes };
+}

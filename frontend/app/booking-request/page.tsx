@@ -19,8 +19,9 @@ import type { Dayjs } from "dayjs";
 import {
   bookingRangeOverlaps,
   disabledBookingDate,
+  disabledBookingEndDate,
+  disabledBookingEndTime,
   disabledBookingTime,
-  spaceHasOverlap,
 } from "@/lib/bookingAvailability";
 import {
   useCreatePublicBooking,
@@ -60,10 +61,7 @@ export default function PublicBookingRequestPage() {
   const endTime = Form.useWatch("end_time", form);
   const availableSpaces = (spaces.data ?? []).filter(
     (space) =>
-      space.is_active &&
-      !space.company_id &&
-      !["Blocked", "Maintenance"].includes(space.status) &&
-      !spaceHasOverlap(bookingWindows.data, space.id, startTime, endTime),
+      space.is_active && !space.company_id && !["Blocked", "Maintenance"].includes(space.status),
   );
   const availableEquipment = (equipment.data ?? []).filter(
     (item) => item.is_active && item.status === "Available",
@@ -205,10 +203,10 @@ export default function PublicBookingRequestPage() {
           >
             <DatePicker
               disabledDate={(date) =>
-                disabledBookingDate(date, bookingWindows.data, selectedSpaceId)
+                disabledBookingEndDate(date, bookingWindows.data, selectedSpaceId, startTime)
               }
               disabledTime={(date) =>
-                disabledBookingTime(date, bookingWindows.data, selectedSpaceId)
+                disabledBookingEndTime(date, bookingWindows.data, selectedSpaceId, startTime)
               }
               showTime={{ format: "HH:mm", minuteStep: 30 }}
               style={{ width: "100%" }}
