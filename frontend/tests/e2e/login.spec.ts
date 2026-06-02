@@ -28,7 +28,10 @@ test.describe("login page", () => {
     await page.route("**/api/auth/login/", async (route) => {
       await route.fulfill({
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Set-Cookie": `ilb.refresh_token=${refresh}; Path=/; HttpOnly; SameSite=Lax`,
+        },
         body: JSON.stringify({ access }),
       });
     });
@@ -50,16 +53,6 @@ test.describe("login page", () => {
         }
       })
       .toMatch(/^ey/);
-    await page.context().addCookies([
-      {
-        name: "ilb.refresh_token",
-        value: refresh,
-        sameSite: "Lax",
-        httpOnly: true,
-        url: "http://localhost:3000",
-      },
-    ]);
-    await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/dashboard/);
   });
 
@@ -68,7 +61,10 @@ test.describe("login page", () => {
     await page.route("**/api/auth/login/", async (route) => {
       await route.fulfill({
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Set-Cookie": `ilb.refresh_token=${refresh}; Path=/; HttpOnly; SameSite=Lax`,
+        },
         body: JSON.stringify({ access }),
       });
     });
@@ -90,16 +86,6 @@ test.describe("login page", () => {
         }
       })
       .toMatch(/^ey/);
-    await page.context().addCookies([
-      {
-        name: "ilb.refresh_token",
-        value: refresh,
-        sameSite: "Lax",
-        httpOnly: true,
-        url: "http://localhost:3000",
-      },
-    ]);
-    await page.goto("/portal");
     await expect(page).toHaveURL(/\/portal/);
   });
 

@@ -77,6 +77,28 @@ test.describe("remaining UI workflow coverage", () => {
     let replySeen = false;
 
     await page.route("**/api/tickets/", (route) => fulfillJson(route, [ticket]));
+    await page.route(/\/api\/companies\/(?:\?|$)/, (route) =>
+      fulfillJson(route, {
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: "company-1",
+            name: "Empresa Ticket",
+            tax_id: "501000099",
+            address: null,
+            phone: null,
+            email: null,
+            legal_representative: "Cliente",
+            description: null,
+            is_active: true,
+            created_at: "2026-05-20T09:00:00Z",
+            updated_at: "2026-05-20T09:00:00Z",
+          },
+        ],
+      }),
+    );
     await page.route("**/api/tickets/ticket-1/", async (route) => {
       if (route.request().method() === "PATCH") {
         patchSeen = true;

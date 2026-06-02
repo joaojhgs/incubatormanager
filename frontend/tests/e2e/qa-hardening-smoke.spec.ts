@@ -374,19 +374,25 @@ test.describe("QA hardening smoke coverage", () => {
     await expect(page.getByText("Sala 1").first()).toBeVisible();
     await expect(page.getByText("Projetor QA").first()).toBeVisible();
     await expect(page.getByText("Histórico recente de atribuições")).toBeVisible();
-    await expect(page.getByText("booking-1")).toBeVisible();
+    await expect(page.getByRole("link", { name: /Sala 1/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Empresa QA/ })).toHaveAttribute(
+      "href",
+      /\/bookings\?booking=booking-1/,
+    );
   });
 
   test("public booking request remains unauthenticated and validates required fields", async ({
     page,
   }) => {
-    await page.route("**/api/spaces/", (route) =>
+    await page.route("**/api/public/spaces/", (route) =>
       fulfillJson(route, [
         {
           id: "space-1",
           name: "Sala de Reunião",
           space_type: "Meeting",
           capacity: 8,
+          rental_cost: "12.00",
+          rental_cost_unit: "hour",
           status: "Available",
           company_id: null,
           is_active: true,
@@ -395,6 +401,8 @@ test.describe("QA hardening smoke coverage", () => {
         },
       ]),
     );
+    await page.route("**/api/public/inventory/equipment/", (route) => fulfillJson(route, []));
+    await page.route("**/api/bookings/public-calendar/", (route) => fulfillJson(route, []));
 
     await page.goto("/booking-request");
 
@@ -403,7 +411,7 @@ test.describe("QA hardening smoke coverage", () => {
       page.getByText("Submeta um pedido de reserva para análise pela equipa da incubadora."),
     ).toBeVisible();
     await page.getByRole("combobox", { name: "Espaço" }).click();
-    await expect(page.getByText("Sala de Reunião · 8 pessoas")).toBeVisible();
+    await expect(page.getByText(/Sala de Reunião .* 8 pessoas/)).toBeVisible();
 
     await page.getByRole("button", { name: "Submeter pedido" }).click();
 
