@@ -30,7 +30,6 @@ and the frontend is a Next.js 14 application served behind the same gateway.
 - [Tilt live-development workflow](#tilt-live-development-workflow)
 - [Demo data and local credentials](#demo-data-and-local-credentials)
 - [Testing and verification](#testing-and-verification)
-- [Feature screenshots](#feature-screenshots)
 - [Technical report and supporting docs](#technical-report-and-supporting-docs)
 - [CI/CD and deployment](#cicd-and-deployment)
 - [Security and operational notes](#security-and-operational-notes)
@@ -584,38 +583,6 @@ check.
 
 ---
 
-## Feature screenshots
-
-No product screenshots are currently committed outside dependency folders. The
-README therefore does not embed stale or fabricated images.
-
-When capturing screenshots for GitHub or the final defense package, store them
-under `docs/screenshots/` and update this table with real image links:
-
-| Feature                  | Suggested path                         | Route to capture       |
-| ------------------------ | -------------------------------------- | ---------------------- |
-| Login                    | `docs/screenshots/login.png`           | `/login`               |
-| Staff dashboard          | `docs/screenshots/staff-dashboard.png` | `/dashboard`           |
-| Companies                | `docs/screenshots/companies.png`       | `/companies`           |
-| Company detail/documents | `docs/screenshots/company-detail.png`  | `/companies/[id]`      |
-| Contracts                | `docs/screenshots/contracts.png`       | `/contracts`           |
-| Finance                  | `docs/screenshots/finance.png`         | `/finance`             |
-| Spaces and bookings      | `docs/screenshots/spaces-bookings.png` | `/spaces`, `/bookings` |
-| Inventory                | `docs/screenshots/inventory.png`       | `/inventory`           |
-| Tickets                  | `docs/screenshots/tickets.png`         | `/tickets`             |
-| Client portal            | `docs/screenshots/client-portal.png`   | `/portal`              |
-| Public booking request   | `docs/screenshots/public-booking.png`  | `/booking-request`     |
-
-Suggested capture flow:
-
-```bash
-make demo
-make seed
-# log in as seeded staff/client users, then capture the routes above
-```
-
----
-
 ## Technical report and supporting docs
 
 The project includes several documents that describe implementation decisions,
@@ -637,18 +604,6 @@ runbooks, and defense evidence.
 | [`docs/defense/demo-script.md`](docs/defense/demo-script.md)                                   | Demo walkthrough script.                                                                              |
 | [`docs/defense/slides.md`](docs/defense/slides.md)                                             | Defense slide content.                                                                                |
 | [`docs/defense/ilb-incubator-defense-deck.pptx`](docs/defense/ilb-incubator-defense-deck.pptx) | Generated presentation deck artifact.                                                                 |
-
-Build the final LaTeX report from the repository root:
-
-```bash
-latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=docs/final-report docs/final-report/final-report.tex
-```
-
-Clean auxiliary files while keeping the committed PDF:
-
-```bash
-latexmk -c -outdir=docs/final-report docs/final-report/final-report.tex
-```
 
 ---
 
