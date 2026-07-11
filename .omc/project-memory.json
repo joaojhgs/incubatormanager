@@ -1,0 +1,196 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1783737859306,
+  "projectRoot": "/home/developer/projects/sdl-project-group-20",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "Python",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "pyproject.toml"
+        ]
+      },
+      {
+        "name": "C/C++",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Makefile"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "@playwright/test",
+        "version": "1.52.0",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "make build",
+    "testCommand": "make test",
+    "lintCommand": "npm run lint",
+    "devCommand": null,
+    "scripts": {
+      "lint": "eslint . && npm --prefix frontend run lint",
+      "lint:fix": "eslint . --fix && npm --prefix frontend run lint:fix",
+      "format": "prettier --write .",
+      "format:check": "prettier --check .",
+      "test:e2e": "playwright test --config e2e/playwright.config.ts"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 10,
+      "lastAccessed": 1783737859287,
+      "keyFiles": [
+        "AGENT_HANDOFF.md",
+        "architecture.md",
+        "checkpoint-presentation-guide.md",
+        "contributing.md",
+        "deploy.md"
+      ]
+    },
+    "e2e": {
+      "path": "e2e",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1783737859288,
+      "keyFiles": [
+        "gateway_auth.spec.ts",
+        "playwright.config.ts"
+      ]
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 16,
+      "lastAccessed": 1783737859293,
+      "keyFiles": [
+        "Dockerfile",
+        "middleware.ts",
+        "next-env.d.ts",
+        "next.config.mjs",
+        "package-lock.json"
+      ]
+    },
+    "gateway": {
+      "path": "gateway",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1783737859296,
+      "keyFiles": [
+        "Dockerfile",
+        "docs-index.html",
+        "nginx.conf"
+      ]
+    },
+    "infra": {
+      "path": "infra",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1783737859297,
+      "keyFiles": [
+        "Tiltfile",
+        "docker-compose.apparmor.yml",
+        "docker-compose.dev.yml",
+        "docker-compose.production.yml",
+        "docker-compose.tilt-health.yml"
+      ]
+    },
+    "libs": {
+      "path": "libs",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1783737859297,
+      "keyFiles": []
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 1,
+      "lastAccessed": 1783737859298,
+      "keyFiles": [
+        "generate-env.sh"
+      ]
+    },
+    "services": {
+      "path": "services",
+      "purpose": "Business logic services",
+      "fileCount": 0,
+      "lastAccessed": 1783737859298,
+      "keyFiles": []
+    },
+    "frontend/app": {
+      "path": "frontend/app",
+      "purpose": "Application code",
+      "fileCount": 2,
+      "lastAccessed": 1783737859298,
+      "keyFiles": [
+        "globals.css",
+        "layout.tsx"
+      ]
+    },
+    "frontend/components": {
+      "path": "frontend/components",
+      "purpose": "UI components",
+      "fileCount": 0,
+      "lastAccessed": 1783737859299,
+      "keyFiles": []
+    },
+    "frontend/lib": {
+      "path": "frontend/lib",
+      "purpose": "Library code",
+      "fileCount": 3,
+      "lastAccessed": 1783737859299,
+      "keyFiles": [
+        "bookingAvailability.test.ts",
+        "bookingAvailability.ts",
+        "pricing.ts"
+      ]
+    },
+    "infra/scripts": {
+      "path": "infra/scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 2,
+      "lastAccessed": 1783737859300,
+      "keyFiles": [
+        "cron-runner.py",
+        "minio-init.sh"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}
